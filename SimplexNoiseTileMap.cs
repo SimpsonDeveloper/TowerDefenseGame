@@ -1,11 +1,67 @@
+namespace towerdefensegame;
+
 using Godot;
 using System;
 
-public partial class GrassTileMap : Node
+public partial class SimplexNoiseTileMap : Node
 {
     [Export]
-    private TileMapLayer _tileMapLayer;
+    public SimplexNoiseSettings SimplexNoiseSettings;
+    // saved grass settings
+    // frequency = 0.93f;
+    // octaves = 2;
+    // lacunarity = 1.0f;
+    // gain = 0.1f;
     
+    [Export]
+    public int TileSetIndex;
+    
+    [Export]
+    public TileMapLayer TileMapLayer;
+    
+    [ExportGroup("Noise Settings")]
+    [ExportSubgroup("Frequency")]
+    [Export]
+    public float Frequency { get; set;}
+    [Export]
+    public float FrequencyMin { get; set;}
+    [Export]
+    public float FrequencyMax { get; set;}
+    [Export]
+    public float FrequencyStep{ get; set;}
+    
+
+    [ExportSubgroup("Octaves")]
+    [Export]
+    public int Octaves { get; set;}
+    [Export]
+    public float OctavesMin { get; set;}
+    [Export]
+    public float OctavesMax { get; set;}
+    [Export]
+    public float OctavesStep{ get; set;}
+
+    [ExportSubgroup("Lacunarity")]
+    [Export]
+    public float Lacunarity { get; set;}
+    [Export]
+    public float LacunarityMin { get; set;}
+    [Export]
+    public float LacunarityMax { get; set;}
+    [Export]
+    public float LacunarityStep{ get; set;}
+
+    [ExportSubgroup("Gain")]
+    [Export]
+    public float Gain { get; set;}
+    [Export]
+    public float GainMin { get; set;}
+    [Export]
+    public float GainMax { get; set;}
+    [Export]
+    public float GainStep{ get; set;}
+    
+    [ExportGroup("Slider Settings")]
     // Sliders
     [Export]
     private HSlider _frequencySlider;
@@ -33,6 +89,24 @@ public partial class GrassTileMap : Node
     private Label _fractalGainSliderLabel;
     
     private FastNoiseLite _noise;
+    
+    public override void _EnterTree()
+    {
+        if (ProcessMode == ProcessModeEnum.Disabled)
+        {
+            QueueFree();
+        }
+    }
+    
+    public override void _ExitTree()
+    {
+        // Proper cleanup when node is removed from the scene tree
+        if (_noise != null)
+        {
+            _noise.Dispose();
+            _noise = null;
+        }
+    }
 
     public override void _Ready()
     {
@@ -44,29 +118,37 @@ public partial class GrassTileMap : Node
         _noise.FractalType = FastNoiseLite.FractalTypeEnum.Fbm;
 
         // Period → Frequency (inverse relationship: lower frequency = larger features)
-        float frequency = 0.93f;
-        _noise.Frequency = frequency;  // Smaller = larger "blobs"
-        _frequencySlider.SetValue(frequency);
+        _noise.Frequency = Frequency;  // Smaller = larger "blobs"
+        _frequencySlider.SetValue(Frequency);
+        _frequencySlider.SetMin(FrequencyMin);
+        _frequencySlider.SetMax(FrequencyMax);
+        _frequencySlider.SetStep(FrequencyStep);
 
         // Octaves
-        int octaves = 2;
-        _noise.FractalOctaves = octaves;  // More = more detail
-        _fractalOctavesSlider.SetValue(octaves);
+        _noise.FractalOctaves = Octaves;  // More = more detail
+        _fractalOctavesSlider.SetValue(Octaves);
+        _fractalOctavesSlider.SetMin(OctavesMin);
+        _fractalOctavesSlider.SetMax(OctavesMax);
+        _fractalOctavesSlider.SetStep(OctavesStep);
 
         // Lacunarity (how frequency changes per octave)
-        float lacunarity = 1.0f;
-        _noise.FractalLacunarity = lacunarity;  // Higher = more detail per octave
-        _fractalLacunaritySlider.SetValue(lacunarity);
+        _noise.FractalLacunarity = Lacunarity;  // Higher = more detail per octave
+        _fractalLacunaritySlider.SetValue(Lacunarity);
+        _fractalLacunaritySlider.SetMin(LacunarityMin);
+        _fractalLacunaritySlider.SetMax(LacunarityMax);
+        _fractalLacunaritySlider.SetStep(LacunarityStep);
 
         // Persistence → Gain (how amplitude changes per octave)
-        float gain = 0.1f;
-        _noise.FractalGain = gain;  // Higher = rougher noise
-        _fractalGainSlider.SetValue(gain);
+        _noise.FractalGain = Gain;  // Higher = rougher noise
+        _fractalGainSlider.SetValue(Gain);
+        _fractalGainSlider.SetMin(GainMin);
+        _fractalGainSlider.SetMax(GainMax);
+        _fractalGainSlider.SetStep(GainStep);
         
-        _frequencySliderLabel.SetText($"Frequency: {frequency}");
-        _fractalOctavesSliderLabel.SetText($"Octaves: {octaves}");
-        _fractalLacunaritySliderLabel.SetText($"Lacunarity: {lacunarity}");
-        _fractalGainSliderLabel.SetText($"Gain: {gain}");
+        _frequencySliderLabel.SetText($"Frequency: {Frequency}");
+        _fractalOctavesSliderLabel.SetText($"Octaves: {Octaves}");
+        _fractalLacunaritySliderLabel.SetText($"Lacunarity: {Lacunarity}");
+        _fractalGainSliderLabel.SetText($"Gain: {Gain}");
         
         // Connect slider signals
         _frequencySlider.ValueChanged += OnFrequencyChanged;
@@ -118,10 +200,10 @@ public partial class GrassTileMap : Node
     private void GenerateTerrain()
     {
         Vector2 viewportSize = GetViewport().GetVisibleRect().Size;
-        Vector2I tileSize = _tileMapLayer.TileSet.TileSize;
+        Vector2I tileSize = TileMapLayer.TileSet.TileSize;
 
-        int width = (int)(viewportSize.X / tileSize.X / _tileMapLayer.GetScale().X) + 1;
-        int height = (int)(viewportSize.Y / tileSize.Y / _tileMapLayer.GetScale().Y) + 1;
+        int width = (int)(viewportSize.X / tileSize.X / TileMapLayer.GetScale().X) + 1;
+        int height = (int)(viewportSize.Y / tileSize.Y / TileMapLayer.GetScale().Y) + 1;
         
         for (int x = 0; x < width; x++)
         {
@@ -143,7 +225,7 @@ public partial class GrassTileMap : Node
                 Vector2I atlasCoords = new Vector2I(atlasX, atlasY);
                 
                 // SetCell(coords, sourceId, atlasCoords)
-                _tileMapLayer.SetCell(new Vector2I(x, y), 0, atlasCoords);
+                TileMapLayer.SetCell(new Vector2I(x, y), TileSetIndex, atlasCoords);
             }
         }
     }

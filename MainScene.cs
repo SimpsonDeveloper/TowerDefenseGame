@@ -1,3 +1,5 @@
+namespace towerdefensegame;
+
 using System;
 using Godot;
 

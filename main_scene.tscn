@@ -1,6 +1,10 @@
-[gd_scene load_steps=5 format=3 uid="uid://byg548mddsuhp"]
+[gd_scene load_steps=13 format=3 uid="uid://byg548mddsuhp"]
 
-[ext_resource type="Script" uid="uid://b4glji8f8dmbs" path="res://GrassTileMap.cs" id="1_2c62f"]
+[ext_resource type="Script" uid="uid://b4glji8f8dmbs" path="res://SimplexNoiseTileMap.cs" id="1_2c62f"]
+[ext_resource type="Texture2D" uid="uid://djx3uwfoyl8c4" path="res://assets/4pxAllTilesDirt.png" id="3_8mm7a"]
+[ext_resource type="Texture2D" uid="uid://c7myrd30lgsgs" path="res://assets/4pxAllTilesRock.png" id="4_hq1ik"]
+[ext_resource type="Texture2D" uid="uid://ut1ccpfhil53" path="res://assets/4pxAllTilesHeight.png" id="5_nfk4m"]
+[ext_resource type="Texture2D" uid="uid://cs80cua2t4o3k" path="res://assets/4pxAllTilesHeightV2.png" id="6_hq1ik"]
 [ext_resource type="Texture2D" uid="uid://dqdycafpipri1" path="res://assets/4pxGrassTiles.png" id="8_7ycvg"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_qwutr"]
@@ -11,15 +15,68 @@ texture_region_size = Vector2i(4, 4)
 0:1/0 = 0
 1:1/0 = 0
 
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_66tet"]
+texture = ExtResource("3_8mm7a")
+texture_region_size = Vector2i(4, 4)
+0:0/0 = 0
+1:0/0 = 0
+0:1/0 = 0
+1:1/0 = 0
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_7ycvg"]
+texture = ExtResource("4_hq1ik")
+texture_region_size = Vector2i(4, 4)
+0:0/0 = 0
+1:0/0 = 0
+0:1/0 = 0
+1:1/0 = 0
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_wr18j"]
+texture = ExtResource("5_nfk4m")
+texture_region_size = Vector2i(4, 4)
+0:0/0 = 0
+1:0/0 = 0
+0:1/0 = 0
+1:1/0 = 0
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_nfk4m"]
+texture = ExtResource("6_hq1ik")
+texture_region_size = Vector2i(4, 4)
+0:0/0 = 0
+1:0/0 = 0
+0:1/0 = 0
+1:1/0 = 0
+
 [sub_resource type="TileSet" id="TileSet_hq1ik"]
 tile_size = Vector2i(4, 4)
 sources/0 = SubResource("TileSetAtlasSource_qwutr")
+sources/1 = SubResource("TileSetAtlasSource_66tet")
+sources/2 = SubResource("TileSetAtlasSource_7ycvg")
+sources/3 = SubResource("TileSetAtlasSource_wr18j")
+sources/4 = SubResource("TileSetAtlasSource_nfk4m")
 
 [node name="Node2D" type="Node2D"]
 
 [node name="GrassTileMap" type="Node" parent="." node_paths=PackedStringArray("_tileMapLayer", "_frequencySlider", "_fractalOctavesSlider", "_fractalLacunaritySlider", "_fractalGainSlider", "_frequencySliderLabel", "_fractalOctavesSliderLabel", "_fractalLacunaritySliderLabel", "_fractalGainSliderLabel")]
+process_mode = 4
 script = ExtResource("1_2c62f")
 _tileMapLayer = NodePath("TileMapLayer")
+Frequency = 0.93
+FrequencyMin = 0.1
+FrequencyMax = 0.99
+FrequencyStep = 0.01
+Octaves = 2
+OctavesMin = 1.0
+OctavesMax = 10.0
+OctavesStep = 1.0
+Lacunarity = 1.0
+LacunarityMin = 1.0
+LacunarityMax = 4.0
+LacunarityStep = 0.1
+Gain = 0.1
+GainMin = 0.1
+GainMax = 1.0
+GainStep = 0.05
 _frequencySlider = NodePath("FrequencySlider")
 _fractalOctavesSlider = NodePath("FractalOctavesSlider")
 _fractalLacunaritySlider = NodePath("FractalLacunaritySlider")
@@ -37,10 +94,6 @@ offset_left = 8.0
 offset_top = 24.0
 offset_right = 208.0
 offset_bottom = 40.0
-min_value = 0.1
-max_value = 0.99
-step = 0.01
-value = 0.99
 tick_count = 10
 ticks_on_borders = true
 
@@ -57,9 +110,6 @@ offset_left = 255.0
 offset_top = 24.0
 offset_right = 455.0
 offset_bottom = 40.0
-min_value = 1.0
-max_value = 10.0
-value = 1.0
 tick_count = 10
 ticks_on_borders = true
 
@@ -76,10 +126,6 @@ offset_left = 8.0
 offset_top = 77.0
 offset_right = 208.0
 offset_bottom = 93.0
-min_value = 1.0
-max_value = 4.0
-step = 0.1
-value = 1.0
 tick_count = 10
 ticks_on_borders = true
 
@@ -96,14 +142,106 @@ offset_left = 255.0
 offset_top = 77.0
 offset_right = 455.0
 offset_bottom = 93.0
-min_value = 0.1
-max_value = 1.0
-step = 0.05
-value = 0.1
 tick_count = 10
 ticks_on_borders = true
 
 [node name="FractalGainLabel" type="Label" parent="GrassTileMap/FractalGainSlider"]
+layout_mode = 0
+offset_left = 1.0
+offset_top = -24.0
+offset_right = 82.0
+offset_bottom = -1.0
+text = "Fractal Gain: "
+
+[node name="CanyonTileMap" type="Node" parent="." node_paths=PackedStringArray("_tileMapLayer", "_frequencySlider", "_fractalOctavesSlider", "_fractalLacunaritySlider", "_fractalGainSlider", "_frequencySliderLabel", "_fractalOctavesSliderLabel", "_fractalLacunaritySliderLabel", "_fractalGainSliderLabel")]
+script = ExtResource("1_2c62f")
+_tileSetIndex = 4
+_tileMapLayer = NodePath("TileMapLayer")
+Frequency = 0.005
+FrequencyMin = 0.001
+FrequencyMax = 0.1
+FrequencyStep = 0.001
+Octaves = 2
+OctavesMin = 1.0
+OctavesMax = 10.0
+OctavesStep = 1.0
+Lacunarity = 1.0
+LacunarityMin = 1.0
+LacunarityMax = 4.0
+LacunarityStep = 0.1
+Gain = 0.1
+GainMin = 0.1
+GainMax = 1.0
+GainStep = 0.05
+_frequencySlider = NodePath("FrequencySlider")
+_fractalOctavesSlider = NodePath("FractalOctavesSlider")
+_fractalLacunaritySlider = NodePath("FractalLacunaritySlider")
+_fractalGainSlider = NodePath("FractalGainSlider")
+_frequencySliderLabel = NodePath("FrequencySlider/FrequencyLabel")
+_fractalOctavesSliderLabel = NodePath("FractalOctavesSlider/FractalOctavesLabel")
+_fractalLacunaritySliderLabel = NodePath("FractalLacunaritySlider/FractalLacunarityLabel")
+_fractalGainSliderLabel = NodePath("FractalGainSlider/FractalGainLabel")
+
+[node name="TileMapLayer" type="TileMapLayer" parent="CanyonTileMap"]
+tile_set = SubResource("TileSet_hq1ik")
+
+[node name="FrequencySlider" type="HSlider" parent="CanyonTileMap"]
+offset_left = 8.0
+offset_top = 24.0
+offset_right = 208.0
+offset_bottom = 40.0
+tick_count = 10
+ticks_on_borders = true
+
+[node name="FrequencyLabel" type="Label" parent="CanyonTileMap/FrequencySlider"]
+layout_mode = 0
+offset_left = 1.0
+offset_top = -24.0
+offset_right = 82.0
+offset_bottom = -1.0
+text = "Frequency: "
+
+[node name="FractalOctavesSlider" type="HSlider" parent="CanyonTileMap"]
+offset_left = 255.0
+offset_top = 24.0
+offset_right = 455.0
+offset_bottom = 40.0
+tick_count = 10
+ticks_on_borders = true
+
+[node name="FractalOctavesLabel" type="Label" parent="CanyonTileMap/FractalOctavesSlider"]
+layout_mode = 0
+offset_left = 1.0
+offset_top = -24.0
+offset_right = 82.0
+offset_bottom = -1.0
+text = "Fractal Octaves: "
+
+[node name="FractalLacunaritySlider" type="HSlider" parent="CanyonTileMap"]
+offset_left = 8.0
+offset_top = 77.0
+offset_right = 208.0
+offset_bottom = 93.0
+tick_count = 10
+ticks_on_borders = true
+
+[node name="FractalLacunarityLabel" type="Label" parent="CanyonTileMap/FractalLacunaritySlider"]
+layout_mode = 0
+offset_left = 1.0
+offset_top = -24.0
+offset_right = 82.0
+offset_bottom = -1.0
+text = "Fractal Lacunarity: "
+
+[node name="FractalGainSlider" type="HSlider" parent="CanyonTileMap"]
+offset_left = 255.0
+offset_top = 77.0
+offset_right = 455.0
+offset_bottom = 93.0
+tick_count = 10
+ticks_on_borders = true
+
+[node name="FractalGainLabel" type="Label" parent="CanyonTileMap/FractalGainSlider"]
 layout_mode = 0
 offset_left = 1.0
 offset_top = -24.0
