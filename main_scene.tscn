@@ -1,0 +1,112 @@
+[gd_scene load_steps=5 format=3 uid="uid://byg548mddsuhp"]
+
+[ext_resource type="Script" uid="uid://b4glji8f8dmbs" path="res://GrassTileMap.cs" id="1_2c62f"]
+[ext_resource type="Texture2D" uid="uid://dqdycafpipri1" path="res://assets/4pxGrassTiles.png" id="8_7ycvg"]
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_qwutr"]
+texture = ExtResource("8_7ycvg")
+texture_region_size = Vector2i(4, 4)
+0:0/0 = 0
+1:0/0 = 0
+0:1/0 = 0
+1:1/0 = 0
+
+[sub_resource type="TileSet" id="TileSet_hq1ik"]
+tile_size = Vector2i(4, 4)
+sources/0 = SubResource("TileSetAtlasSource_qwutr")
+
+[node name="Node2D" type="Node2D"]
+
+[node name="GrassTileMap" type="Node" parent="." node_paths=PackedStringArray("_tileMapLayer", "_frequencySlider", "_fractalOctavesSlider", "_fractalLacunaritySlider", "_fractalGainSlider", "_frequencySliderLabel", "_fractalOctavesSliderLabel", "_fractalLacunaritySliderLabel", "_fractalGainSliderLabel")]
+script = ExtResource("1_2c62f")
+_tileMapLayer = NodePath("TileMapLayer")
+_frequencySlider = NodePath("FrequencySlider")
+_fractalOctavesSlider = NodePath("FractalOctavesSlider")
+_fractalLacunaritySlider = NodePath("FractalLacunaritySlider")
+_fractalGainSlider = NodePath("FractalGainSlider")
+_frequencySliderLabel = NodePath("FrequencySlider/FrequencyLabel")
+_fractalOctavesSliderLabel = NodePath("FractalOctavesSlider/FractalOctavesLabel")
+_fractalLacunaritySliderLabel = NodePath("FractalLacunaritySlider/FractalLacunarityLabel")
+_fractalGainSliderLabel = NodePath("FractalGainSlider/FractalGainLabel")
+
+[node name="TileMapLayer" type="TileMapLayer" parent="GrassTileMap"]
+tile_set = SubResource("TileSet_hq1ik")
+
+[node name="FrequencySlider" type="HSlider" parent="GrassTileMap"]
+offset_left = 8.0
+offset_top = 24.0
+offset_right = 208.0
+offset_bottom = 40.0
+min_value = 0.1
+max_value = 0.99
+step = 0.01
+value = 0.99
+tick_count = 10
+ticks_on_borders = true
+
+[node name="FrequencyLabel" type="Label" parent="GrassTileMap/FrequencySlider"]
+layout_mode = 0
+offset_left = 1.0
+offset_top = -24.0
+offset_right = 82.0
+offset_bottom = -1.0
+text = "Frequency: "
+
+[node name="FractalOctavesSlider" type="HSlider" parent="GrassTileMap"]
+offset_left = 255.0
+offset_top = 24.0
+offset_right = 455.0
+offset_bottom = 40.0
+min_value = 1.0
+max_value = 10.0
+value = 1.0
+tick_count = 10
+ticks_on_borders = true
+
+[node name="FractalOctavesLabel" type="Label" parent="GrassTileMap/FractalOctavesSlider"]
+layout_mode = 0
+offset_left = 1.0
+offset_top = -24.0
+offset_right = 82.0
+offset_bottom = -1.0
+text = "Fractal Octaves: "
+
+[node name="FractalLacunaritySlider" type="HSlider" parent="GrassTileMap"]
+offset_left = 8.0
+offset_top = 77.0
+offset_right = 208.0
+offset_bottom = 93.0
+min_value = 1.0
+max_value = 4.0
+step = 0.1
+value = 1.0
+tick_count = 10
+ticks_on_borders = true
+
+[node name="FractalLacunarityLabel" type="Label" parent="GrassTileMap/FractalLacunaritySlider"]
+layout_mode = 0
+offset_left = 1.0
+offset_top = -24.0
+offset_right = 82.0
+offset_bottom = -1.0
+text = "Fractal Lacunarity: "
+
+[node name="FractalGainSlider" type="HSlider" parent="GrassTileMap"]
+offset_left = 255.0
+offset_top = 77.0
+offset_right = 455.0
+offset_bottom = 93.0
+min_value = 0.1
+max_value = 1.0
+step = 0.05
+value = 0.1
+tick_count = 10
+ticks_on_borders = true
+
+[node name="FractalGainLabel" type="Label" parent="GrassTileMap/FractalGainSlider"]
+layout_mode = 0
+offset_left = 1.0
+offset_top = -24.0
+offset_right = 82.0
+offset_bottom = -1.0
+text = "Fractal Gain: "
