@@ -1,4 +1,4 @@
-[gd_scene load_steps=13 format=3 uid="uid://byg548mddsuhp"]
+[gd_scene load_steps=14 format=3 uid="uid://byg548mddsuhp"]
 
 [ext_resource type="Script" uid="uid://b4glji8f8dmbs" path="res://SimplexNoiseTileMap.cs" id="1_2c62f"]
 [ext_resource type="Texture2D" uid="uid://djx3uwfoyl8c4" path="res://assets/4pxAllTilesDirt.png" id="3_8mm7a"]
@@ -55,12 +55,14 @@ sources/2 = SubResource("TileSetAtlasSource_7ycvg")
 sources/3 = SubResource("TileSetAtlasSource_wr18j")
 sources/4 = SubResource("TileSetAtlasSource_nfk4m")
 
+[sub_resource type="LabelSettings" id="LabelSettings_hq1ik"]
+
 [node name="Node2D" type="Node2D"]
 
-[node name="GrassTileMap" type="Node" parent="." node_paths=PackedStringArray("_tileMapLayer", "_frequencySlider", "_fractalOctavesSlider", "_fractalLacunaritySlider", "_fractalGainSlider", "_frequencySliderLabel", "_fractalOctavesSliderLabel", "_fractalLacunaritySliderLabel", "_fractalGainSliderLabel")]
+[node name="GrassTileMap" type="Node" parent="." node_paths=PackedStringArray("TileMapLayer", "_frequencySlider", "_fractalOctavesSlider", "_fractalLacunaritySlider", "_fractalGainSlider", "_frequencySliderLabel", "_fractalOctavesSliderLabel", "_fractalLacunaritySliderLabel", "_fractalGainSliderLabel")]
 process_mode = 4
 script = ExtResource("1_2c62f")
-_tileMapLayer = NodePath("TileMapLayer")
+TileMapLayer = NodePath("TileMapLayer")
 Frequency = 0.93
 FrequencyMin = 0.1
 FrequencyMax = 0.99
@@ -153,10 +155,10 @@ offset_right = 82.0
 offset_bottom = -1.0
 text = "Fractal Gain: "
 
-[node name="CanyonTileMap" type="Node" parent="." node_paths=PackedStringArray("_tileMapLayer", "_frequencySlider", "_fractalOctavesSlider", "_fractalLacunaritySlider", "_fractalGainSlider", "_frequencySliderLabel", "_fractalOctavesSliderLabel", "_fractalLacunaritySliderLabel", "_fractalGainSliderLabel")]
+[node name="CanyonTileMap" type="Node" parent="." node_paths=PackedStringArray("TileMapLayer", "_frequencySlider", "_fractalOctavesSlider", "_fractalLacunaritySlider", "_fractalGainSlider", "_frequencySliderLabel", "_fractalOctavesSliderLabel", "_fractalLacunaritySliderLabel", "_fractalGainSliderLabel")]
 script = ExtResource("1_2c62f")
-_tileSetIndex = 4
-_tileMapLayer = NodePath("TileMapLayer")
+TileSetIndex = 4
+TileMapLayer = NodePath("TileMapLayer")
 Frequency = 0.005
 FrequencyMin = 0.001
 FrequencyMax = 0.1
@@ -200,6 +202,7 @@ offset_top = -24.0
 offset_right = 82.0
 offset_bottom = -1.0
 text = "Frequency: "
+label_settings = SubResource("LabelSettings_hq1ik")
 
 [node name="FractalOctavesSlider" type="HSlider" parent="CanyonTileMap"]
 offset_left = 255.0
