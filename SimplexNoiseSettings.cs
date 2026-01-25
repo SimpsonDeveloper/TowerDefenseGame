@@ -1,38 +1,24 @@
-﻿namespace towerdefensegame;
+namespace towerdefensegame;
 
 using Godot;
 
-public enum NoisePreset
-{
-    Default,
-    Smooth,
-    Rough,
-    Detailed
-}
-
+[GlobalClass]
 public partial class SimplexNoiseSettings : Resource
 {
+    // saved grass settings
+    // frequency = 0.93f;
+    // octaves = 2;
+    // lacunarity = 1.0f;
+    // gain = 0.1f;
     [Export]
-    public NoisePreset Preset { get; set; }
-
-    [Export(PropertyHint.Range, "0.01,2.0")] 
-    public float Frequency { get; set;}
-
-    [Export(PropertyHint.Range, "1,8")] 
-    public float Octaves { get; set;}
-
-    [Export(PropertyHint.Range, "0.1,4.0")] 
-    public float Lacunarity { get; set;}
-
-    [Export(PropertyHint.Range, "0.1,1.0")] 
-    public float Gain { get; set;}
-
-    public SimplexNoiseSettings()
-    {
-        Preset = NoisePreset.Default;
-        Frequency = 0.93f;
-        Octaves = 2;
-        Lacunarity = 1.0f;
-        Gain = 0.1f;
-    }
+    public SliderConfig FrequencyConfig { get; set; }
+    
+    [Export]
+    public SliderConfig OctavesConfig { get; set; }
+    
+    [Export]
+    public SliderConfig LacunarityConfig { get; set; }
+    
+    [Export]
+    public SliderConfig GainConfig { get; set; }
 }

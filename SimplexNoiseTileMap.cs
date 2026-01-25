@@ -7,59 +7,12 @@ public partial class SimplexNoiseTileMap : Node
 {
     [Export]
     public SimplexNoiseSettings SimplexNoiseSettings;
-    // saved grass settings
-    // frequency = 0.93f;
-    // octaves = 2;
-    // lacunarity = 1.0f;
-    // gain = 0.1f;
     
     [Export]
     public int TileSetIndex;
     
     [Export]
     public TileMapLayer TileMapLayer;
-    
-    [ExportGroup("Noise Settings")]
-    [ExportSubgroup("Frequency")]
-    [Export]
-    public float Frequency { get; set;}
-    [Export]
-    public float FrequencyMin { get; set;}
-    [Export]
-    public float FrequencyMax { get; set;}
-    [Export]
-    public float FrequencyStep{ get; set;}
-    
-
-    [ExportSubgroup("Octaves")]
-    [Export]
-    public int Octaves { get; set;}
-    [Export]
-    public float OctavesMin { get; set;}
-    [Export]
-    public float OctavesMax { get; set;}
-    [Export]
-    public float OctavesStep{ get; set;}
-
-    [ExportSubgroup("Lacunarity")]
-    [Export]
-    public float Lacunarity { get; set;}
-    [Export]
-    public float LacunarityMin { get; set;}
-    [Export]
-    public float LacunarityMax { get; set;}
-    [Export]
-    public float LacunarityStep{ get; set;}
-
-    [ExportSubgroup("Gain")]
-    [Export]
-    public float Gain { get; set;}
-    [Export]
-    public float GainMin { get; set;}
-    [Export]
-    public float GainMax { get; set;}
-    [Export]
-    public float GainStep{ get; set;}
     
     [ExportGroup("Slider Settings")]
     // Sliders
@@ -110,6 +63,11 @@ public partial class SimplexNoiseTileMap : Node
 
     public override void _Ready()
     {
+        if (ProcessMode == ProcessModeEnum.Disabled)
+        {
+            QueueFree();
+            return;
+        }
         _noise = new FastNoiseLite();
         _noise.Seed = (int)GD.Randi();
         _noise.NoiseType = FastNoiseLite.NoiseTypeEnum.Simplex;
@@ -118,37 +76,28 @@ public partial class SimplexNoiseTileMap : Node
         _noise.FractalType = FastNoiseLite.FractalTypeEnum.Fbm;
 
         // Period → Frequency (inverse relationship: lower frequency = larger features)
-        _noise.Frequency = Frequency;  // Smaller = larger "blobs"
-        _frequencySlider.SetValue(Frequency);
-        _frequencySlider.SetMin(FrequencyMin);
-        _frequencySlider.SetMax(FrequencyMax);
-        _frequencySlider.SetStep(FrequencyStep);
+        float frequency = SimplexNoiseSettings.FrequencyConfig.InitialValue;
+        _noise.Frequency = frequency;  // Smaller = larger "blobs"
+        _frequencySliderLabel.SetText($"Frequency: {_noise.Frequency}");
+        InitSlider(_frequencySlider, SimplexNoiseSettings.FrequencyConfig);
 
         // Octaves
-        _noise.FractalOctaves = Octaves;  // More = more detail
-        _fractalOctavesSlider.SetValue(Octaves);
-        _fractalOctavesSlider.SetMin(OctavesMin);
-        _fractalOctavesSlider.SetMax(OctavesMax);
-        _fractalOctavesSlider.SetStep(OctavesStep);
+        int octaves = (int)SimplexNoiseSettings.OctavesConfig.InitialValue;
+        _noise.FractalOctaves = octaves;  // More = more detail
+        _fractalOctavesSliderLabel.SetText($"Octaves: {_noise.FractalOctaves}");
+        InitSlider(_fractalOctavesSlider, SimplexNoiseSettings.OctavesConfig);
 
         // Lacunarity (how frequency changes per octave)
-        _noise.FractalLacunarity = Lacunarity;  // Higher = more detail per octave
-        _fractalLacunaritySlider.SetValue(Lacunarity);
-        _fractalLacunaritySlider.SetMin(LacunarityMin);
-        _fractalLacunaritySlider.SetMax(LacunarityMax);
-        _fractalLacunaritySlider.SetStep(LacunarityStep);
+        float lacunarity = SimplexNoiseSettings.LacunarityConfig.InitialValue;
+        _noise.FractalLacunarity = lacunarity;  // Higher = more detail per octave
+        _fractalLacunaritySliderLabel.SetText($"Lacunarity: {_noise.FractalLacunarity}");
+        InitSlider(_fractalLacunaritySlider, SimplexNoiseSettings.LacunarityConfig);
 
         // Persistence → Gain (how amplitude changes per octave)
-        _noise.FractalGain = Gain;  // Higher = rougher noise
-        _fractalGainSlider.SetValue(Gain);
-        _fractalGainSlider.SetMin(GainMin);
-        _fractalGainSlider.SetMax(GainMax);
-        _fractalGainSlider.SetStep(GainStep);
-        
-        _frequencySliderLabel.SetText($"Frequency: {Frequency}");
-        _fractalOctavesSliderLabel.SetText($"Octaves: {Octaves}");
-        _fractalLacunaritySliderLabel.SetText($"Lacunarity: {Lacunarity}");
-        _fractalGainSliderLabel.SetText($"Gain: {Gain}");
+        float gain = SimplexNoiseSettings.GainConfig.InitialValue;
+        _noise.FractalGain = gain;  // Higher = rougher noise
+        _fractalGainSliderLabel.SetText($"Gain: {_noise.FractalGain}");
+        InitSlider(_fractalGainSlider, SimplexNoiseSettings.GainConfig);
         
         // Connect slider signals
         _frequencySlider.ValueChanged += OnFrequencyChanged;
@@ -159,7 +108,15 @@ public partial class SimplexNoiseTileMap : Node
         GenerateTerrain();
         Console.WriteLine("Ready!");
     }
-    
+
+    private void InitSlider(HSlider slider, SliderConfig sliderConfig)
+    {
+        slider.SetMin(sliderConfig.Min);
+        slider.SetMax(sliderConfig.Max);
+        slider.SetStep(sliderConfig.Step);
+        slider.SetValue(sliderConfig.InitialValue);
+    }
+
     private void OnFrequencyChanged(double value)
     {
         _noise.Frequency = (float)value;
