@@ -1,4 +1,4 @@
-[gd_scene load_steps=29 format=3 uid="uid://byg548mddsuhp"]
+[gd_scene load_steps=30 format=3 uid="uid://byg548mddsuhp"]
 
 [ext_resource type="Script" uid="uid://b4glji8f8dmbs" path="res://SimplexNoiseTileMap.cs" id="1_2c62f"]
 [ext_resource type="Script" uid="uid://rradq6tqhv60" path="res://SliderConfig.cs" id="2_66tet"]
@@ -10,16 +10,18 @@
 [ext_resource type="Texture2D" uid="uid://cs80cua2t4o3k" path="res://assets/4pxAllTilesHeightV2.png" id="6_hq1ik"]
 [ext_resource type="Texture2D" uid="uid://dqdycafpipri1" path="res://assets/4pxGrassTiles.png" id="8_7ycvg"]
 
-[sub_resource type="Resource" id="Resource_66tet"]
+[sub_resource type="Resource" id="Resource_wr18j"]
 script = ExtResource("2_66tet")
-InitialValue = 0.005
-Min = 0.001
-Max = 0.07
-Step = 0.001
+Name = "Frequency"
+InitialValue = 0.93
+Min = 0.01
+Max = 0.99
+Step = 0.01
 metadata/_custom_type_script = "uid://rradq6tqhv60"
 
-[sub_resource type="Resource" id="Resource_7ycvg"]
+[sub_resource type="Resource" id="Resource_qwutr"]
 script = ExtResource("2_66tet")
+Name = "Gain"
 InitialValue = 0.1
 Min = 0.01
 Max = 0.99
@@ -28,45 +30,16 @@ metadata/_custom_type_script = "uid://rradq6tqhv60"
 
 [sub_resource type="Resource" id="Resource_671wp"]
 script = ExtResource("2_66tet")
-InitialValue = 0.9
-Min = 0.01
-Max = 0.99
-Step = 0.01
-metadata/_custom_type_script = "uid://rradq6tqhv60"
-
-[sub_resource type="Resource" id="Resource_mo76n"]
-script = ExtResource("2_66tet")
-InitialValue = 0.9
-Min = 0.01
-Max = 0.99
-Step = 0.01
-metadata/_custom_type_script = "uid://rradq6tqhv60"
-
-[sub_resource type="Resource" id="Resource_2jcla"]
-script = ExtResource("2_66tet")
-InitialValue = 0.5
-Min = 0.01
-Max = 0.99
-Step = 0.01
-metadata/_custom_type_script = "uid://rradq6tqhv60"
-
-[sub_resource type="Resource" id="Resource_m35m6"]
-script = ExtResource("3_wr18j")
-JumpRangeMinConfig = SubResource("Resource_2jcla")
-JumpRangeMaxConfig = SubResource("Resource_mo76n")
-JumpRangeJumpToConfig = SubResource("Resource_671wp")
-metadata/_custom_type_script = "uid://d0hcuv6wltm5r"
-
-[sub_resource type="Resource" id="Resource_wr18j"]
-script = ExtResource("2_66tet")
+Name = "Lacunarity"
 InitialValue = 1.0
 Min = 1.0
 Max = 4.0
 Step = 0.1
 metadata/_custom_type_script = "uid://rradq6tqhv60"
 
-[sub_resource type="Resource" id="Resource_qwutr"]
+[sub_resource type="Resource" id="Resource_mo76n"]
 script = ExtResource("2_66tet")
+Name = "Octaves"
 InitialValue = 2.0
 Min = 1.0
 Max = 10.0
@@ -75,11 +48,10 @@ metadata/_custom_type_script = "uid://rradq6tqhv60"
 
 [sub_resource type="Resource" id="Resource_42l1d"]
 script = ExtResource("3_7ycvg")
-FrequencyConfig = SubResource("Resource_66tet")
-OctavesConfig = SubResource("Resource_qwutr")
-LacunarityConfig = SubResource("Resource_wr18j")
-GainConfig = SubResource("Resource_7ycvg")
-JumpRangeSettings = SubResource("Resource_m35m6")
+FrequencyConfig = SubResource("Resource_wr18j")
+OctavesConfig = SubResource("Resource_mo76n")
+LacunarityConfig = SubResource("Resource_671wp")
+GainConfig = SubResource("Resource_qwutr")
 metadata/_custom_type_script = "uid://diafiaynje5sc"
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_qwutr"]
@@ -130,239 +102,101 @@ sources/2 = SubResource("TileSetAtlasSource_7ycvg")
 sources/3 = SubResource("TileSetAtlasSource_wr18j")
 sources/4 = SubResource("TileSetAtlasSource_nfk4m")
 
-[sub_resource type="LabelSettings" id="LabelSettings_66tet"]
-font_color = Color(0, 0, 0, 1)
+[sub_resource type="Resource" id="Resource_2jcla"]
+script = ExtResource("2_66tet")
+Name = "Frequency"
+InitialValue = 0.005
+Min = 0.001
+Max = 0.07
+Step = 0.001
+metadata/_custom_type_script = "uid://rradq6tqhv60"
 
-[sub_resource type="LabelSettings" id="LabelSettings_7ycvg"]
-font_color = Color(0, 0, 0, 1)
+[sub_resource type="Resource" id="Resource_m35m6"]
+script = ExtResource("2_66tet")
+Name = "Gain"
+InitialValue = 0.1
+Min = 0.01
+Max = 0.99
+Step = 0.01
+metadata/_custom_type_script = "uid://rradq6tqhv60"
 
-[sub_resource type="LabelSettings" id="LabelSettings_wr18j"]
-font_color = Color(0, 0, 0, 1)
+[sub_resource type="Resource" id="Resource_y5ved"]
+script = ExtResource("2_66tet")
+Name = "Jump Range Jump To"
+InitialValue = 0.5
+Min = 0.01
+Max = 0.99
+Step = 0.01
+metadata/_custom_type_script = "uid://rradq6tqhv60"
 
-[sub_resource type="LabelSettings" id="LabelSettings_qwutr"]
-font_color = Color(0, 0, 0, 1)
+[sub_resource type="Resource" id="Resource_kv3aw"]
+script = ExtResource("2_66tet")
+Name = "Jump Range Max"
+InitialValue = 0.5
+Min = 0.01
+Max = 0.99
+Step = 0.01
+metadata/_custom_type_script = "uid://rradq6tqhv60"
+
+[sub_resource type="Resource" id="Resource_o7u2a"]
+script = ExtResource("2_66tet")
+Name = "Jump Range Min"
+InitialValue = 0.5
+Min = 0.01
+Max = 0.99
+Step = 0.01
+metadata/_custom_type_script = "uid://rradq6tqhv60"
+
+[sub_resource type="Resource" id="Resource_ijoax"]
+script = ExtResource("3_wr18j")
+JumpRangeMinConfig = SubResource("Resource_o7u2a")
+JumpRangeMaxConfig = SubResource("Resource_kv3aw")
+JumpRangeJumpToConfig = SubResource("Resource_y5ved")
+metadata/_custom_type_script = "uid://d0hcuv6wltm5r"
+
+[sub_resource type="Resource" id="Resource_j8kkg"]
+script = ExtResource("2_66tet")
+Name = "Lacunarity"
+InitialValue = 1.0
+Min = 1.0
+Max = 4.0
+Step = 0.1
+metadata/_custom_type_script = "uid://rradq6tqhv60"
+
+[sub_resource type="Resource" id="Resource_yh4yk"]
+script = ExtResource("2_66tet")
+Name = "Octaves"
+InitialValue = 2.0
+Min = 1.0
+Max = 10.0
+Step = 1.0
+metadata/_custom_type_script = "uid://rradq6tqhv60"
+
+[sub_resource type="Resource" id="Resource_p8s74"]
+script = ExtResource("3_7ycvg")
+FrequencyConfig = SubResource("Resource_2jcla")
+OctavesConfig = SubResource("Resource_yh4yk")
+LacunarityConfig = SubResource("Resource_j8kkg")
+GainConfig = SubResource("Resource_m35m6")
+JumpRangeSettings = SubResource("Resource_ijoax")
+metadata/_custom_type_script = "uid://diafiaynje5sc"
 
 [node name="Node2D" type="Node2D"]
 
-[node name="GrassTileMap" type="Node" parent="." node_paths=PackedStringArray("TileMapLayer", "_frequencySlider", "_fractalOctavesSlider", "_fractalLacunaritySlider", "_fractalGainSlider", "_frequencySliderLabel", "_fractalOctavesSliderLabel", "_fractalLacunaritySliderLabel", "_fractalGainSliderLabel")]
+[node name="GrassTileMap" type="Node" parent="." node_paths=PackedStringArray("TileMapLayer")]
 process_mode = 4
 script = ExtResource("1_2c62f")
 SimplexNoiseSettings = SubResource("Resource_42l1d")
 TileMapLayer = NodePath("TileMapLayer")
-_frequencySlider = NodePath("FrequencySlider")
-_fractalOctavesSlider = NodePath("FractalOctavesSlider")
-_fractalLacunaritySlider = NodePath("FractalLacunaritySlider")
-_fractalGainSlider = NodePath("FractalGainSlider")
-_frequencySliderLabel = NodePath("FrequencySlider/FrequencyLabel")
-_fractalOctavesSliderLabel = NodePath("FractalOctavesSlider/FractalOctavesLabel")
-_fractalLacunaritySliderLabel = NodePath("FractalLacunaritySlider/FractalLacunarityLabel")
-_fractalGainSliderLabel = NodePath("FractalGainSlider/FractalGainLabel")
 
 [node name="TileMapLayer" type="TileMapLayer" parent="GrassTileMap"]
 tile_set = SubResource("TileSet_hq1ik")
 
-[node name="FrequencySlider" type="HSlider" parent="GrassTileMap"]
-offset_left = 8.0
-offset_top = 24.0
-offset_right = 208.0
-offset_bottom = 40.0
-tick_count = 10
-ticks_on_borders = true
-
-[node name="FrequencyLabel" type="Label" parent="GrassTileMap/FrequencySlider"]
-layout_mode = 0
-offset_left = 1.0
-offset_top = -24.0
-offset_right = 82.0
-offset_bottom = -1.0
-text = "Frequency: "
-
-[node name="FractalOctavesSlider" type="HSlider" parent="GrassTileMap"]
-offset_left = 255.0
-offset_top = 24.0
-offset_right = 455.0
-offset_bottom = 40.0
-tick_count = 10
-ticks_on_borders = true
-
-[node name="FractalOctavesLabel" type="Label" parent="GrassTileMap/FractalOctavesSlider"]
-layout_mode = 0
-offset_left = 1.0
-offset_top = -24.0
-offset_right = 82.0
-offset_bottom = -1.0
-text = "Fractal Octaves: "
-
-[node name="FractalLacunaritySlider" type="HSlider" parent="GrassTileMap"]
-offset_left = 8.0
-offset_top = 77.0
-offset_right = 208.0
-offset_bottom = 93.0
-tick_count = 10
-ticks_on_borders = true
-
-[node name="FractalLacunarityLabel" type="Label" parent="GrassTileMap/FractalLacunaritySlider"]
-layout_mode = 0
-offset_left = 1.0
-offset_top = -24.0
-offset_right = 82.0
-offset_bottom = -1.0
-text = "Fractal Lacunarity: "
-
-[node name="FractalGainSlider" type="HSlider" parent="GrassTileMap"]
-offset_left = 255.0
-offset_top = 77.0
-offset_right = 455.0
-offset_bottom = 93.0
-tick_count = 10
-ticks_on_borders = true
-
-[node name="FractalGainLabel" type="Label" parent="GrassTileMap/FractalGainSlider"]
-layout_mode = 0
-offset_left = 1.0
-offset_top = -24.0
-offset_right = 82.0
-offset_bottom = -1.0
-text = "Fractal Gain: "
-
-[node name="CanyonTileMap" type="Node" parent="." node_paths=PackedStringArray("TileMapLayer", "_frequencySlider", "_fractalOctavesSlider", "_fractalLacunaritySlider", "_fractalGainSlider", "_frequencySliderLabel", "_fractalOctavesSliderLabel", "_fractalLacunaritySliderLabel", "_fractalGainSliderLabel", "_jumpRangeMinSlider", "_jumpRangeMaxSlider", "_jumpRangeJumpToSlider", "_jumpRangeMinLabel", "_jumpRangeMaxLabel", "_jumpRangeJumpToLabel")]
+[node name="CanyonTileMap" type="Node" parent="." node_paths=PackedStringArray("TileMapLayer")]
 script = ExtResource("1_2c62f")
-SimplexNoiseSettings = SubResource("Resource_42l1d")
+SimplexNoiseSettings = SubResource("Resource_p8s74")
 TileSetIndex = 4
 TileMapLayer = NodePath("TileMapLayer")
-_frequencySlider = NodePath("FrequencySlider")
-_fractalOctavesSlider = NodePath("FractalOctavesSlider")
-_fractalLacunaritySlider = NodePath("FractalLacunaritySlider")
-_fractalGainSlider = NodePath("FractalGainSlider")
-_frequencySliderLabel = NodePath("FrequencySlider/FrequencyLabel")
-_fractalOctavesSliderLabel = NodePath("FractalOctavesSlider/FractalOctavesLabel")
-_fractalLacunaritySliderLabel = NodePath("FractalLacunaritySlider/FractalLacunarityLabel")
-_fractalGainSliderLabel = NodePath("FractalGainSlider/FractalGainLabel")
-_jumpRangeMinSlider = NodePath("JumpRangeMinSlider")
-_jumpRangeMaxSlider = NodePath("JumpRangeMaxSlider")
-_jumpRangeJumpToSlider = NodePath("JumpRangeJumpToSlider")
-_jumpRangeMinLabel = NodePath("JumpRangeMinSlider/JumpRangeMinLabel")
-_jumpRangeMaxLabel = NodePath("JumpRangeMaxSlider/JumpRangeMaxLabel")
-_jumpRangeJumpToLabel = NodePath("JumpRangeJumpToSlider/JumpRangeJumpToLabel")
 
 [node name="TileMapLayer" type="TileMapLayer" parent="CanyonTileMap"]
 tile_set = SubResource("TileSet_hq1ik")
-
-[node name="FrequencySlider" type="HSlider" parent="CanyonTileMap"]
-offset_left = 8.0
-offset_top = 24.0
-offset_right = 208.0
-offset_bottom = 40.0
-tick_count = 10
-ticks_on_borders = true
-
-[node name="FrequencyLabel" type="Label" parent="CanyonTileMap/FrequencySlider"]
-layout_mode = 0
-offset_left = 1.0
-offset_top = -24.0
-offset_right = 82.0
-offset_bottom = -1.0
-text = "Frequency: "
-label_settings = SubResource("LabelSettings_66tet")
-
-[node name="FractalOctavesSlider" type="HSlider" parent="CanyonTileMap"]
-offset_left = 255.0
-offset_top = 24.0
-offset_right = 455.0
-offset_bottom = 40.0
-tick_count = 10
-ticks_on_borders = true
-
-[node name="FractalOctavesLabel" type="Label" parent="CanyonTileMap/FractalOctavesSlider"]
-layout_mode = 0
-offset_left = 1.0
-offset_top = -24.0
-offset_right = 82.0
-offset_bottom = -1.0
-text = "Fractal Octaves: "
-label_settings = SubResource("LabelSettings_7ycvg")
-
-[node name="FractalLacunaritySlider" type="HSlider" parent="CanyonTileMap"]
-offset_left = 8.0
-offset_top = 77.0
-offset_right = 208.0
-offset_bottom = 93.0
-tick_count = 10
-ticks_on_borders = true
-
-[node name="FractalLacunarityLabel" type="Label" parent="CanyonTileMap/FractalLacunaritySlider"]
-layout_mode = 0
-offset_left = 1.0
-offset_top = -24.0
-offset_right = 82.0
-offset_bottom = -1.0
-text = "Fractal Lacunarity: "
-label_settings = SubResource("LabelSettings_wr18j")
-
-[node name="FractalGainSlider" type="HSlider" parent="CanyonTileMap"]
-offset_left = 255.0
-offset_top = 77.0
-offset_right = 455.0
-offset_bottom = 93.0
-tick_count = 10
-ticks_on_borders = true
-
-[node name="FractalGainLabel" type="Label" parent="CanyonTileMap/FractalGainSlider"]
-layout_mode = 0
-offset_left = 1.0
-offset_top = -24.0
-offset_right = 82.0
-offset_bottom = -1.0
-text = "Fractal Gain: "
-label_settings = SubResource("LabelSettings_qwutr")
-
-[node name="JumpRangeMinSlider" type="HSlider" parent="CanyonTileMap"]
-offset_left = 502.0
-offset_top = 24.0
-offset_right = 702.0
-offset_bottom = 40.0
-tick_count = 10
-ticks_on_borders = true
-
-[node name="JumpRangeMinLabel" type="Label" parent="CanyonTileMap/JumpRangeMinSlider"]
-layout_mode = 0
-offset_left = 1.0
-offset_top = -24.0
-offset_right = 82.0
-offset_bottom = -1.0
-text = "Jump Range Min:"
-label_settings = SubResource("LabelSettings_qwutr")
-
-[node name="JumpRangeMaxSlider" type="HSlider" parent="CanyonTileMap"]
-offset_left = 502.0
-offset_top = 77.0
-offset_right = 702.0
-offset_bottom = 93.0
-tick_count = 10
-ticks_on_borders = true
-
-[node name="JumpRangeMaxLabel" type="Label" parent="CanyonTileMap/JumpRangeMaxSlider"]
-layout_mode = 0
-offset_left = 1.0
-offset_top = -24.0
-offset_right = 82.0
-offset_bottom = -1.0
-text = "Jump Range Max: "
-label_settings = SubResource("LabelSettings_qwutr")
-
-[node name="JumpRangeJumpToSlider" type="HSlider" parent="CanyonTileMap"]
-offset_left = 502.0
-offset_top = 130.0
-offset_right = 702.0
-offset_bottom = 146.0
-tick_count = 10
-ticks_on_borders = true
-
-[node name="JumpRangeJumpToLabel" type="Label" parent="CanyonTileMap/JumpRangeJumpToSlider"]
-layout_mode = 0
-offset_left = 1.0
-offset_top = -24.0
-offset_right = 82.0
-offset_bottom = -1.0
-text = "Jump Range Jump To: "
-label_settings = SubResource("LabelSettings_qwutr")

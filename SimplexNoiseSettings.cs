@@ -10,6 +10,7 @@ public partial class SimplexNoiseSettings : Resource
     // octaves = 2;
     // lacunarity = 1.0f;
     // gain = 0.1f;
+    // (thinking maybe gain = 0.28)
     [Export]
     public SliderConfig FrequencyConfig { get; set; }
     

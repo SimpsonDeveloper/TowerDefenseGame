@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace towerdefensegame;
 
 using Godot;
@@ -14,53 +16,17 @@ public partial class SimplexNoiseTileMap : Node
     [Export]
     public TileMapLayer TileMapLayer;
     
-    [ExportGroup("Noise Slider Settings")]
-    // Noise Sliders
-    [Export]
-    private HSlider _frequencySlider;
+    private readonly Dictionary<string, HSlider> _noiseSliders = new();
     
-    [Export]
-    private HSlider _fractalOctavesSlider;
+    private readonly Dictionary<string, Label> _noiseLabels = new();
     
-    [Export]
-    private HSlider _fractalLacunaritySlider;
-    
-    [Export]
-    private HSlider _fractalGainSlider;
-    
-    // Noise Slider Labels
-    [Export]
-    private Label _frequencySliderLabel;
-    
-    [Export]
-    private Label _fractalOctavesSliderLabel;
-    
-    [Export]
-    private Label _fractalLacunaritySliderLabel;
-    
-    [Export]
-    private Label _fractalGainSliderLabel;
-    
-    [ExportGroup("Jump Range Settings")]
-    // Jump range sliders
-    [Export]
-    private HSlider _jumpRangeMinSlider;
-    
-    [Export]
-    private HSlider _jumpRangeMaxSlider;
-    
-    [Export]
-    private HSlider _jumpRangeJumpToSlider;
-    
-    // Jump range labels
-    [Export]
-    private Label _jumpRangeMinLabel;
-    
-    [Export]
-    private Label _jumpRangeMaxLabel;
-    
-    [Export]
-    private Label _jumpRangeJumpToLabel;
+    private string _frequencyName = "Frequency";
+    private string _octavesName = "Octaves";
+    private string _lacunarityName = "Lacunarity";
+    private string _gainName = "Gain";
+    private string _jumpRangeMinName = "Jump Range Min";
+    private string _jumpRangeMaxName = "Jump Range Max";
+    private string _jumpRangeJumpToName = "Jump Range Jump To";
     
     private FastNoiseLite _noise;
 
@@ -95,50 +61,40 @@ public partial class SimplexNoiseTileMap : Node
             QueueFree();
             return;
         }
+
         _noise = new FastNoiseLite();
         _noise.Seed = (int)GD.Randi();
         _noise.NoiseType = FastNoiseLite.NoiseTypeEnum.Simplex;
         
         // Enable fractal noise (required for octaves, lacunarity, gain)
         _noise.FractalType = FastNoiseLite.FractalTypeEnum.Fbm;
-
-        // Period → Frequency (inverse relationship: lower frequency = larger features)
-        float frequency = SimplexNoiseSettings.FrequencyConfig.InitialValue;
-        _noise.Frequency = frequency;  // Smaller = larger "blobs"
-        InitSlider(_frequencySlider,
-            SimplexNoiseSettings.FrequencyConfig,
-            _frequencySliderLabel,
-            $"Frequency: {_noise.Frequency}");
-
-        // Octaves
-        int octaves = (int)SimplexNoiseSettings.OctavesConfig.InitialValue;
-        _noise.FractalOctaves = octaves;  // More = more detail
-        InitSlider(_fractalOctavesSlider,
-            SimplexNoiseSettings.OctavesConfig,
-            _fractalOctavesSliderLabel,
-            $"Octaves: {_noise.FractalOctaves}");
-
-        // Lacunarity (how frequency changes per octave)
-        float lacunarity = SimplexNoiseSettings.LacunarityConfig.InitialValue;
-        _noise.FractalLacunarity = lacunarity;  // Higher = more detail per octave
-        InitSlider(_fractalLacunaritySlider,
-            SimplexNoiseSettings.LacunarityConfig,
-            _fractalLacunaritySliderLabel,
-            $"Lacunarity: {_noise.FractalLacunarity}");
-
-        // Persistence → Gain (how amplitude changes per octave)
-        float gain = SimplexNoiseSettings.GainConfig.InitialValue;
-        _noise.FractalGain = gain;  // Higher = rougher noise
-        InitSlider(_fractalGainSlider,
-            SimplexNoiseSettings.GainConfig,
-            _fractalGainSliderLabel,
-            $"Gain: {_noise.FractalGain}");
         
-        // Connect slider signals
-        _frequencySlider.ValueChanged += OnFrequencyChanged;
-        _fractalOctavesSlider.ValueChanged += OnFractalOctavesChanged;
-        _fractalLacunaritySlider.ValueChanged += OnFractalLacunarityChanged;
-        _fractalGainSlider.ValueChanged += OnFractalGainChanged;
+        // Initialize sliders
+        CreateNoiseSliders();
+        
+        GenerateTerrain();
+        Console.WriteLine("Ready!");
+    }
+    
+    private void CreateNoiseSliders()
+    {
+        if (SimplexNoiseSettings == null)
+            return;
+        
+        var sliderConfigsList = new List<(int row, int col, SliderConfig config, Godot.Range.ValueChangedEventHandler onValueChanged)>
+        {
+            // Period → Frequency (inverse relationship: lower frequency = larger features)
+            // Smaller = larger "blobs"
+            (0, 0, SimplexNoiseSettings.FrequencyConfig, OnFrequencyChanged),
+            // Octaves → More = more detail
+            (0, 1, SimplexNoiseSettings.OctavesConfig, OnFractalOctavesChanged),
+            // Lacunarity (how frequency changes per octave)
+            // Higher = more detail per octave
+            (1, 0, SimplexNoiseSettings.LacunarityConfig, OnFractalLacunarityChanged),
+            // Persistence → Gain (how amplitude changes per octave)
+            // Higher = rougher noise
+            (1, 1, SimplexNoiseSettings.GainConfig, OnFractalGainChanged),
+        };
         
         if (SimplexNoiseSettings.JumpRangeSettings != null)
         {
@@ -149,106 +105,113 @@ public partial class SimplexNoiseTileMap : Node
                 throw new Exception("JumpRangeSettings is non-null, but or more of its subfields is null");
             }
             
-            if (_jumpRangeMinSlider == null ||
-                _jumpRangeMaxSlider == null ||
-                _jumpRangeJumpToSlider == null)
-            {
-                throw new Exception("JumpRangeSettings is non-null, but one or more jump slider is null");
-            }
-            
-            if (_jumpRangeMinLabel == null ||
-                _jumpRangeMaxLabel == null ||
-                _jumpRangeJumpToLabel == null)
-            {
-                throw new Exception("JumpRangeSettings is non-null, but one or more jump label is null");
-            }
-            
             // JumpRangeMin → The min value to apply a jump
-            _jumpRangeMin = SimplexNoiseSettings.JumpRangeSettings.JumpRangeMinConfig.InitialValue;
-            InitSlider(_jumpRangeMinSlider,
-                SimplexNoiseSettings.JumpRangeSettings.JumpRangeMinConfig,
-                _jumpRangeMinLabel,
-                $"Min: {_jumpRangeMin}");
-            
+            sliderConfigsList.Add((0, 2, SimplexNoiseSettings.JumpRangeSettings.JumpRangeMinConfig, OnJumpRangeMinChanged));
             // JumpRangeMax → The max value to apply a jump
-            _jumpRangeMax = SimplexNoiseSettings.JumpRangeSettings.JumpRangeMaxConfig.InitialValue;
-            InitSlider(_jumpRangeMaxSlider,
-                SimplexNoiseSettings.JumpRangeSettings.JumpRangeMaxConfig,
-                _jumpRangeMaxLabel,
-                $"Max: {_jumpRangeMax}");
-            
-            // JumpRangeJumpTo → The value to jump to when the 
-            _jumpRangeJumpTo = SimplexNoiseSettings.JumpRangeSettings.JumpRangeJumpToConfig.InitialValue;
-            InitSlider(_jumpRangeJumpToSlider,
-                SimplexNoiseSettings.JumpRangeSettings.JumpRangeJumpToConfig,
-                _jumpRangeJumpToLabel,
-                $"JumpTo: {_jumpRangeJumpTo}");
-            
-            // Connect slider signals
-            _jumpRangeMinSlider.ValueChanged += OnJumpRangeMinChanged;
-            _jumpRangeMaxSlider.ValueChanged += OnJumpRangeMaxChanged;
-            _jumpRangeJumpToSlider.ValueChanged += OnJumpRangeJumpToChanged;
+            sliderConfigsList.Add((1, 2, SimplexNoiseSettings.JumpRangeSettings.JumpRangeMaxConfig, OnJumpRangeMaxChanged));
+            // JumpRangeJumpTo → The value to jump to when applying a jump
+            sliderConfigsList.Add((2, 2, SimplexNoiseSettings.JumpRangeSettings.JumpRangeJumpToConfig, OnJumpRangeJumpToChanged));
         }
         
-        GenerateTerrain();
-        Console.WriteLine("Ready!");
+        foreach (var (row, col, config, onValueChanged) in sliderConfigsList)
+        {
+            if (config == null)
+                continue;
+            
+            // Create slider
+            var slider = new HSlider();
+            // Add slider to current node
+            AddChild(slider);
+            slider.Size = new Vector2(200, 16);
+            slider.Position = new Vector2(8 + 247 * col, 24 + 53 * row);
+            slider.MinValue = config.Min;
+            slider.MaxValue = config.Max;
+            slider.Step = config.Step;
+            slider.Value = config.InitialValue;
+            slider.ValueChanged += onValueChanged;
+            
+            // Create label
+            var label = new Label();
+            // Add label as child to slider
+            slider.AddChild(label);
+            label.Size = new Vector2(90, 23);
+            label.Position = new Vector2(0, -24);
+            label.Text = FormatLabelText(config.Name, config.InitialValue);
+            LabelSettings labelSettings = new LabelSettings();
+            Color color = new Color();
+            color.R = 0;
+            color.G = 0;
+            color.B = 0;
+            color.A = 1;
+            labelSettings.SetFontColor(color);
+            label.LabelSettings = labelSettings;
+            
+            // Store reference for later use
+            _noiseSliders[config.Name] = slider;
+            _noiseLabels[config.Name] = label;
+            
+            onValueChanged.Invoke(config.InitialValue);
+        }
     }
 
-    private void InitSlider(HSlider slider, SliderConfig sliderConfig, Label sliderLabel, string labelText)
+    private string FormatLabelText(string name, float value)
     {
-        slider.SetMin(sliderConfig.Min);
-        slider.SetMax(sliderConfig.Max);
-        slider.SetStep(sliderConfig.Step);
-        slider.SetValue(sliderConfig.InitialValue);
-        sliderLabel.SetText(labelText);
+        return $"{name}: {value}";
     }
-
+    
     private void OnFrequencyChanged(double value)
     {
         _noise.Frequency = (float)value;
-        _frequencySliderLabel.SetText($"Frequency: {_noise.Frequency}");
+        string name = SimplexNoiseSettings.FrequencyConfig.Name;
+        _noiseLabels[name].SetText(FormatLabelText(name, (float)value));
         GenerateTerrain();
     }
     
     private void OnFractalOctavesChanged(double value)
     {
         _noise.FractalOctaves = (int)value;
-        _fractalOctavesSliderLabel.SetText($"Octaves: {_noise.FractalOctaves}");
+        string name = SimplexNoiseSettings.OctavesConfig.Name;
+        _noiseLabels[name].SetText(FormatLabelText(name, (float)value));
         GenerateTerrain();
     }
     
     private void OnFractalLacunarityChanged(double value)
     {
         _noise.FractalLacunarity = (float)value;
-        _fractalLacunaritySliderLabel.SetText($"Lacunarity: {_noise.FractalLacunarity}");
+        string name = SimplexNoiseSettings.LacunarityConfig.Name;
+        _noiseLabels[name].SetText(FormatLabelText(name, (float)value));
         GenerateTerrain();
     }
     
     private void OnFractalGainChanged(double value)
     {
         _noise.FractalGain = (float)value;
-        _fractalGainSliderLabel.SetText($"Gain: {_noise.FractalGain}");
+        string name = SimplexNoiseSettings.GainConfig.Name;
+        _noiseLabels[name].SetText(FormatLabelText(name, (float)value));
         GenerateTerrain();
     }
 
     private void OnJumpRangeMinChanged(double value)
     {
         _jumpRangeMin = (float)value;
-        _jumpRangeMinLabel.SetText($"Min: {_jumpRangeMin}");
+        string name = SimplexNoiseSettings.JumpRangeSettings.JumpRangeMinConfig.Name;
+        _noiseLabels[name].SetText(FormatLabelText(name, (float)value));
         GenerateTerrain();
     }
     
     private void OnJumpRangeMaxChanged(double value)
     {
         _jumpRangeMax = (float)value;
-        _jumpRangeMaxLabel.SetText($"Max: {_jumpRangeMax}");
+        string name = SimplexNoiseSettings.JumpRangeSettings.JumpRangeMaxConfig.Name;
+        _noiseLabels[name].SetText(FormatLabelText(name, (float)value));
         GenerateTerrain();
     }
 
     private void OnJumpRangeJumpToChanged(double value)
     {
         _jumpRangeJumpTo = (float)value;
-        _jumpRangeJumpToLabel.SetText($"JumpTo: {_jumpRangeJumpTo}");
+        string name = SimplexNoiseSettings.JumpRangeSettings.JumpRangeJumpToConfig.Name;
+        _noiseLabels[name].SetText(FormatLabelText(name, (float)value));
         GenerateTerrain();
     }
     
