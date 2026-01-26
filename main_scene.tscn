@@ -1,9 +1,10 @@
-[gd_scene load_steps=24 format=3 uid="uid://byg548mddsuhp"]
+[gd_scene load_steps=29 format=3 uid="uid://byg548mddsuhp"]
 
 [ext_resource type="Script" uid="uid://b4glji8f8dmbs" path="res://SimplexNoiseTileMap.cs" id="1_2c62f"]
 [ext_resource type="Script" uid="uid://rradq6tqhv60" path="res://SliderConfig.cs" id="2_66tet"]
 [ext_resource type="Script" uid="uid://diafiaynje5sc" path="res://SimplexNoiseSettings.cs" id="3_7ycvg"]
 [ext_resource type="Texture2D" uid="uid://djx3uwfoyl8c4" path="res://assets/4pxAllTilesDirt.png" id="3_8mm7a"]
+[ext_resource type="Script" uid="uid://d0hcuv6wltm5r" path="res://JumpRangeSettings.cs" id="3_wr18j"]
 [ext_resource type="Texture2D" uid="uid://c7myrd30lgsgs" path="res://assets/4pxAllTilesRock.png" id="4_hq1ik"]
 [ext_resource type="Texture2D" uid="uid://ut1ccpfhil53" path="res://assets/4pxAllTilesHeight.png" id="5_nfk4m"]
 [ext_resource type="Texture2D" uid="uid://cs80cua2t4o3k" path="res://assets/4pxAllTilesHeightV2.png" id="6_hq1ik"]
@@ -24,6 +25,37 @@ Min = 0.01
 Max = 0.99
 Step = 0.01
 metadata/_custom_type_script = "uid://rradq6tqhv60"
+
+[sub_resource type="Resource" id="Resource_671wp"]
+script = ExtResource("2_66tet")
+InitialValue = 0.9
+Min = 0.01
+Max = 0.99
+Step = 0.01
+metadata/_custom_type_script = "uid://rradq6tqhv60"
+
+[sub_resource type="Resource" id="Resource_mo76n"]
+script = ExtResource("2_66tet")
+InitialValue = 0.9
+Min = 0.01
+Max = 0.99
+Step = 0.01
+metadata/_custom_type_script = "uid://rradq6tqhv60"
+
+[sub_resource type="Resource" id="Resource_2jcla"]
+script = ExtResource("2_66tet")
+InitialValue = 0.5
+Min = 0.01
+Max = 0.99
+Step = 0.01
+metadata/_custom_type_script = "uid://rradq6tqhv60"
+
+[sub_resource type="Resource" id="Resource_m35m6"]
+script = ExtResource("3_wr18j")
+JumpRangeMinConfig = SubResource("Resource_2jcla")
+JumpRangeMaxConfig = SubResource("Resource_mo76n")
+JumpRangeJumpToConfig = SubResource("Resource_671wp")
+metadata/_custom_type_script = "uid://d0hcuv6wltm5r"
 
 [sub_resource type="Resource" id="Resource_wr18j"]
 script = ExtResource("2_66tet")
@@ -47,6 +79,7 @@ FrequencyConfig = SubResource("Resource_66tet")
 OctavesConfig = SubResource("Resource_qwutr")
 LacunarityConfig = SubResource("Resource_wr18j")
 GainConfig = SubResource("Resource_7ycvg")
+JumpRangeSettings = SubResource("Resource_m35m6")
 metadata/_custom_type_script = "uid://diafiaynje5sc"
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_qwutr"]
@@ -192,7 +225,7 @@ offset_right = 82.0
 offset_bottom = -1.0
 text = "Fractal Gain: "
 
-[node name="CanyonTileMap" type="Node" parent="." node_paths=PackedStringArray("TileMapLayer", "_frequencySlider", "_fractalOctavesSlider", "_fractalLacunaritySlider", "_fractalGainSlider", "_frequencySliderLabel", "_fractalOctavesSliderLabel", "_fractalLacunaritySliderLabel", "_fractalGainSliderLabel")]
+[node name="CanyonTileMap" type="Node" parent="." node_paths=PackedStringArray("TileMapLayer", "_frequencySlider", "_fractalOctavesSlider", "_fractalLacunaritySlider", "_fractalGainSlider", "_frequencySliderLabel", "_fractalOctavesSliderLabel", "_fractalLacunaritySliderLabel", "_fractalGainSliderLabel", "_jumpRangeMinSlider", "_jumpRangeMaxSlider", "_jumpRangeJumpToSlider", "_jumpRangeMinLabel", "_jumpRangeMaxLabel", "_jumpRangeJumpToLabel")]
 script = ExtResource("1_2c62f")
 SimplexNoiseSettings = SubResource("Resource_42l1d")
 TileSetIndex = 4
@@ -205,6 +238,12 @@ _frequencySliderLabel = NodePath("FrequencySlider/FrequencyLabel")
 _fractalOctavesSliderLabel = NodePath("FractalOctavesSlider/FractalOctavesLabel")
 _fractalLacunaritySliderLabel = NodePath("FractalLacunaritySlider/FractalLacunarityLabel")
 _fractalGainSliderLabel = NodePath("FractalGainSlider/FractalGainLabel")
+_jumpRangeMinSlider = NodePath("JumpRangeMinSlider")
+_jumpRangeMaxSlider = NodePath("JumpRangeMaxSlider")
+_jumpRangeJumpToSlider = NodePath("JumpRangeJumpToSlider")
+_jumpRangeMinLabel = NodePath("JumpRangeMinSlider/JumpRangeMinLabel")
+_jumpRangeMaxLabel = NodePath("JumpRangeMaxSlider/JumpRangeMaxLabel")
+_jumpRangeJumpToLabel = NodePath("JumpRangeJumpToSlider/JumpRangeJumpToLabel")
 
 [node name="TileMapLayer" type="TileMapLayer" parent="CanyonTileMap"]
 tile_set = SubResource("TileSet_hq1ik")
@@ -275,4 +314,55 @@ offset_top = -24.0
 offset_right = 82.0
 offset_bottom = -1.0
 text = "Fractal Gain: "
+label_settings = SubResource("LabelSettings_qwutr")
+
+[node name="JumpRangeMinSlider" type="HSlider" parent="CanyonTileMap"]
+offset_left = 502.0
+offset_top = 24.0
+offset_right = 702.0
+offset_bottom = 40.0
+tick_count = 10
+ticks_on_borders = true
+
+[node name="JumpRangeMinLabel" type="Label" parent="CanyonTileMap/JumpRangeMinSlider"]
+layout_mode = 0
+offset_left = 1.0
+offset_top = -24.0
+offset_right = 82.0
+offset_bottom = -1.0
+text = "Jump Range Min:"
+label_settings = SubResource("LabelSettings_qwutr")
+
+[node name="JumpRangeMaxSlider" type="HSlider" parent="CanyonTileMap"]
+offset_left = 502.0
+offset_top = 77.0
+offset_right = 702.0
+offset_bottom = 93.0
+tick_count = 10
+ticks_on_borders = true
+
+[node name="JumpRangeMaxLabel" type="Label" parent="CanyonTileMap/JumpRangeMaxSlider"]
+layout_mode = 0
+offset_left = 1.0
+offset_top = -24.0
+offset_right = 82.0
+offset_bottom = -1.0
+text = "Jump Range Max: "
+label_settings = SubResource("LabelSettings_qwutr")
+
+[node name="JumpRangeJumpToSlider" type="HSlider" parent="CanyonTileMap"]
+offset_left = 502.0
+offset_top = 130.0
+offset_right = 702.0
+offset_bottom = 146.0
+tick_count = 10
+ticks_on_borders = true
+
+[node name="JumpRangeJumpToLabel" type="Label" parent="CanyonTileMap/JumpRangeJumpToSlider"]
+layout_mode = 0
+offset_left = 1.0
+offset_top = -24.0
+offset_right = 82.0
+offset_bottom = -1.0
+text = "Jump Range Jump To: "
 label_settings = SubResource("LabelSettings_qwutr")

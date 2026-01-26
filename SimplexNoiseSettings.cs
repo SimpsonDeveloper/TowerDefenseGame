@@ -21,4 +21,7 @@ public partial class SimplexNoiseSettings : Resource
     
     [Export]
     public SliderConfig GainConfig { get; set; }
+    
+    [Export]
+    public JumpRangeSettings JumpRangeSettings { get; set; }
 }
