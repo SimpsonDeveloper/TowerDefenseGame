@@ -20,14 +20,6 @@ public partial class SimplexNoiseTileMap : Node
     
     private readonly Dictionary<string, Label> _noiseLabels = new();
     
-    private string _frequencyName = "Frequency";
-    private string _octavesName = "Octaves";
-    private string _lacunarityName = "Lacunarity";
-    private string _gainName = "Gain";
-    private string _jumpRangeMinName = "Jump Range Min";
-    private string _jumpRangeMaxName = "Jump Range Max";
-    private string _jumpRangeJumpToName = "Jump Range Jump To";
-    
     private FastNoiseLite _noise;
 
     private float _jumpRangeMin;
