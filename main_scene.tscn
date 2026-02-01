@@ -1,9 +1,9 @@
-[gd_scene load_steps=45 format=3 uid="uid://byg548mddsuhp"]
+[gd_scene load_steps=48 format=3 uid="uid://byg548mddsuhp"]
 
 [ext_resource type="Script" uid="uid://b4glji8f8dmbs" path="res://SimplexNoiseTileMap.cs" id="1_2c62f"]
 [ext_resource type="Script" uid="uid://rradq6tqhv60" path="res://SliderConfig.cs" id="2_66tet"]
 [ext_resource type="Script" uid="uid://diafiaynje5sc" path="res://SimplexNoiseSettings.cs" id="3_7ycvg"]
-[ext_resource type="Texture2D" uid="uid://djx3uwfoyl8c4" path="res://assets/4pxAllTilesDirt.png" id="3_8mm7a"]
+[ext_resource type="Texture2D" uid="uid://djx3uwfoyl8c4" path="res://assets/4pxAllTilesSand.png" id="3_8mm7a"]
 [ext_resource type="Script" uid="uid://d0hcuv6wltm5r" path="res://JumpRangeSettings.cs" id="3_wr18j"]
 [ext_resource type="Texture2D" uid="uid://c7myrd30lgsgs" path="res://assets/4pxAllTilesRock.png" id="4_hq1ik"]
 [ext_resource type="Texture2D" uid="uid://ut1ccpfhil53" path="res://assets/4pxAllTilesHeight.png" id="5_nfk4m"]
@@ -187,13 +187,13 @@ metadata/_custom_type_script = "uid://diafiaynje5sc"
 
 [sub_resource type="Resource" id="Resource_ak604"]
 script = ExtResource("11_42l1d")
-LastIndex = 1
+LastIndex = 3
 metadata/_custom_type_script = "uid://bn66bgttlo0pn"
 
 [sub_resource type="Resource" id="Resource_meb7l"]
 script = ExtResource("11_42l1d")
-FirstIndex = 2
-LastIndex = 2
+FirstIndex = 4
+LastIndex = 5
 metadata/_custom_type_script = "uid://bn66bgttlo0pn"
 
 [sub_resource type="TileSet" id="TileSet_42l1d"]
@@ -226,7 +226,7 @@ sources/0 = SubResource("TileSetAtlasSource_671wp")
 [sub_resource type="Resource" id="Resource_o4fqm"]
 script = ExtResource("2_66tet")
 Name = "Terrain Frequency"
-InitialValue = 0.01
+InitialValue = 0.007
 Min = 0.001
 Max = 0.07
 Step = 0.001
@@ -235,7 +235,7 @@ metadata/_custom_type_script = "uid://rradq6tqhv60"
 [sub_resource type="Resource" id="Resource_gfmxp"]
 script = ExtResource("2_66tet")
 Name = "Terrain Octaves"
-InitialValue = 2.0
+InitialValue = 4.0
 Min = 1.0
 Max = 10.0
 Step = 1.0
@@ -244,7 +244,7 @@ metadata/_custom_type_script = "uid://rradq6tqhv60"
 [sub_resource type="Resource" id="Resource_1n88h"]
 script = ExtResource("2_66tet")
 Name = "Terrain Lacunarity"
-InitialValue = 1.0
+InitialValue = 3.1
 Min = 1.0
 Max = 4.0
 Step = 0.1
@@ -253,11 +253,29 @@ metadata/_custom_type_script = "uid://rradq6tqhv60"
 [sub_resource type="Resource" id="Resource_opjno"]
 script = ExtResource("2_66tet")
 Name = "Terrain Gain"
-InitialValue = 0.1
+InitialValue = 0.21
 Min = 0.01
 Max = 0.99
 Step = 0.01
 metadata/_custom_type_script = "uid://rradq6tqhv60"
+
+[sub_resource type="Resource" id="Resource_u0ygc"]
+script = ExtResource("11_42l1d")
+FirstIndex = 6
+LastIndex = 9
+metadata/_custom_type_script = "uid://bn66bgttlo0pn"
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_mo76n"]
+texture = ExtResource("3_8mm7a")
+texture_region_size = Vector2i(4, 4)
+0:0/0 = 0
+1:0/0 = 0
+0:1/0 = 0
+1:1/0 = 0
+
+[sub_resource type="TileSet" id="TileSet_2jcla"]
+tile_size = Vector2i(4, 4)
+sources/0 = SubResource("TileSetAtlasSource_mo76n")
 
 [node name="Node2D" type="Node2D"]
 
@@ -281,6 +299,7 @@ TileMapLayer = NodePath("TileMapLayer")
 tile_set = SubResource("TileSet_hq1ik")
 
 [node name="TerrainGen" type="Node" parent="." node_paths=PackedStringArray("SimplexGens", "TileMapLayer")]
+process_mode = 4
 script = ExtResource("10_671wp")
 SimplexGens = [NodePath("GensLayer/GrassGen"), NodePath("GensLayer/RockGen")]
 GenRanges = {
@@ -337,6 +356,90 @@ SimplexGenNode = NodePath("..")
 offset_right = 40.0
 offset_bottom = 40.0
 script = ExtResource("12_42l1d")
+FrequencyConfig = SubResource("Resource_o4fqm")
+OctavesConfig = SubResource("Resource_gfmxp")
+LacunarityConfig = SubResource("Resource_1n88h")
+GainConfig = SubResource("Resource_opjno")
+SimplexGenNode = NodePath("..")
+
+[node name="TerrainGen2" type="Node" parent="." node_paths=PackedStringArray("SimplexGens", "TileMapLayer")]
+script = ExtResource("10_671wp")
+SimplexGens = [NodePath("GensLayer2/GrassGen2"), NodePath("GensLayer2/SandGen2"), NodePath("GensLayer2/RockGen2")]
+GenRanges = {
+SubResource("Resource_ak604"): 0,
+SubResource("Resource_meb7l"): 1,
+SubResource("Resource_u0ygc"): 2
+}
+TileMapLayer = NodePath("RootTileLayer")
+
+[node name="RootTileLayer" type="TileMapLayer" parent="TerrainGen2"]
+editor_description = "Root. No tiles from here are placed right now. Only tile size, and only transform. For the moment..."
+tile_set = SubResource("TileSet_42l1d")
+
+[node name="GrassTileLayer" type="TileMapLayer" parent="TerrainGen2/RootTileLayer"]
+tile_set = SubResource("TileSet_vimvf")
+
+[node name="RockTileLayer" type="TileMapLayer" parent="TerrainGen2/RootTileLayer"]
+tile_set = SubResource("TileSet_mo76n")
+
+[node name="SandTileLayer" type="TileMapLayer" parent="TerrainGen2/RootTileLayer"]
+tile_set = SubResource("TileSet_2jcla")
+
+[node name="GensLayer2" type="Node" parent="TerrainGen2"]
+
+[node name="GrassGen2" type="Node" parent="TerrainGen2/GensLayer2" node_paths=PackedStringArray("TerrainGen", "TileMapLayer")]
+script = ExtResource("11_mo76n")
+TerrainGen = NodePath("../..")
+TileMapLayer = NodePath("../../RootTileLayer/GrassTileLayer")
+
+[node name="GrassUI2" type="Container" parent="TerrainGen2/GensLayer2/GrassGen2" node_paths=PackedStringArray("SimplexGenNode")]
+offset_top = 100.0
+offset_right = 40.0
+offset_bottom = 140.0
+script = ExtResource("12_42l1d")
+FrequencyConfig = SubResource("Resource_wr18j")
+OctavesConfig = SubResource("Resource_mo76n")
+LacunarityConfig = SubResource("Resource_671wp")
+GainConfig = SubResource("Resource_qwutr")
+SimplexGenNode = NodePath("..")
+
+[node name="RockGen2" type="Node" parent="TerrainGen2/GensLayer2" node_paths=PackedStringArray("TerrainGen", "TileMapLayer")]
+script = ExtResource("11_mo76n")
+TerrainGen = NodePath("../..")
+TileMapLayer = NodePath("../../RootTileLayer/RockTileLayer")
+
+[node name="RockUI2" type="Container" parent="TerrainGen2/GensLayer2/RockGen2" node_paths=PackedStringArray("SimplexGenNode")]
+offset_top = 200.0
+offset_right = 40.0
+offset_bottom = 240.0
+script = ExtResource("12_42l1d")
+FrequencyConfig = SubResource("Resource_wr18j")
+OctavesConfig = SubResource("Resource_mo76n")
+LacunarityConfig = SubResource("Resource_671wp")
+GainConfig = SubResource("Resource_qwutr")
+SimplexGenNode = NodePath("..")
+
+[node name="SandGen2" type="Node" parent="TerrainGen2/GensLayer2" node_paths=PackedStringArray("TerrainGen", "TileMapLayer")]
+script = ExtResource("11_mo76n")
+TerrainGen = NodePath("../..")
+TileMapLayer = NodePath("../../RootTileLayer/SandTileLayer")
+
+[node name="SandUI2" type="Container" parent="TerrainGen2/GensLayer2/SandGen2" node_paths=PackedStringArray("SimplexGenNode")]
+offset_top = 300.0
+offset_right = 40.0
+offset_bottom = 340.0
+script = ExtResource("12_42l1d")
+FrequencyConfig = SubResource("Resource_wr18j")
+OctavesConfig = SubResource("Resource_mo76n")
+LacunarityConfig = SubResource("Resource_671wp")
+GainConfig = SubResource("Resource_qwutr")
+SimplexGenNode = NodePath("..")
+
+[node name="TerrainGenUI2" type="Container" parent="TerrainGen2" node_paths=PackedStringArray("SimplexGenNode")]
+offset_right = 40.0
+offset_bottom = 40.0
+script = ExtResource("12_42l1d")
+ShowUI = true
 FrequencyConfig = SubResource("Resource_o4fqm")
 OctavesConfig = SubResource("Resource_gfmxp")
 LacunarityConfig = SubResource("Resource_1n88h")

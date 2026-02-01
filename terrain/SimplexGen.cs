@@ -21,7 +21,7 @@ public partial class SimplexGen : Node, ISimplexGenConfigurable
     
     public override void _EnterTree()
     {
-        if (ProcessMode == ProcessModeEnum.Disabled)
+        if (!CanProcess())
         {
             QueueFree();
         }
@@ -39,7 +39,7 @@ public partial class SimplexGen : Node, ISimplexGenConfigurable
 
     public override void _Ready()
     {
-        if (ProcessMode == ProcessModeEnum.Disabled)
+        if (!CanProcess())
         {
             QueueFree();
             return;

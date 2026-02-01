@@ -32,7 +32,7 @@ public partial class TerrainGen : Node, ISimplexGenConfigurable
     
     public override void _EnterTree()
     {
-        if (ProcessMode == ProcessModeEnum.Disabled)
+        if (!CanProcess())
         {
             QueueFree();
         }
@@ -59,7 +59,7 @@ public partial class TerrainGen : Node, ISimplexGenConfigurable
     
     public override void _Ready()
     {
-        if (ProcessMode == ProcessModeEnum.Disabled)
+        if (!CanProcess())
         {
             QueueFree();
             return;
