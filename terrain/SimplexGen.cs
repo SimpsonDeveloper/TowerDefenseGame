@@ -50,7 +50,7 @@ public partial class SimplexGen : Node, ISimplexGenConfigurable
             throw new Exception("SimplexGen not initialized yet!");
         }
         
-        Console.WriteLine("SimplexGen Ready!");
+        Console.WriteLine($"SimplexGen {GetName()} Ready!");
     }
     
     public void InitNoiseConfig(double frequency, double lacunarity, double octaves, double gain)

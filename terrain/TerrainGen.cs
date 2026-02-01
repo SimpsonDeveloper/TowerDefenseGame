@@ -71,7 +71,7 @@ public partial class TerrainGen : Node, ISimplexGenConfigurable
         }
         
         GenerateTerrain();
-        Console.WriteLine("TerrainGen Ready!");
+        Console.WriteLine($"TerrainGen {GetName()} Ready!");
     }
 
     private void ValidateConfig()
@@ -109,39 +109,59 @@ public partial class TerrainGen : Node, ISimplexGenConfigurable
             throw new Exception("GenRanges must not be null or empty!");
         }
         
-        // Validate index ranges are sorted, don't overlap, and are greater than or equal to 0
+        // Validate index ranges are sorted, don't overlap, and min and max are equidistant from 0
         KeyValuePair<GenRange, int>? previous = null;
+        int min = 0;
+        int max = 0;
         foreach (KeyValuePair<GenRange, int> entry in GenRanges)
         {
             if (entry.Key == null)
             {
                 throw new Exception("GenRanges contents must not be null or empty!");
             }
-
+            if (entry.Value < 0)
+            {
+                throw new Exception("GenRanges contents must be greater than or equal to zero!");
+            }
             if (entry.Value >= SimplexGens.Length)
             {
                 throw new Exception("GenRanges indices must be less than or equal to SimplexGens.Length!");
             }
+            
+            int firstIndex = entry.Key.FirstIndex;
+            int lastIndex = entry.Key.LastIndex;
+            if (firstIndex < min)
+            {
+                min = firstIndex;
+            }
+            if (lastIndex > max)
+            {
+                max = lastIndex;
+            }
+            
             if (!previous.HasValue)
             {
                 previous = entry;
                 continue;
             }
             
-            int firstIndex = entry.Key.FirstIndex;
-            int lastIndex = entry.Key.LastIndex;
-            if (firstIndex < 0 || lastIndex < 0)
-            {
-                throw new Exception("All SimplexGen indices must be greater than or equal to zero!");
-            }
             if (firstIndex > lastIndex)
             {
                 throw new Exception("SimplexGen FirstIndex must be less than or equal to LastIndex!");
             }
-            if (previous.Value.Key.LastIndex > firstIndex)
+            if (previous.Value.Key.LastIndex >= firstIndex)
             {
                 throw new Exception("SimplexGen IndexRanges must not overlap!");
             }
+        }
+
+        if (min == 0 || max == 0)
+        {
+            throw new Exception("SimplexGen IndexRanges min/max must not be zero!");
+        }
+        if (min != -max)
+        {
+            throw new Exception("SimplexGen IndexRanges min must be -max!");
         }
     }
     
@@ -162,11 +182,11 @@ public partial class TerrainGen : Node, ISimplexGenConfigurable
         {
             for (int y = 0; y < height; y++)
             {
-                float absNoiseValue = Math.Abs(_noise.GetNoise2D(x, y));
+                float noiseValue = _noise.GetNoise2D(x, y);
                 
-                // Map noise (-1 to 1) to a tile index (0 to [multiplicand - 1])
-                int multiplicand = _maxGenIndex + 1;
-                int genIndex = (int)Math.Floor(absNoiseValue * multiplicand);
+                // Map noise (-1 to 1) to a gen index
+                int multiplicand = _maxGenIndex;
+                int genIndex = (int)Math.Round(noiseValue * multiplicand);
 
                 // Tell the generator to set its tile
                 _simplexGenIndices[genIndex].GenerateTerrain(x, y);
@@ -199,7 +219,7 @@ public partial class TerrainGen : Node, ISimplexGenConfigurable
         _simplexGenIndices = new Godot.Collections.Dictionary<int, SimplexGen>();
         foreach (KeyValuePair<GenRange, int> entry in GenRanges)
         {
-            // assume validation passed. Validated index ranges are sorted, don't overlap, and are greater than or equal to 0
+            // assume validation passed. Validated index ranges are sorted, don't overlap, and min and max are equidistant from 0
             int firstIndex = entry.Key.FirstIndex;
             int lastIndex = entry.Key.LastIndex;
             // last range should have the largest index

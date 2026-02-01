@@ -59,7 +59,7 @@ public partial class SimplexGenConfig : Container
         // Initialize sliders
         CreateNoiseSliders();
         
-        Console.WriteLine("SimplexGenConfig Ready!");
+        Console.WriteLine($"SimplexGenConfig {GetName()} Ready!");
     }
     
     private void CreateNoiseSliders()
