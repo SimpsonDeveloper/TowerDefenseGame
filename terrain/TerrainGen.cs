@@ -117,6 +117,11 @@ public partial class TerrainGen : Node, ISimplexGenConfigurable
             {
                 throw new Exception("GenRanges contents must not be null or empty!");
             }
+
+            if (entry.Value >= SimplexGens.Length)
+            {
+                throw new Exception("GenRanges indices must be less than or equal to SimplexGens.Length!");
+            }
             if (!previous.HasValue)
             {
                 previous = entry;
