@@ -1,19 +1,19 @@
-[gd_scene load_steps=52 format=3 uid="uid://byg548mddsuhp"]
+[gd_scene load_steps=57 format=3 uid="uid://byg548mddsuhp"]
 
 [ext_resource type="Script" uid="uid://b4glji8f8dmbs" path="res://SimplexNoiseTileMap.cs" id="1_2c62f"]
 [ext_resource type="Script" uid="uid://rradq6tqhv60" path="res://SliderConfig.cs" id="2_66tet"]
 [ext_resource type="Script" uid="uid://diafiaynje5sc" path="res://SimplexNoiseSettings.cs" id="3_7ycvg"]
-[ext_resource type="Texture2D" uid="uid://djx3uwfoyl8c4" path="res://assets/4pxAllTilesSand.png" id="3_8mm7a"]
 [ext_resource type="Script" uid="uid://d0hcuv6wltm5r" path="res://JumpRangeSettings.cs" id="3_wr18j"]
-[ext_resource type="Texture2D" uid="uid://c7myrd30lgsgs" path="res://assets/4pxAllTilesRock.png" id="4_hq1ik"]
 [ext_resource type="Texture2D" uid="uid://ut1ccpfhil53" path="res://assets/4pxAllTilesHeight.png" id="5_nfk4m"]
 [ext_resource type="Texture2D" uid="uid://cs80cua2t4o3k" path="res://assets/4pxAllTilesHeightV2.png" id="6_hq1ik"]
-[ext_resource type="Texture2D" uid="uid://dqdycafpipri1" path="res://assets/4pxGrassTiles.png" id="8_7ycvg"]
 [ext_resource type="Script" uid="uid://dnb5iegcl3s5r" path="res://terrain/TerrainGen.cs" id="10_671wp"]
+[ext_resource type="Texture2D" uid="uid://borlm11nmqp5l" path="res://assets/4pxTilesGrass.png" id="11_2jcla"]
 [ext_resource type="Script" uid="uid://bn66bgttlo0pn" path="res://terrain/GenRange.cs" id="11_42l1d"]
 [ext_resource type="Script" uid="uid://d33brm7vp1jgy" path="res://terrain/SimplexGen.cs" id="11_mo76n"]
 [ext_resource type="Script" uid="uid://7o0j1gneru7r" path="res://terrain/SimplexGenConfig.cs" id="12_42l1d"]
-[ext_resource type="Texture2D" uid="uid://bst71eduyyr2l" path="res://assets/4pxAllTilesWater.png" id="14_42l1d"]
+[ext_resource type="Texture2D" uid="uid://bk367j5ybqmrp" path="res://assets/4pxTilesRock.png" id="12_m35m6"]
+[ext_resource type="Texture2D" uid="uid://bj68uljao4uvj" path="res://assets/4pxTilesSand.png" id="13_u0ygc"]
+[ext_resource type="Texture2D" uid="uid://bu4xhoq5eo5dg" path="res://assets/4pxTilesWater.png" id="14_7th4q"]
 
 [sub_resource type="Resource" id="Resource_wr18j"]
 script = ExtResource("2_66tet")
@@ -59,24 +59,30 @@ LacunarityConfig = SubResource("Resource_671wp")
 GainConfig = SubResource("Resource_qwutr")
 metadata/_custom_type_script = "uid://diafiaynje5sc"
 
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_wr18j"]
+
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_qwutr"]
-texture = ExtResource("8_7ycvg")
+texture = SubResource("CompressedTexture2D_wr18j")
 texture_region_size = Vector2i(4, 4)
 0:0/0 = 0
 1:0/0 = 0
 0:1/0 = 0
 1:1/0 = 0
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_qwutr"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_66tet"]
-texture = ExtResource("3_8mm7a")
+texture = SubResource("CompressedTexture2D_qwutr")
 texture_region_size = Vector2i(4, 4)
 0:0/0 = 0
 1:0/0 = 0
 0:1/0 = 0
 1:1/0 = 0
 
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_671wp"]
+
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_7ycvg"]
-texture = ExtResource("4_hq1ik")
+texture = SubResource("CompressedTexture2D_671wp")
 texture_region_size = Vector2i(4, 4)
 0:0/0 = 0
 1:0/0 = 0
@@ -201,29 +207,11 @@ metadata/_custom_type_script = "uid://bn66bgttlo0pn"
 [sub_resource type="TileSet" id="TileSet_42l1d"]
 tile_size = Vector2i(4, 4)
 
-[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_ak604"]
-texture = ExtResource("8_7ycvg")
-texture_region_size = Vector2i(4, 4)
-0:0/0 = 0
-1:0/0 = 0
-0:1/0 = 0
-1:1/0 = 0
-
 [sub_resource type="TileSet" id="TileSet_vimvf"]
 tile_size = Vector2i(4, 4)
-sources/0 = SubResource("TileSetAtlasSource_ak604")
-
-[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_671wp"]
-texture = ExtResource("4_hq1ik")
-texture_region_size = Vector2i(4, 4)
-0:0/0 = 0
-1:0/0 = 0
-0:1/0 = 0
-1:1/0 = 0
 
 [sub_resource type="TileSet" id="TileSet_mo76n"]
 tile_size = Vector2i(4, 4)
-sources/0 = SubResource("TileSetAtlasSource_671wp")
 
 [sub_resource type="Resource" id="Resource_o4fqm"]
 script = ExtResource("2_66tet")
@@ -273,8 +261,44 @@ FirstIndex = 4
 LastIndex = 6
 metadata/_custom_type_script = "uid://bn66bgttlo0pn"
 
-[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_mo76n"]
-texture = ExtResource("3_8mm7a")
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_6jybn"]
+texture = ExtResource("11_2jcla")
+texture_region_size = Vector2i(4, 4)
+0:0/0 = 0
+1:0/0 = 0
+0:1/0 = 0
+1:1/0 = 0
+
+[sub_resource type="TileSet" id="TileSet_wr18j"]
+tile_size = Vector2i(4, 4)
+sources/0 = SubResource("TileSetAtlasSource_6jybn")
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_84odl"]
+texture = ExtResource("12_m35m6")
+texture_region_size = Vector2i(4, 4)
+0:0/0 = 0
+1:0/0 = 0
+0:1/0 = 0
+1:1/0 = 0
+
+[sub_resource type="TileSet" id="TileSet_qwutr"]
+tile_size = Vector2i(4, 4)
+sources/0 = SubResource("TileSetAtlasSource_84odl")
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_ak604"]
+texture = ExtResource("13_u0ygc")
+texture_region_size = Vector2i(4, 4)
+0:0/0 = 0
+1:0/0 = 0
+0:1/0 = 0
+1:1/0 = 0
+
+[sub_resource type="TileSet" id="TileSet_671wp"]
+tile_size = Vector2i(4, 4)
+sources/0 = SubResource("TileSetAtlasSource_ak604")
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_vimvf"]
+texture = ExtResource("14_7th4q")
 texture_region_size = Vector2i(4, 4)
 0:0/0 = 0
 1:0/0 = 0
@@ -283,19 +307,7 @@ texture_region_size = Vector2i(4, 4)
 
 [sub_resource type="TileSet" id="TileSet_2jcla"]
 tile_size = Vector2i(4, 4)
-sources/0 = SubResource("TileSetAtlasSource_mo76n")
-
-[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_2jcla"]
-texture = ExtResource("14_42l1d")
-texture_region_size = Vector2i(4, 4)
-0:0/0 = 0
-1:0/0 = 0
-0:1/0 = 0
-1:1/0 = 0
-
-[sub_resource type="TileSet" id="TileSet_m35m6"]
-tile_size = Vector2i(4, 4)
-sources/0 = SubResource("TileSetAtlasSource_2jcla")
+sources/0 = SubResource("TileSetAtlasSource_vimvf")
 
 [node name="Node2D" type="Node2D"]
 
@@ -398,16 +410,16 @@ editor_description = "Root. No tiles from here are placed right now. Only tile s
 tile_set = SubResource("TileSet_42l1d")
 
 [node name="GrassTileLayer" type="TileMapLayer" parent="TerrainGen2/RootTileLayer"]
-tile_set = SubResource("TileSet_vimvf")
+tile_set = SubResource("TileSet_wr18j")
 
 [node name="RockTileLayer" type="TileMapLayer" parent="TerrainGen2/RootTileLayer"]
-tile_set = SubResource("TileSet_mo76n")
+tile_set = SubResource("TileSet_qwutr")
 
 [node name="SandTileLayer" type="TileMapLayer" parent="TerrainGen2/RootTileLayer"]
-tile_set = SubResource("TileSet_2jcla")
+tile_set = SubResource("TileSet_671wp")
 
 [node name="WaterTileLayer" type="TileMapLayer" parent="TerrainGen2/RootTileLayer"]
-tile_set = SubResource("TileSet_m35m6")
+tile_set = SubResource("TileSet_2jcla")
 
 [node name="GensLayer2" type="Node" parent="TerrainGen2"]
 

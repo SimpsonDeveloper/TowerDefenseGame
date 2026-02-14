@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://c7myrd30lgsgs"
-path="res://.godot/imported/4pxAllTilesRock.png-3ce08a870b1c573206f60a9ea2a06f78.ctex"
+uid="uid://borlm11nmqp5l"
+path="res://.godot/imported/4pxTilesGrass.png-3b90842fa920b2bec24b86a26d07ca32.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/4pxAllTilesRock.png"
-dest_files=["res://.godot/imported/4pxAllTilesRock.png-3ce08a870b1c573206f60a9ea2a06f78.ctex"]
+source_file="res://assets/4pxTilesGrass.png"
+dest_files=["res://.godot/imported/4pxTilesGrass.png-3b90842fa920b2bec24b86a26d07ca32.ctex"]
 
 [params]
 

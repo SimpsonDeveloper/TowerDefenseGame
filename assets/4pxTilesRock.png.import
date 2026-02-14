@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bst71eduyyr2l"
-path="res://.godot/imported/4pxAllTilesWater.png-e397a5ab523e88bc1a2d1d54bb6fe49c.ctex"
+uid="uid://bk367j5ybqmrp"
+path="res://.godot/imported/4pxTilesRock.png-8fdf5467ff5726aa733b9daeef00d2c1.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/4pxAllTilesWater.png"
-dest_files=["res://.godot/imported/4pxAllTilesWater.png-e397a5ab523e88bc1a2d1d54bb6fe49c.ctex"]
+source_file="res://assets/4pxTilesRock.png"
+dest_files=["res://.godot/imported/4pxTilesRock.png-8fdf5467ff5726aa733b9daeef00d2c1.ctex"]
 
 [params]
 
