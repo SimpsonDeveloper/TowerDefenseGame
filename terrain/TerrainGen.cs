@@ -57,7 +57,7 @@ public partial class TerrainGen : Node, ISimplexGenConfigurable
         if (@event.IsActionPressed("ui_accept"))
         {
             _noise.Seed = (int)GD.Randi();
-            GenerateTerrain();
+            InvalidateChunks();
         }
     }
     
@@ -169,7 +169,7 @@ public partial class TerrainGen : Node, ISimplexGenConfigurable
         }
     }
     
-    public void GenerateTerrain()
+    public void InvalidateChunks()
     {
         ClearAllTiles();
         ChunkManager.ClearAllChunks();
@@ -304,24 +304,24 @@ public partial class TerrainGen : Node, ISimplexGenConfigurable
     public void OnFrequencyChanged(double value)
     {
         _noise.Frequency = (float)value;
-        GenerateTerrain();
+        InvalidateChunks();
     }
     
     public void OnFractalOctavesChanged(double value)
     {
         _noise.FractalOctaves = (int)value;
-        GenerateTerrain();
+        InvalidateChunks();
     }
     
     public void OnFractalLacunarityChanged(double value)
     {
         _noise.FractalLacunarity = (float)value;
-        GenerateTerrain();
+        InvalidateChunks();
     }
     
     public void OnFractalGainChanged(double value)
     {
         _noise.FractalGain = (float)value;
-        GenerateTerrain();
+        InvalidateChunks();
     }
 }

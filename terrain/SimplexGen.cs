@@ -97,25 +97,25 @@ public partial class SimplexGen : Node, ISimplexGenConfigurable
     public void OnFrequencyChanged(double value)
     {
         _noise.Frequency = (float)value;
-        TerrainGen.GenerateTerrain();
+        TerrainGen.InvalidateChunks();
     }
     
     public void OnFractalOctavesChanged(double value)
     {
         _noise.FractalOctaves = (int)value;
-        TerrainGen.GenerateTerrain();
+        TerrainGen.InvalidateChunks();
     }
     
     public void OnFractalLacunarityChanged(double value)
     {
         _noise.FractalLacunarity = (float)value;
-        TerrainGen.GenerateTerrain();
+        TerrainGen.InvalidateChunks();
     }
     
     public void OnFractalGainChanged(double value)
     {
         _noise.FractalGain = (float)value;
-        TerrainGen.GenerateTerrain();
+        TerrainGen.InvalidateChunks();
     }
     
     public void GenerateTerrain(int x, int y)
