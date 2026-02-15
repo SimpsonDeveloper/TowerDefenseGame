@@ -29,8 +29,21 @@ public partial class ChunkManager : Node
     [Export]
     public int ChunkBuffer { get; set; } = 1;
 
+    /// <summary>
+    /// Maximum number of chunks to generate per frame.
+    /// Higher values = faster loading but more stutter.
+    /// </summary>
+    [Export]
+    public int ChunksPerFrame { get; set; } = 2;
+
     // Tracks which chunks have been generated using chunk coordinates as keys
     private HashSet<Vector2I> _generatedChunks = new HashSet<Vector2I>();
+
+    // Queue of chunks waiting to be generated
+    private Queue<Vector2I> _pendingChunks = new Queue<Vector2I>();
+
+    // Tracks which chunks are already queued to avoid duplicates
+    private HashSet<Vector2I> _queuedChunks = new HashSet<Vector2I>();
 
     private Vector2I _lastCameraChunk = new Vector2I(int.MinValue, int.MinValue);
 
@@ -54,13 +67,14 @@ public partial class ChunkManager : Node
         if (TerrainGen == null || Camera == null)
             return;
 
-        UpdateVisibleChunks();
+        QueueVisibleChunks();
+        ProcessPendingChunks();
     }
 
     /// <summary>
-    /// Checks which chunks should be visible and generates any that haven't been created yet.
+    /// Queues chunks that should be visible but haven't been generated yet.
     /// </summary>
-    private void UpdateVisibleChunks()
+    private void QueueVisibleChunks()
     {
         // Get visible area in world coordinates
         Rect2 visibleRect = GetVisibleWorldRect();
@@ -73,19 +87,57 @@ public partial class ChunkManager : Node
         minChunk -= new Vector2I(ChunkBuffer, ChunkBuffer);
         maxChunk += new Vector2I(ChunkBuffer, ChunkBuffer);
 
-        // Generate any missing chunks
+        // Get camera chunk position for distance-based prioritization
+        Vector2I cameraChunk = WorldToChunkCoords(Camera.GlobalPosition);
+
+        // Collect chunks that need generation with their distances
+        List<(Vector2I coord, int distance)> chunksToQueue = new List<(Vector2I, int)>();
+
         for (int cx = minChunk.X; cx <= maxChunk.X; cx++)
         {
             for (int cy = minChunk.Y; cy <= maxChunk.Y; cy++)
             {
                 Vector2I chunkCoord = new Vector2I(cx, cy);
 
-                if (!_generatedChunks.Contains(chunkCoord))
-                {
-                    GenerateChunk(chunkCoord);
-                    _generatedChunks.Add(chunkCoord);
-                }
+                // Skip if already generated or already queued
+                if (_generatedChunks.Contains(chunkCoord) || _queuedChunks.Contains(chunkCoord))
+                    continue;
+
+                // Calculate Manhattan distance from camera for prioritization
+                int distance = Math.Abs(cx - cameraChunk.X) + Math.Abs(cy - cameraChunk.Y);
+                chunksToQueue.Add((chunkCoord, distance));
             }
+        }
+
+        // Sort by distance (closest first) and add to queue
+        chunksToQueue.Sort((a, b) => a.distance.CompareTo(b.distance));
+
+        foreach (var (coord, _) in chunksToQueue)
+        {
+            _pendingChunks.Enqueue(coord);
+            _queuedChunks.Add(coord);
+        }
+    }
+
+    /// <summary>
+    /// Processes a limited number of pending chunks per frame.
+    /// </summary>
+    private void ProcessPendingChunks()
+    {
+        int chunksGenerated = 0;
+
+        while (_pendingChunks.Count > 0 && chunksGenerated < ChunksPerFrame)
+        {
+            Vector2I chunkCoord = _pendingChunks.Dequeue();
+            _queuedChunks.Remove(chunkCoord);
+
+            // Double-check it hasn't been generated (in case of race conditions)
+            if (_generatedChunks.Contains(chunkCoord))
+                continue;
+
+            GenerateChunk(chunkCoord);
+            _generatedChunks.Add(chunkCoord);
+            chunksGenerated++;
         }
     }
 
@@ -147,7 +199,17 @@ public partial class ChunkManager : Node
     public void ClearAllChunks()
     {
         _generatedChunks.Clear();
+        _pendingChunks.Clear();
+        _queuedChunks.Clear();
         _lastCameraChunk = new Vector2I(int.MinValue, int.MinValue);
+    }
+
+    /// <summary>
+    /// Gets the number of chunks waiting to be generated.
+    /// </summary>
+    public int GetPendingChunkCount()
+    {
+        return _pendingChunks.Count;
     }
 
     /// <summary>
