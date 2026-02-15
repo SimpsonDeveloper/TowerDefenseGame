@@ -1,4 +1,4 @@
-[gd_scene load_steps=31 format=3 uid="uid://byg548mddsuhp"]
+[gd_scene load_steps=32 format=3 uid="uid://byg548mddsuhp"]
 
 [ext_resource type="Script" uid="uid://rradq6tqhv60" path="res://SliderConfig.cs" id="2_66tet"]
 [ext_resource type="Texture2D" uid="uid://borlm11nmqp5l" path="res://assets/4pxTilesGrass.png" id="3_7ycvg"]
@@ -6,6 +6,7 @@
 [ext_resource type="Texture2D" uid="uid://bj68uljao4uvj" path="res://assets/4pxTilesSand.png" id="5_qwutr"]
 [ext_resource type="Texture2D" uid="uid://bu4xhoq5eo5dg" path="res://assets/4pxTilesWater.png" id="6_671wp"]
 [ext_resource type="Script" uid="uid://dnb5iegcl3s5r" path="res://terrain/TerrainGen.cs" id="10_671wp"]
+[ext_resource type="Script" uid="uid://d1rb4n55le2cp" path="res://CameraController.cs" id="10_wr18j"]
 [ext_resource type="Script" uid="uid://bn66bgttlo0pn" path="res://terrain/GenRange.cs" id="11_42l1d"]
 [ext_resource type="Script" uid="uid://d33brm7vp1jgy" path="res://terrain/SimplexGen.cs" id="11_mo76n"]
 [ext_resource type="Script" uid="uid://7o0j1gneru7r" path="res://terrain/SimplexGenConfig.cs" id="12_42l1d"]
@@ -262,3 +263,7 @@ OctavesConfig = SubResource("Resource_gfmxp")
 LacunarityConfig = SubResource("Resource_1n88h")
 GainConfig = SubResource("Resource_opjno")
 SimplexGenNode = NodePath("..")
+
+[node name="Camera2D" type="Camera2D" parent="."]
+position = Vector2(576, 324)
+script = ExtResource("10_wr18j")
