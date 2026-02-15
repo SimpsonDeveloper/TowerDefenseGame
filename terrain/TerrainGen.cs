@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using Godot;
 
 namespace towerdefensegame;
@@ -19,6 +20,9 @@ public partial class TerrainGen : Node, ISimplexGenConfigurable
     // Mainly using this for transform parenting of other tile map layers at the moment
     [Export]
     public TileMapLayer TileMapLayer;
+    
+    [Export]
+    public ChunkManager ChunkManager;
         
     private FastNoiseLite _noise;
     
@@ -167,21 +171,8 @@ public partial class TerrainGen : Node, ISimplexGenConfigurable
     
     public void GenerateTerrain()
     {
-        Vector2 viewportSize = GetViewport().GetVisibleRect().Size;
-        Vector2I tileSize = TileMapLayer.TileSet.TileSize;
-
-        int width = (int)(viewportSize.X / tileSize.X / TileMapLayer.GetScale().X) + 1;
-        int height = (int)(viewportSize.Y / tileSize.Y / TileMapLayer.GetScale().Y) + 1;
-
         ClearAllTiles();
-        
-        for (int x = 0; x < width; x++)
-        {
-            for (int y = 0; y < height; y++)
-            {
-                GenerateTile(x, y);
-            }
-        }
+        ChunkManager.ClearAllChunks();
     }
 
     /// <summary>
@@ -193,13 +184,53 @@ public partial class TerrainGen : Node, ISimplexGenConfigurable
     /// <param name="height">Height in tiles</param>
     public void GenerateChunk(int startX, int startY, int width, int height)
     {
+        Stopwatch totalSw = Stopwatch.StartNew();
+        Stopwatch noiseSw = new Stopwatch();
+        Stopwatch simplexGenSw = new Stopwatch();
+
+        // Reset SimplexGen timers before chunk generation
+        foreach (var gen in SimplexGens)
+        {
+            gen.ResetTimers();
+        }
+
         for (int x = startX; x < startX + width; x++)
         {
             for (int y = startY; y < startY + height; y++)
             {
-                GenerateTile(x, y);
+                // Time noise calculation in TerrainGen
+                noiseSw.Start();
+                float noiseValue = _noise.GetNoise2D(x, y);
+                int multiplicand = _maxGenIndex;
+                int genIndex = (int)Math.Round(noiseValue * multiplicand);
+                noiseSw.Stop();
+
+                // Time SimplexGen.GenerateTerrain (includes its own noise + SetCell)
+                simplexGenSw.Start();
+                _simplexGenIndices[genIndex].GenerateTerrain(x, y);
+                simplexGenSw.Stop();
             }
         }
+
+        totalSw.Stop();
+        int tileCount = width * height;
+        double noisePercent = totalSw.ElapsedMilliseconds > 0 ? 100.0 * noiseSw.ElapsedMilliseconds / totalSw.ElapsedMilliseconds : 0;
+        double simplexPercent = totalSw.ElapsedMilliseconds > 0 ? 100.0 * simplexGenSw.ElapsedMilliseconds / totalSw.ElapsedMilliseconds : 0;
+
+        // Aggregate SimplexGen timers
+        long totalSimplexNoise = 0;
+        long totalSetCell = 0;
+        foreach (var gen in SimplexGens)
+        {
+            totalSimplexNoise += gen.NoiseTimeMs;
+            totalSetCell += gen.SetCellTimeMs;
+        }
+
+        GD.Print($"[TerrainGen] Chunk ({startX},{startY}) {width}x{height} ({tileCount} tiles): {totalSw.ElapsedMilliseconds}ms");
+        GD.Print($"  - TerrainGen noise: {noiseSw.ElapsedMilliseconds}ms ({noisePercent:F1}%)");
+        GD.Print($"  - SimplexGen total: {simplexGenSw.ElapsedMilliseconds}ms ({simplexPercent:F1}%)");
+        GD.Print($"    - SimplexGen noise: {totalSimplexNoise}ms");
+        GD.Print($"    - SimplexGen SetCell: {totalSetCell}ms");
     }
 
     /// <summary>

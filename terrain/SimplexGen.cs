@@ -1,4 +1,5 @@
-﻿using System;
+using System;
+using System.Diagnostics;
 using Godot;
 
 namespace towerdefensegame;
@@ -18,6 +19,29 @@ public partial class SimplexGen : Node, ISimplexGenConfigurable
     private FastNoiseLite _noise;
 
     private bool _initialized;
+
+    // Timing accumulators for profiling
+    private Stopwatch _noiseSw = new Stopwatch();
+    private Stopwatch _setCellSw = new Stopwatch();
+
+    /// <summary>
+    /// Accumulated time spent on noise calculations (in ms).
+    /// </summary>
+    public long NoiseTimeMs => _noiseSw.ElapsedMilliseconds;
+
+    /// <summary>
+    /// Accumulated time spent on SetCell calls (in ms).
+    /// </summary>
+    public long SetCellTimeMs => _setCellSw.ElapsedMilliseconds;
+
+    /// <summary>
+    /// Resets the timing accumulators.
+    /// </summary>
+    public void ResetTimers()
+    {
+        _noiseSw.Reset();
+        _setCellSw.Reset();
+    }
     
     public override void _EnterTree()
     {
@@ -96,6 +120,8 @@ public partial class SimplexGen : Node, ISimplexGenConfigurable
     
     public void GenerateTerrain(int x, int y)
     {
+        // Time noise calculation
+        _noiseSw.Start();
         float noiseValue = _noise.GetNoise2D(x, y);
         float absNoiseValue = Math.Abs(noiseValue);
         
@@ -108,8 +134,11 @@ public partial class SimplexGen : Node, ISimplexGenConfigurable
         int atlasX = tileIndex % atlasWidth;
         int atlasY = tileIndex / atlasWidth;
         Vector2I atlasCoords = new Vector2I(atlasX, atlasY);
+        _noiseSw.Stop();
         
-        // SetCell(coords, sourceId, atlasCoords)
+        // Time SetCell call
+        _setCellSw.Start();
         TileMapLayer.SetCell(new Vector2I(x, y), TileSetIndex, atlasCoords);
+        _setCellSw.Stop();
     }
 }

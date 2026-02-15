@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using Godot;
 
 namespace towerdefensegame;
@@ -128,13 +129,16 @@ public partial class ChunkManager : Node
     /// </summary>
     private void GenerateChunk(Vector2I chunkCoord)
     {
+        Stopwatch sw = Stopwatch.StartNew();
+
         // Calculate tile coordinates for this chunk
         int startTileX = chunkCoord.X * ChunkSize;
         int startTileY = chunkCoord.Y * ChunkSize;
 
         TerrainGen.GenerateChunk(startTileX, startTileY, ChunkSize, ChunkSize);
 
-        GD.Print($"Generated chunk at {chunkCoord} (tiles {startTileX},{startTileY} to {startTileX + ChunkSize},{startTileY + ChunkSize})");
+        sw.Stop();
+        GD.Print($"[ChunkManager] Chunk {chunkCoord}: {sw.ElapsedMilliseconds}ms total");
     }
 
     /// <summary>

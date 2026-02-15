@@ -161,7 +161,7 @@ metadata/_custom_type_script = "uid://rradq6tqhv60"
 
 [node name="Node2D" type="Node2D"]
 
-[node name="TerrainGen" type="Node" parent="." node_paths=PackedStringArray("SimplexGens", "TileMapLayer")]
+[node name="TerrainGen" type="Node" parent="." node_paths=PackedStringArray("SimplexGens", "TileMapLayer", "ChunkManager")]
 script = ExtResource("10_671wp")
 SimplexGens = [NodePath("GensLayer/WaterGen"), NodePath("GensLayer/GrassGen"), NodePath("GensLayer/SandGen"), NodePath("GensLayer/RockGen")]
 GenRanges = {
@@ -171,6 +171,7 @@ SubResource("Resource_u0ygc"): 2,
 SubResource("Resource_7th4q"): 3
 }
 TileMapLayer = NodePath("RootTileLayer")
+ChunkManager = NodePath("ChunkManager")
 
 [node name="RootTileLayer" type="TileMapLayer" parent="TerrainGen"]
 editor_description = "Root. No tiles from here are placed right now. Only tile size, and only transform. For the moment..."
@@ -269,6 +270,8 @@ SimplexGenNode = NodePath("..")
 script = ExtResource("10_qwutr")
 TerrainGen = NodePath("..")
 Camera = NodePath("../../Camera2D")
+ChunkSize = 50
+ChunkBuffer = 0
 
 [node name="Camera2D" type="Camera2D" parent="."]
 position = Vector2(576, 324)
