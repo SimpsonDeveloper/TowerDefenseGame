@@ -176,7 +176,7 @@ public partial class TerrainGen : Node, ISimplexGenConfigurable
     }
 
     /// <summary>
-    /// Generates terrain for a specific chunk region.
+    /// Generates terrain for a specific chunk region (synchronous, calls SetCell directly).
     /// </summary>
     /// <param name="startX">Starting tile X coordinate</param>
     /// <param name="startY">Starting tile Y coordinate</param>
@@ -234,6 +234,68 @@ public partial class TerrainGen : Node, ISimplexGenConfigurable
     }
 
     /// <summary>
+    /// Generates chunk data without calling SetCell. Thread-safe for background generation.
+    /// </summary>
+    /// <param name="chunkCoord">The chunk coordinate</param>
+    /// <param name="startX">Starting tile X coordinate</param>
+    /// <param name="startY">Starting tile Y coordinate</param>
+    /// <param name="width">Width in tiles</param>
+    /// <param name="height">Height in tiles</param>
+    /// <returns>ChunkData containing all tile information</returns>
+    public ChunkData GenerateChunkData(Vector2I chunkCoord, int startX, int startY, int width, int height)
+    {
+        ChunkData chunkData = new ChunkData(chunkCoord, startX, startY, width, height);
+
+        for (int x = 0; x < width; x++)
+        {
+            for (int y = 0; y < height; y++)
+            {
+                int worldX = startX + x;
+                int worldY = startY + y;
+
+                // Get terrain type from main noise
+                float noiseValue = _noise.GetNoise2D(worldX, worldY);
+                int genIndex = (int)Math.Round(noiseValue * _maxGenIndex);
+
+                // Get the SimplexGen for this terrain type
+                SimplexGen simplexGen = _simplexGenIndices[genIndex];
+
+                // Get tile info from SimplexGen (thread-safe, no SetCell)
+                TileInfo tileInfo = simplexGen.GenerateTileInfo(worldX, worldY);
+
+                chunkData.Tiles[x, y] = tileInfo;
+            }
+        }
+
+        return chunkData;
+    }
+
+    /// <summary>
+    /// Applies generated chunk data to the tile map layers. Must be called on main thread.
+    /// </summary>
+    /// <param name="chunkData">The chunk data to apply</param>
+    public void ApplyChunkData(ChunkData chunkData)
+    {
+        for (int x = 0; x < chunkData.Width; x++)
+        {
+            for (int y = 0; y < chunkData.Height; y++)
+            {
+                int worldX = chunkData.StartX + x;
+                int worldY = chunkData.StartY + y;
+                TileInfo tileInfo = chunkData.Tiles[x, y];
+
+                // Get the correct TileMapLayer and apply the tile
+                SimplexGen simplexGen = SimplexGens[tileInfo.SimplexGenIndex];
+                simplexGen.TileMapLayer.SetCell(
+                    new Vector2I(worldX, worldY),
+                    tileInfo.TileSetIndex,
+                    tileInfo.AtlasCoords
+                );
+            }
+        }
+    }
+
+    /// <summary>
     /// Generates a single tile at the given coordinates.
     /// </summary>
     private void GenerateTile(int x, int y)
@@ -280,6 +342,12 @@ public partial class TerrainGen : Node, ISimplexGenConfigurable
         _noise.FractalOctaves = (int)octaves;
         _noise.FractalGain = (float)gain;
         
+        // Set SimplexGenIndex on each SimplexGen for async tile generation
+        for (int i = 0; i < SimplexGens.Length; i++)
+        {
+            SimplexGens[i].SimplexGenIndex = i;
+        }
+
         // set up Gen index ranges
         _simplexGenIndices = new Godot.Collections.Dictionary<int, SimplexGen>();
         foreach (KeyValuePair<GenRange, int> entry in GenRanges)

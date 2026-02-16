@@ -15,6 +15,12 @@ public partial class SimplexGen : Node, ISimplexGenConfigurable
     
     [Export]
     public int TileSetIndex;
+
+    /// <summary>
+    /// Index of this SimplexGen in the TerrainGen.SimplexGens array.
+    /// Set during initialization.
+    /// </summary>
+    public int SimplexGenIndex { get; set; }
     
     private FastNoiseLite _noise;
 
@@ -140,5 +146,29 @@ public partial class SimplexGen : Node, ISimplexGenConfigurable
         _setCellSw.Start();
         TileMapLayer.SetCell(new Vector2I(x, y), TileSetIndex, atlasCoords);
         _setCellSw.Stop();
+    }
+
+    /// <summary>
+    /// Generates tile information without calling SetCell. Thread-safe for background generation.
+    /// </summary>
+    /// <param name="x">World tile X coordinate</param>
+    /// <param name="y">World tile Y coordinate</param>
+    /// <returns>TileInfo containing all data needed to place the tile</returns>
+    public TileInfo GenerateTileInfo(int x, int y)
+    {
+        float noiseValue = _noise.GetNoise2D(x, y);
+        float absNoiseValue = Math.Abs(noiseValue);
+        
+        // Map noise (-1 to 1) to a tile index (0 to 3)
+        //TODO: need to update this hard coded range and atlas
+        int tileIndex = (int)Math.Floor(absNoiseValue * 4);
+        
+        // convert the index to a 2d vector, based on vector dimensions
+        int atlasWidth = 2;
+        int atlasX = tileIndex % atlasWidth;
+        int atlasY = tileIndex / atlasWidth;
+        Vector2I atlasCoords = new Vector2I(atlasX, atlasY);
+
+        return new TileInfo(SimplexGenIndex, TileSetIndex, atlasCoords);
     }
 }

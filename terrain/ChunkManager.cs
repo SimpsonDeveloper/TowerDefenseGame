@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Threading.Tasks;
 using Godot;
 
 namespace towerdefensegame;
@@ -30,20 +32,32 @@ public partial class ChunkManager : Node
     public int ChunkBuffer { get; set; } = 1;
 
     /// <summary>
-    /// Maximum number of chunks to generate per frame.
-    /// Higher values = faster loading but more stutter.
+    /// Maximum number of chunks to apply per frame (SetCell calls on main thread).
+    /// Higher values = faster tile placement but more stutter.
     /// </summary>
     [Export]
-    public int ChunksPerFrame { get; set; } = 2;
+    public int ChunksToApplyPerFrame { get; set; } = 2;
 
-    // Tracks which chunks have been generated using chunk coordinates as keys
+    /// <summary>
+    /// Maximum number of async chunk generation tasks to run concurrently.
+    /// </summary>
+    [Export]
+    public int MaxConcurrentGenerations { get; set; } = 4;
+
+    // Tracks which chunks have been fully generated and applied
     private HashSet<Vector2I> _generatedChunks = new HashSet<Vector2I>();
 
-    // Queue of chunks waiting to be generated
+    // Tracks which chunks are currently being generated asynchronously
+    private HashSet<Vector2I> _generatingChunks = new HashSet<Vector2I>();
+
+    // Queue of chunks waiting to be generated (not yet started)
     private Queue<Vector2I> _pendingChunks = new Queue<Vector2I>();
 
     // Tracks which chunks are already queued to avoid duplicates
     private HashSet<Vector2I> _queuedChunks = new HashSet<Vector2I>();
+
+    // Thread-safe queue for completed chunk data ready to be applied on main thread
+    private ConcurrentQueue<ChunkData> _completedChunks = new ConcurrentQueue<ChunkData>();
 
     private Vector2I _lastCameraChunk = new Vector2I(int.MinValue, int.MinValue);
 
@@ -68,7 +82,8 @@ public partial class ChunkManager : Node
             return;
 
         QueueVisibleChunks();
-        ProcessPendingChunks();
+        StartPendingGenerations();
+        ApplyCompletedChunks();
     }
 
     /// <summary>
@@ -99,8 +114,10 @@ public partial class ChunkManager : Node
             {
                 Vector2I chunkCoord = new Vector2I(cx, cy);
 
-                // Skip if already generated or already queued
-                if (_generatedChunks.Contains(chunkCoord) || _queuedChunks.Contains(chunkCoord))
+                // Skip if already generated, generating, or queued
+                if (_generatedChunks.Contains(chunkCoord) || 
+                    _generatingChunks.Contains(chunkCoord) || 
+                    _queuedChunks.Contains(chunkCoord))
                     continue;
 
                 // Calculate Manhattan distance from camera for prioritization
@@ -120,24 +137,74 @@ public partial class ChunkManager : Node
     }
 
     /// <summary>
-    /// Processes a limited number of pending chunks per frame.
+    /// Starts async generation for pending chunks, up to MaxConcurrentGenerations.
     /// </summary>
-    private void ProcessPendingChunks()
+    private void StartPendingGenerations()
     {
-        int chunksGenerated = 0;
-
-        while (_pendingChunks.Count > 0 && chunksGenerated < ChunksPerFrame)
+        while (_pendingChunks.Count > 0 && _generatingChunks.Count < MaxConcurrentGenerations)
         {
             Vector2I chunkCoord = _pendingChunks.Dequeue();
             _queuedChunks.Remove(chunkCoord);
 
-            // Double-check it hasn't been generated (in case of race conditions)
-            if (_generatedChunks.Contains(chunkCoord))
+            // Double-check it hasn't been generated
+            if (_generatedChunks.Contains(chunkCoord) || _generatingChunks.Contains(chunkCoord))
                 continue;
 
-            GenerateChunk(chunkCoord);
-            _generatedChunks.Add(chunkCoord);
-            chunksGenerated++;
+            _generatingChunks.Add(chunkCoord);
+            StartAsyncChunkGeneration(chunkCoord);
+        }
+    }
+
+    /// <summary>
+    /// Starts async generation of a chunk on a background thread.
+    /// </summary>
+    private void StartAsyncChunkGeneration(Vector2I chunkCoord)
+    {
+        int startTileX = chunkCoord.X * ChunkSize;
+        int startTileY = chunkCoord.Y * ChunkSize;
+
+        // Capture values for the closure
+        int chunkSize = ChunkSize;
+        TerrainGen terrainGen = TerrainGen;
+
+        Task.Run(() =>
+        {
+            Stopwatch sw = Stopwatch.StartNew();
+
+            // Generate chunk data on background thread (no Godot calls)
+            ChunkData chunkData = terrainGen.GenerateChunkData(
+                chunkCoord, startTileX, startTileY, chunkSize, chunkSize);
+
+            sw.Stop();
+            GD.Print($"[ChunkManager] Chunk {chunkCoord} generated async: {sw.ElapsedMilliseconds}ms");
+
+            // Queue the completed data for main thread application
+            _completedChunks.Enqueue(chunkData);
+        });
+    }
+
+    /// <summary>
+    /// Applies completed chunk data on the main thread (SetCell calls).
+    /// </summary>
+    private void ApplyCompletedChunks()
+    {
+        int chunksApplied = 0;
+
+        while (chunksApplied < ChunksToApplyPerFrame && _completedChunks.TryDequeue(out ChunkData chunkData))
+        {
+            Stopwatch sw = Stopwatch.StartNew();
+
+            // Apply tile data on main thread
+            TerrainGen.ApplyChunkData(chunkData);
+
+            // Update tracking
+            _generatingChunks.Remove(chunkData.ChunkCoord);
+            _generatedChunks.Add(chunkData.ChunkCoord);
+
+            sw.Stop();
+            GD.Print($"[ChunkManager] Chunk {chunkData.ChunkCoord} applied: {sw.ElapsedMilliseconds}ms");
+
+            chunksApplied++;
         }
     }
 
@@ -177,30 +244,18 @@ public partial class ChunkManager : Node
     }
 
     /// <summary>
-    /// Generates terrain for a specific chunk.
-    /// </summary>
-    private void GenerateChunk(Vector2I chunkCoord)
-    {
-        Stopwatch sw = Stopwatch.StartNew();
-
-        // Calculate tile coordinates for this chunk
-        int startTileX = chunkCoord.X * ChunkSize;
-        int startTileY = chunkCoord.Y * ChunkSize;
-
-        TerrainGen.GenerateChunk(startTileX, startTileY, ChunkSize, ChunkSize);
-
-        sw.Stop();
-        GD.Print($"[ChunkManager] Chunk {chunkCoord}: {sw.ElapsedMilliseconds}ms total");
-    }
-
-    /// <summary>
     /// Clears all generated chunks and resets the manager.
     /// </summary>
     public void ClearAllChunks()
     {
         _generatedChunks.Clear();
+        _generatingChunks.Clear();
         _pendingChunks.Clear();
         _queuedChunks.Clear();
+        
+        // Clear the completed chunks queue
+        while (_completedChunks.TryDequeue(out _)) { }
+        
         _lastCameraChunk = new Vector2I(int.MinValue, int.MinValue);
     }
 
