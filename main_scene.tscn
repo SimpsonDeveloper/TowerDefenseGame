@@ -270,8 +270,8 @@ SimplexGenNode = NodePath("..")
 script = ExtResource("10_qwutr")
 TerrainGen = NodePath("..")
 Camera = NodePath("../../Camera2D")
-ChunkSize = 50
-ChunkBuffer = 0
+ChunkSize = 20
+ChunksToApplyPerFrame = 1
 
 [node name="Camera2D" type="Camera2D" parent="."]
 position = Vector2(576, 324)
