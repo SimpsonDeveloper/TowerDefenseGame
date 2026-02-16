@@ -61,6 +61,15 @@ public partial class ChunkManager : Node
     // Thread-safe queue for failed chunks that need to be retried
     private ConcurrentQueue<Vector2I> _failedChunks = new ConcurrentQueue<Vector2I>();
 
+    // Maps chunk coordinates to their renderers
+    private Dictionary<Vector2I, ChunkRenderer> _chunkRenderers = new Dictionary<Vector2I, ChunkRenderer>();
+
+    // Parent node for all chunk renderers
+    private Node2D _chunkContainer;
+
+    // Collision TileMapLayer (shared across all chunks)
+    private TileMapLayer _collisionTileMap;
+
     private Vector2I _lastCameraChunk = new Vector2I(int.MinValue, int.MinValue);
 
     public override void _Ready()
@@ -76,6 +85,67 @@ public partial class ChunkManager : Node
             GD.PrintErr("ChunkManager: Camera not assigned!");
             return;
         }
+
+        // Create container for chunk renderers
+        _chunkContainer = new Node2D();
+        _chunkContainer.Name = "ChunkContainer";
+        AddChild(_chunkContainer);
+
+        // Create collision TileMapLayer
+        SetupCollisionTileMap();
+    }
+
+    /// <summary>
+    /// Sets up the collision-only TileMapLayer.
+    /// </summary>
+    private void SetupCollisionTileMap()
+    {
+        _collisionTileMap = new TileMapLayer();
+        _collisionTileMap.Name = "CollisionTileMap";
+
+        // Create a minimal TileSet for collision
+        var tileSet = new TileSet();
+        tileSet.TileSize = new Vector2I(ChunkRenderer.TilePixelSize, ChunkRenderer.TilePixelSize);
+
+        // Create a TileSetAtlasSource with a small transparent texture
+        var atlasSource = new TileSetAtlasSource();
+        
+        // Create a 4x4 transparent image for the collision tile
+        var image = Image.CreateEmpty(ChunkRenderer.TilePixelSize, ChunkRenderer.TilePixelSize, false, Image.Format.Rgba8);
+        image.Fill(new Color(0, 0, 0, 0));  // Fully transparent
+        var texture = ImageTexture.CreateFromImage(image);
+        
+        atlasSource.Texture = texture;
+        atlasSource.TextureRegionSize = new Vector2I(ChunkRenderer.TilePixelSize, ChunkRenderer.TilePixelSize);
+        atlasSource.CreateTile(Vector2I.Zero);
+
+        // Add physics layer to tileset
+        tileSet.AddPhysicsLayer();
+        
+        // Add the atlas source to the tileset
+        tileSet.AddSource(atlasSource);
+
+        // Set up collision for the tile (full tile collision)
+        var physicsLayerIdx = 0;
+        var tileData = atlasSource.GetTileData(Vector2I.Zero, 0);
+        
+        // Create a square collision polygon covering the full tile
+        var polygon = new Vector2[]
+        {
+            new Vector2(0, 0),
+            new Vector2(ChunkRenderer.TilePixelSize, 0),
+            new Vector2(ChunkRenderer.TilePixelSize, ChunkRenderer.TilePixelSize),
+            new Vector2(0, ChunkRenderer.TilePixelSize)
+        };
+        tileData.AddCollisionPolygon(physicsLayerIdx);
+        tileData.SetCollisionPolygonPoints(physicsLayerIdx, 0, polygon);
+
+        _collisionTileMap.TileSet = tileSet;
+        
+        // Make collision layer invisible (it's only for physics)
+        _collisionTileMap.Modulate = new Color(1, 1, 1, 0);
+
+        AddChild(_collisionTileMap);
     }
 
     public override void _Process(double delta)
@@ -217,7 +287,7 @@ public partial class ChunkManager : Node
     }
 
     /// <summary>
-    /// Applies completed chunk data on the main thread (SetCell calls).
+    /// Applies completed chunk data on the main thread using ChunkRenderer.
     /// </summary>
     private void ApplyCompletedChunks()
     {
@@ -225,8 +295,14 @@ public partial class ChunkManager : Node
 
         while (chunksApplied < ChunksToApplyPerFrame && _completedChunks.TryDequeue(out ChunkData chunkData))
         {
-            // Apply tile data on main thread
-            TerrainGen.ApplyChunkData(chunkData);
+            // Create and initialize chunk renderer
+            var renderer = new ChunkRenderer();
+            renderer.CollisionTileMap = _collisionTileMap;
+            _chunkContainer.AddChild(renderer);
+            renderer.Initialize(chunkData);
+
+            // Track the renderer
+            _chunkRenderers[chunkData.ChunkCoord] = renderer;
 
             // Update tracking
             _generatingChunks.Remove(chunkData.ChunkCoord);
@@ -259,11 +335,7 @@ public partial class ChunkManager : Node
     /// </summary>
     private Vector2I WorldToChunkCoords(Vector2 worldPos)
     {
-        if (TerrainGen.TileMapLayer == null)
-            return Vector2I.Zero;
-
-        Vector2I tileSize = TerrainGen.TileMapLayer.TileSet.TileSize;
-        int chunkWorldSize = ChunkSize * tileSize.X; // Assuming square tiles
+        int chunkWorldSize = ChunkSize * ChunkRenderer.TilePixelSize;
 
         int chunkX = Mathf.FloorToInt(worldPos.X / chunkWorldSize);
         int chunkY = Mathf.FloorToInt(worldPos.Y / chunkWorldSize);
@@ -272,10 +344,27 @@ public partial class ChunkManager : Node
     }
 
     /// <summary>
+    /// Converts world position to tile coordinates.
+    /// </summary>
+    private Vector2I WorldToTileCoords(Vector2 worldPos)
+    {
+        int tileX = Mathf.FloorToInt(worldPos.X / ChunkRenderer.TilePixelSize);
+        int tileY = Mathf.FloorToInt(worldPos.Y / ChunkRenderer.TilePixelSize);
+        return new Vector2I(tileX, tileY);
+    }
+
+    /// <summary>
     /// Clears all generated chunks and resets the manager.
     /// </summary>
     public void ClearAllChunks()
     {
+        // Remove all chunk renderers
+        foreach (var renderer in _chunkRenderers.Values)
+        {
+            renderer.QueueFree();
+        }
+        _chunkRenderers.Clear();
+
         _generatedChunks.Clear();
         _generatingChunks.Clear();
         _pendingChunks.Clear();
@@ -312,5 +401,80 @@ public partial class ChunkManager : Node
     public int GetGeneratedChunkCount()
     {
         return _generatedChunks.Count;
+    }
+
+    /// <summary>
+    /// Modifies a tile at the given world position.
+    /// </summary>
+    /// <param name="worldPos">World position in pixels</param>
+    /// <param name="newTerrainType">The new terrain type</param>
+    /// <returns>True if the tile was modified, false if chunk not loaded</returns>
+    public bool ModifyTileAtWorldPos(Vector2 worldPos, TerrainType newTerrainType)
+    {
+        Vector2I chunkCoord = WorldToChunkCoords(worldPos);
+        
+        if (!_chunkRenderers.TryGetValue(chunkCoord, out ChunkRenderer renderer))
+            return false;
+
+        // Calculate local tile coordinates within the chunk
+        Vector2I tileCoord = WorldToTileCoords(worldPos);
+        int localTileX = tileCoord.X - renderer.ChunkData.StartX;
+        int localTileY = tileCoord.Y - renderer.ChunkData.StartY;
+
+        // Validate bounds
+        if (localTileX < 0 || localTileX >= renderer.ChunkData.Width ||
+            localTileY < 0 || localTileY >= renderer.ChunkData.Height)
+            return false;
+
+        renderer.ModifyTile(localTileX, localTileY, newTerrainType);
+        return true;
+    }
+
+    /// <summary>
+    /// Modifies a tile at the given tile coordinates.
+    /// </summary>
+    /// <param name="tileX">Tile X coordinate</param>
+    /// <param name="tileY">Tile Y coordinate</param>
+    /// <param name="newTerrainType">The new terrain type</param>
+    /// <returns>True if the tile was modified, false if chunk not loaded</returns>
+    public bool ModifyTile(int tileX, int tileY, TerrainType newTerrainType)
+    {
+        Vector2 worldPos = new Vector2(
+            tileX * ChunkRenderer.TilePixelSize,
+            tileY * ChunkRenderer.TilePixelSize
+        );
+        return ModifyTileAtWorldPos(worldPos, newTerrainType);
+    }
+
+    /// <summary>
+    /// Gets the terrain type at the given world position.
+    /// </summary>
+    /// <param name="worldPos">World position in pixels</param>
+    /// <returns>The terrain type, or null if chunk not loaded</returns>
+    public TerrainType? GetTerrainTypeAtWorldPos(Vector2 worldPos)
+    {
+        Vector2I chunkCoord = WorldToChunkCoords(worldPos);
+        
+        if (!_chunkRenderers.TryGetValue(chunkCoord, out ChunkRenderer renderer))
+            return null;
+
+        Vector2I tileCoord = WorldToTileCoords(worldPos);
+        int localTileX = tileCoord.X - renderer.ChunkData.StartX;
+        int localTileY = tileCoord.Y - renderer.ChunkData.StartY;
+
+        if (localTileX < 0 || localTileX >= renderer.ChunkData.Width ||
+            localTileY < 0 || localTileY >= renderer.ChunkData.Height)
+            return null;
+
+        return (TerrainType)renderer.ChunkData.Tiles[localTileX, localTileY].SimplexGenIndex;
+    }
+
+    /// <summary>
+    /// Gets the ChunkRenderer for the given chunk coordinates.
+    /// </summary>
+    public ChunkRenderer GetChunkRenderer(Vector2I chunkCoord)
+    {
+        _chunkRenderers.TryGetValue(chunkCoord, out ChunkRenderer renderer);
+        return renderer;
     }
 }
