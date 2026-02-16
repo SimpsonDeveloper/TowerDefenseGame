@@ -9,19 +9,40 @@ namespace towerdefensegame;
 public partial class ChunkRenderer : Node2D
 {
     /// <summary>
-    /// Size of each tile in pixels.
+    /// Size of each tile in pixels (16x16 tile with 4x4 color variations).
     /// </summary>
-    public const int TilePixelSize = 4;
+    public const int TilePixelSize = 16;
+
+    /// <summary>
+    /// Size of each color variation sub-tile within the main tile.
+    /// A 16x16 tile contains 4x4 sub-tiles of 4x4 pixels each.
+    /// </summary>
+    public const int SubTileSize = 4;
+
+    /// <summary>
+    /// Number of color variations per axis within a tile.
+    /// </summary>
+    public const int VariationsPerAxis = 4;
 
     private Sprite2D _sprite;
     private Image _image;
     private ImageTexture _texture;
     private ChunkData _chunkData;
+    private SimplexGen[] _simplexGens;
 
     /// <summary>
     /// Reference to the collision TileMapLayer for placing collision tiles.
     /// </summary>
     public TileMapLayer CollisionTileMap { get; set; }
+
+    /// <summary>
+    /// Reference to SimplexGen array for sub-tile noise sampling.
+    /// </summary>
+    public SimplexGen[] SimplexGens
+    {
+        get => _simplexGens;
+        set => _simplexGens = value;
+    }
 
     /// <summary>
     /// The chunk data this renderer is displaying.
@@ -87,23 +108,48 @@ public partial class ChunkRenderer : Node2D
 
     /// <summary>
     /// Draws a single tile to the image at the given tile coordinates.
+    /// Each 16x16 tile contains 4x4 sub-tiles with color variations based on noise.
     /// </summary>
     private void DrawTileToImage(int tileX, int tileY)
     {
         TileInfo tileInfo = _chunkData.Tiles[tileX, tileY];
         TerrainType terrainType = (TerrainType)tileInfo.SimplexGenIndex;
-        Color color = terrainType.GetColor(tileInfo.VariantIndex);
+        SimplexGen simplexGen = _simplexGens?[tileInfo.SimplexGenIndex];
 
-        // Calculate pixel coordinates
-        int pixelX = tileX * TilePixelSize;
-        int pixelY = tileY * TilePixelSize;
+        // Calculate base pixel coordinates for this tile
+        int basePixelX = tileX * TilePixelSize;
+        int basePixelY = tileY * TilePixelSize;
 
-        // Fill the 4x4 pixel region
-        for (int px = 0; px < TilePixelSize; px++)
+        // Calculate world tile position for noise sampling
+        int worldTileX = _chunkData.StartX + tileX;
+        int worldTileY = _chunkData.StartY + tileY;
+
+        // Draw 4x4 sub-tiles with color variations from noise
+        for (int subTileX = 0; subTileX < VariationsPerAxis; subTileX++)
         {
-            for (int py = 0; py < TilePixelSize; py++)
+            for (int subTileY = 0; subTileY < VariationsPerAxis; subTileY++)
             {
-                _image.SetPixel(pixelX + px, pixelY + py, color);
+                // Calculate world position for this sub-tile (scale to sub-tile coordinates)
+                // Each sub-tile needs a unique noise sample position
+                float subWorldX = worldTileX * VariationsPerAxis + subTileX;
+                float subWorldY = worldTileY * VariationsPerAxis + subTileY;
+
+                // Get variant index (0-3) from noise at sub-tile position
+                int variantIndex = simplexGen?.GetVariantIndex(subWorldX, subWorldY) ?? 0;
+                Color color = terrainType.GetColor(variantIndex);
+
+                // Calculate pixel position for this sub-tile
+                int subPixelX = basePixelX + subTileX * SubTileSize;
+                int subPixelY = basePixelY + subTileY * SubTileSize;
+
+                // Fill the 4x4 pixel sub-tile region
+                for (int px = 0; px < SubTileSize; px++)
+                {
+                    for (int py = 0; py < SubTileSize; py++)
+                    {
+                        _image.SetPixel(subPixelX + px, subPixelY + py, color);
+                    }
+                }
             }
         }
     }

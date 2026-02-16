@@ -301,6 +301,7 @@ public partial class ChunkManager : Node
             // Create and initialize chunk renderer
             var renderer = new ChunkRenderer();
             renderer.CollisionTileMap = _collisionTileMap;
+            renderer.SimplexGens = TerrainGen.SimplexGens;
             _chunkContainer.AddChild(renderer);
             renderer.Initialize(chunkData);
 

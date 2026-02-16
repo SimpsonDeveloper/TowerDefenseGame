@@ -18,9 +18,10 @@ public enum TerrainType
 /// </summary>
 public static class TerrainColors
 {
-    private const int TileSize = 4;
-    private const int VariantsPerTerrain = 4;
-    private const int AtlasWidth = 2;  // 2x2 atlas
+    private const int TileSize = 16;
+    private const int SubTileSize = 4;
+    private const int VariantsPerTerrain = 4;  // 4 color variants per terrain
+    private const int AtlasWidth = 2;  // 2x2 atlas for variants
 
     // Color storage: [terrainType][variantIndex]
     private static Color[][] _colors;
@@ -28,6 +29,7 @@ public static class TerrainColors
 
     // Hard-coded colors (stub - fill these in after sampling from textures)
     // Set UseHardCodedColors to true once you've filled in the values
+    // Each terrain has 4 color variants
     private static readonly bool UseHardCodedColors = true;
     private static readonly Color[][] HardCodedColors = new Color[][]
     {
@@ -87,15 +89,15 @@ public static class TerrainColors
 
             var image = texture.GetImage();
             
-            // Sample center pixel of each 4x4 tile in the 2x2 atlas
+            // Sample center pixel of each variant tile in the 2x2 atlas
             for (int variantIndex = 0; variantIndex < VariantsPerTerrain; variantIndex++)
             {
                 int atlasX = variantIndex % AtlasWidth;
                 int atlasY = variantIndex / AtlasWidth;
                 
-                // Get center pixel of the tile (offset by 1 to get center of 4x4)
-                int pixelX = atlasX * TileSize + TileSize / 2;
-                int pixelY = atlasY * TileSize + TileSize / 2;
+                // Get center pixel of the sub-tile (offset to get center of 4x4 sub-tile)
+                int pixelX = atlasX * SubTileSize + SubTileSize / 2;
+                int pixelY = atlasY * SubTileSize + SubTileSize / 2;
                 
                 Color color = image.GetPixel(pixelX, pixelY);
                 _colors[terrainIndex][variantIndex] = color;

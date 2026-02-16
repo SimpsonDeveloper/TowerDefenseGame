@@ -105,11 +105,11 @@ public partial class SimplexGen : Node, ISimplexGenConfigurable
         float noiseValue = _noise.GetNoise2D(x, y);
         float absNoiseValue = Math.Abs(noiseValue);
         
-        // Map noise (-1 to 1) to a tile index (0 to 3)
-        //TODO: need to update this hard coded range and atlas
+        // Map noise (-1 to 1) to a tile index (0 to 3) for 4 color variants
         int tileIndex = (int)Math.Floor(absNoiseValue * 4);
+        tileIndex = Math.Clamp(tileIndex, 0, 3);
         
-        // convert the index to a 2d vector, based on vector dimensions
+        // Convert the index to a 2d vector for 2x2 atlas
         int atlasWidth = 2;
         int atlasX = tileIndex % atlasWidth;
         int atlasY = tileIndex / atlasWidth;
@@ -129,19 +129,35 @@ public partial class SimplexGen : Node, ISimplexGenConfigurable
         float noiseValue = _noise.GetNoise2D(x, y);
         float absNoiseValue = Math.Abs(noiseValue);
         
-        // Map noise (-1 to 1) to a tile index (0 to 3)
-        //TODO: need to update this hard coded range and atlas
+        // Map noise (-1 to 1) to a tile index (0 to 3) for 4 color variants
         int tileIndex = (int)Math.Floor(absNoiseValue * 4);
         
         // Clamp to valid range
         tileIndex = Math.Clamp(tileIndex, 0, 3);
         
-        // convert the index to a 2d vector, based on vector dimensions
+        // Convert the index to a 2d vector for 2x2 atlas
         int atlasWidth = 2;
         int atlasX = tileIndex % atlasWidth;
         int atlasY = tileIndex / atlasWidth;
         Vector2I atlasCoords = new Vector2I(atlasX, atlasY);
 
         return new TileInfo(SimplexGenIndex, TileSetIndex, atlasCoords, tileIndex);
+    }
+
+    /// <summary>
+    /// Gets just the variant index (0-3) for a given position based on noise.
+    /// Used by ChunkRenderer for sub-tile color variation.
+    /// </summary>
+    /// <param name="x">World X coordinate (can be sub-tile position)</param>
+    /// <param name="y">World Y coordinate (can be sub-tile position)</param>
+    /// <returns>Variant index 0-3</returns>
+    public int GetVariantIndex(float x, float y)
+    {
+        float noiseValue = _noise.GetNoise2D(x, y);
+        float absNoiseValue = Math.Abs(noiseValue);
+        
+        // Map noise to variant index (0 to 3)
+        int variantIndex = (int)Math.Floor(absNoiseValue * 4);
+        return Math.Clamp(variantIndex, 0, 3);
     }
 }
