@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Threading.Tasks;
 using Godot;
 
@@ -59,6 +58,9 @@ public partial class ChunkManager : Node
     // Thread-safe queue for completed chunk data ready to be applied on main thread
     private ConcurrentQueue<ChunkData> _completedChunks = new ConcurrentQueue<ChunkData>();
 
+    // Thread-safe queue for failed chunks that need to be retried
+    private ConcurrentQueue<Vector2I> _failedChunks = new ConcurrentQueue<Vector2I>();
+
     private Vector2I _lastCameraChunk = new Vector2I(int.MinValue, int.MinValue);
 
     public override void _Ready()
@@ -81,9 +83,35 @@ public partial class ChunkManager : Node
         if (TerrainGen == null || Camera == null)
             return;
 
+        // Don't process chunks until TerrainGen is fully initialized
+        if (!TerrainGen.IsInitialized)
+            return;
+
+        // Re-queue any failed chunks for retry
+        RequeueFailedChunks();
+
         QueueVisibleChunks();
         StartPendingGenerations();
         ApplyCompletedChunks();
+    }
+
+    /// <summary>
+    /// Re-queues any chunks that failed during async generation.
+    /// </summary>
+    private void RequeueFailedChunks()
+    {
+        while (_failedChunks.TryDequeue(out Vector2I failedCoord))
+        {
+            // Remove from generating set so it can be queued again
+            _generatingChunks.Remove(failedCoord);
+
+            // Only re-queue if not already generated or queued
+            if (!_generatedChunks.Contains(failedCoord) && !_queuedChunks.Contains(failedCoord))
+            {
+                _pendingChunks.Enqueue(failedCoord);
+                _queuedChunks.Add(failedCoord);
+            }
+        }
     }
 
     /// <summary>
@@ -169,17 +197,22 @@ public partial class ChunkManager : Node
 
         Task.Run(() =>
         {
-            Stopwatch sw = Stopwatch.StartNew();
+            try
+            {
+                // Generate chunk data on background thread (no Godot calls)
+                ChunkData chunkData = terrainGen.GenerateChunkData(
+                    chunkCoord, startTileX, startTileY, chunkSize, chunkSize);
 
-            // Generate chunk data on background thread (no Godot calls)
-            ChunkData chunkData = terrainGen.GenerateChunkData(
-                chunkCoord, startTileX, startTileY, chunkSize, chunkSize);
-
-            sw.Stop();
-            GD.Print($"[ChunkManager] Chunk {chunkCoord} generated async: {sw.ElapsedMilliseconds}ms");
-
-            // Queue the completed data for main thread application
-            _completedChunks.Enqueue(chunkData);
+                // Queue the completed data for main thread application
+                _completedChunks.Enqueue(chunkData);
+            }
+            catch (Exception ex)
+            {
+                GD.PrintErr($"[ChunkManager] Failed to generate chunk {chunkCoord}: {ex.Message}");
+                
+                // Queue for retry
+                _failedChunks.Enqueue(chunkCoord);
+            }
         });
     }
 
@@ -192,17 +225,12 @@ public partial class ChunkManager : Node
 
         while (chunksApplied < ChunksToApplyPerFrame && _completedChunks.TryDequeue(out ChunkData chunkData))
         {
-            Stopwatch sw = Stopwatch.StartNew();
-
             // Apply tile data on main thread
             TerrainGen.ApplyChunkData(chunkData);
 
             // Update tracking
             _generatingChunks.Remove(chunkData.ChunkCoord);
             _generatedChunks.Add(chunkData.ChunkCoord);
-
-            sw.Stop();
-            GD.Print($"[ChunkManager] Chunk {chunkData.ChunkCoord} applied: {sw.ElapsedMilliseconds}ms");
 
             chunksApplied++;
         }
@@ -255,6 +283,9 @@ public partial class ChunkManager : Node
         
         // Clear the completed chunks queue
         while (_completedChunks.TryDequeue(out _)) { }
+        
+        // Clear the failed chunks queue
+        while (_failedChunks.TryDequeue(out _)) { }
         
         _lastCameraChunk = new Vector2I(int.MinValue, int.MinValue);
     }
