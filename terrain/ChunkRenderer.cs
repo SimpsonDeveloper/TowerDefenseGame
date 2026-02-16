@@ -92,7 +92,7 @@ public partial class ChunkRenderer : Node2D
     {
         TileInfo tileInfo = _chunkData.Tiles[tileX, tileY];
         TerrainType terrainType = (TerrainType)tileInfo.SimplexGenIndex;
-        Color color = terrainType.GetColor();
+        Color color = terrainType.GetColor(tileInfo.VariantIndex);
 
         // Calculate pixel coordinates
         int pixelX = tileX * TilePixelSize;
@@ -139,13 +139,15 @@ public partial class ChunkRenderer : Node2D
     /// <param name="localTileX">Local tile X coordinate within the chunk</param>
     /// <param name="localTileY">Local tile Y coordinate within the chunk</param>
     /// <param name="newTerrainType">The new terrain type</param>
-    public void ModifyTile(int localTileX, int localTileY, TerrainType newTerrainType)
+    /// <param name="variantIndex">The color variant (0-3), defaults to 0</param>
+    public void ModifyTile(int localTileX, int localTileY, TerrainType newTerrainType, int variantIndex = 0)
     {
         // Update chunk data
         _chunkData.Tiles[localTileX, localTileY] = new TileInfo(
             (int)newTerrainType,
             0,  // TileSetIndex not used for texture rendering
-            Vector2I.Zero  // AtlasCoords not used for texture rendering
+            Vector2I.Zero,  // AtlasCoords not used for texture rendering
+            variantIndex
         );
 
         // Update texture for this tile

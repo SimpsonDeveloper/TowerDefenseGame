@@ -133,12 +133,15 @@ public partial class SimplexGen : Node, ISimplexGenConfigurable
         //TODO: need to update this hard coded range and atlas
         int tileIndex = (int)Math.Floor(absNoiseValue * 4);
         
+        // Clamp to valid range
+        tileIndex = Math.Clamp(tileIndex, 0, 3);
+        
         // convert the index to a 2d vector, based on vector dimensions
         int atlasWidth = 2;
         int atlasX = tileIndex % atlasWidth;
         int atlasY = tileIndex / atlasWidth;
         Vector2I atlasCoords = new Vector2I(atlasX, atlasY);
 
-        return new TileInfo(SimplexGenIndex, TileSetIndex, atlasCoords);
+        return new TileInfo(SimplexGenIndex, TileSetIndex, atlasCoords, tileIndex);
     }
 }

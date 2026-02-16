@@ -58,7 +58,7 @@ public class ChunkData
 public struct TileInfo
 {
     /// <summary>
-    /// Index into SimplexGens array (determines which TileMapLayer to use).
+    /// Index into SimplexGens array (determines terrain type).
     /// </summary>
     public int SimplexGenIndex;
 
@@ -68,14 +68,20 @@ public struct TileInfo
     public int TileSetIndex;
 
     /// <summary>
-    /// Atlas coordinates for the tile.
+    /// Atlas coordinates for the tile (determines which variant).
     /// </summary>
     public Vector2I AtlasCoords;
 
-    public TileInfo(int simplexGenIndex, int tileSetIndex, Vector2I atlasCoords)
+    /// <summary>
+    /// The tile variant index (0-3) based on noise.
+    /// </summary>
+    public int VariantIndex;
+
+    public TileInfo(int simplexGenIndex, int tileSetIndex, Vector2I atlasCoords, int variantIndex = 0)
     {
         SimplexGenIndex = simplexGenIndex;
         TileSetIndex = tileSetIndex;
         AtlasCoords = atlasCoords;
+        VariantIndex = variantIndex;
     }
 }

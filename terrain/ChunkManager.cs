@@ -86,6 +86,9 @@ public partial class ChunkManager : Node
             return;
         }
 
+        // Initialize terrain colors from textures
+        TerrainColors.Initialize();
+
         // Create container for chunk renderers
         _chunkContainer = new Node2D();
         _chunkContainer.Name = "ChunkContainer";
@@ -408,8 +411,9 @@ public partial class ChunkManager : Node
     /// </summary>
     /// <param name="worldPos">World position in pixels</param>
     /// <param name="newTerrainType">The new terrain type</param>
+    /// <param name="variantIndex">The color variant (0-3), defaults to 0</param>
     /// <returns>True if the tile was modified, false if chunk not loaded</returns>
-    public bool ModifyTileAtWorldPos(Vector2 worldPos, TerrainType newTerrainType)
+    public bool ModifyTileAtWorldPos(Vector2 worldPos, TerrainType newTerrainType, int variantIndex = 0)
     {
         Vector2I chunkCoord = WorldToChunkCoords(worldPos);
         
@@ -426,7 +430,7 @@ public partial class ChunkManager : Node
             localTileY < 0 || localTileY >= renderer.ChunkData.Height)
             return false;
 
-        renderer.ModifyTile(localTileX, localTileY, newTerrainType);
+        renderer.ModifyTile(localTileX, localTileY, newTerrainType, variantIndex);
         return true;
     }
 
@@ -436,14 +440,15 @@ public partial class ChunkManager : Node
     /// <param name="tileX">Tile X coordinate</param>
     /// <param name="tileY">Tile Y coordinate</param>
     /// <param name="newTerrainType">The new terrain type</param>
+    /// <param name="variantIndex">The color variant (0-3), defaults to 0</param>
     /// <returns>True if the tile was modified, false if chunk not loaded</returns>
-    public bool ModifyTile(int tileX, int tileY, TerrainType newTerrainType)
+    public bool ModifyTile(int tileX, int tileY, TerrainType newTerrainType, int variantIndex = 0)
     {
         Vector2 worldPos = new Vector2(
             tileX * ChunkRenderer.TilePixelSize,
             tileY * ChunkRenderer.TilePixelSize
         );
-        return ModifyTileAtWorldPos(worldPos, newTerrainType);
+        return ModifyTileAtWorldPos(worldPos, newTerrainType, variantIndex);
     }
 
     /// <summary>
