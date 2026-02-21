@@ -7,7 +7,7 @@ namespace towerdefensegame;
 public partial class SimplexGen : Node, ISimplexGenConfigurable
 {
     [Export]
-    public TerrainGen TerrainGen;
+    public ChunkManager ChunkManager;
 
     [Export]
     public TerrainType TerrainType { get; set; }
@@ -54,25 +54,25 @@ public partial class SimplexGen : Node, ISimplexGenConfigurable
     public void OnFrequencyChanged(double value)
     {
         _noise.Frequency = (float)value;
-        TerrainGen.InvalidateChunks();
+         ChunkManager.ClearAllChunks();
     }
     
     public void OnFractalOctavesChanged(double value)
     {
         _noise.FractalOctaves = (int)value;
-        TerrainGen.InvalidateChunks();
+         ChunkManager.ClearAllChunks();
     }
     
     public void OnFractalLacunarityChanged(double value)
     {
         _noise.FractalLacunarity = (float)value;
-        TerrainGen.InvalidateChunks();
+         ChunkManager.ClearAllChunks();
     }
     
     public void OnFractalGainChanged(double value)
     {
         _noise.FractalGain = (float)value;
-        TerrainGen.InvalidateChunks();
+         ChunkManager.ClearAllChunks();
     }
     
     /// <summary>

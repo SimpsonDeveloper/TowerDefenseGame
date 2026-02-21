@@ -53,7 +53,7 @@ public partial class TerrainGen : Node, ISimplexGenConfigurable
         if (@event.IsActionPressed("ui_accept"))
         {
             _noise.Seed = (int)GD.Randi();
-            InvalidateChunks();
+            ChunkManager.ClearAllChunks();
         }
     }
     
@@ -140,11 +140,6 @@ public partial class TerrainGen : Node, ISimplexGenConfigurable
             throw new Exception("SimplexGen IndexRanges min must be -max!");
         }
     }
-    
-    public void InvalidateChunks()
-    {
-        ChunkManager.ClearAllChunks();
-    }
 
     /// <summary>
     /// Generates chunk data without calling SetCell. Thread-safe for background generation.
@@ -228,25 +223,25 @@ public partial class TerrainGen : Node, ISimplexGenConfigurable
     public void OnFrequencyChanged(double value)
     {
         _noise.Frequency = (float)value;
-        InvalidateChunks();
+         ChunkManager.ClearAllChunks();
     }
     
     public void OnFractalOctavesChanged(double value)
     {
         _noise.FractalOctaves = (int)value;
-        InvalidateChunks();
+         ChunkManager.ClearAllChunks();
     }
     
     public void OnFractalLacunarityChanged(double value)
     {
         _noise.FractalLacunarity = (float)value;
-        InvalidateChunks();
+         ChunkManager.ClearAllChunks();
     }
     
     public void OnFractalGainChanged(double value)
     {
         _noise.FractalGain = (float)value;
-        InvalidateChunks();
+         ChunkManager.ClearAllChunks();
     }
     
     /// <summary>

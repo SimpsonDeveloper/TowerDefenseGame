@@ -1,4 +1,4 @@
-[gd_scene load_steps=30 format=3 uid="uid://byg548mddsuhp"]
+[gd_scene load_steps=29 format=3 uid="uid://byg548mddsuhp"]
 
 [ext_resource type="Script" uid="uid://rradq6tqhv60" path="res://SliderConfig.cs" id="2_66tet"]
 [ext_resource type="Script" uid="uid://dnb5iegcl3s5r" path="res://terrain/TerrainGen.cs" id="10_671wp"]
@@ -8,78 +8,6 @@
 [ext_resource type="Script" uid="uid://d33brm7vp1jgy" path="res://terrain/SimplexGen.cs" id="11_mo76n"]
 [ext_resource type="Script" uid="uid://7o0j1gneru7r" path="res://terrain/SimplexGenConfig.cs" id="12_42l1d"]
 [ext_resource type="Script" uid="uid://g5eae7qke6uf" path="res://CameraConfig.cs" id="13_cam01"]
-
-[sub_resource type="Resource" id="Resource_wr18j"]
-script = ExtResource("2_66tet")
-Name = "Rock Frequency"
-InitialValue = 0.93
-Min = 0.01
-Max = 0.99
-Step = 0.01
-metadata/_custom_type_script = "uid://rradq6tqhv60"
-
-[sub_resource type="Resource" id="Resource_mo76n"]
-script = ExtResource("2_66tet")
-Name = "Rock Octaves"
-InitialValue = 2.0
-Min = 1.0
-Max = 10.0
-Step = 1.0
-metadata/_custom_type_script = "uid://rradq6tqhv60"
-
-[sub_resource type="Resource" id="Resource_671wp"]
-script = ExtResource("2_66tet")
-Name = "Rock Lacunarity"
-InitialValue = 1.0
-Min = 1.0
-Max = 4.0
-Step = 0.1
-metadata/_custom_type_script = "uid://rradq6tqhv60"
-
-[sub_resource type="Resource" id="Resource_qwutr"]
-script = ExtResource("2_66tet")
-Name = "Rock Gain"
-InitialValue = 0.1
-Min = 0.01
-Max = 0.99
-Step = 0.01
-metadata/_custom_type_script = "uid://rradq6tqhv60"
-
-[sub_resource type="Resource" id="Resource_o4fqm"]
-script = ExtResource("2_66tet")
-Name = "Terrain Frequency"
-InitialValue = 0.006
-Min = 0.001
-Max = 0.07
-Step = 0.001
-metadata/_custom_type_script = "uid://rradq6tqhv60"
-
-[sub_resource type="Resource" id="Resource_gfmxp"]
-script = ExtResource("2_66tet")
-Name = "Terrain Octaves"
-InitialValue = 3.0
-Min = 1.0
-Max = 10.0
-Step = 1.0
-metadata/_custom_type_script = "uid://rradq6tqhv60"
-
-[sub_resource type="Resource" id="Resource_1n88h"]
-script = ExtResource("2_66tet")
-Name = "Terrain Lacunarity"
-InitialValue = 3.1
-Min = 1.0
-Max = 4.0
-Step = 0.1
-metadata/_custom_type_script = "uid://rradq6tqhv60"
-
-[sub_resource type="Resource" id="Resource_opjno"]
-script = ExtResource("2_66tet")
-Name = "Terrain Gain"
-InitialValue = 0.32
-Min = 0.01
-Max = 0.99
-Step = 0.01
-metadata/_custom_type_script = "uid://rradq6tqhv60"
 
 [sub_resource type="Resource" id="Resource_grass_freq"]
 script = ExtResource("2_66tet")
@@ -111,6 +39,42 @@ metadata/_custom_type_script = "uid://rradq6tqhv60"
 [sub_resource type="Resource" id="Resource_grass_gain"]
 script = ExtResource("2_66tet")
 Name = "Grass Gain"
+InitialValue = 0.1
+Min = 0.01
+Max = 0.99
+Step = 0.01
+metadata/_custom_type_script = "uid://rradq6tqhv60"
+
+[sub_resource type="Resource" id="Resource_wr18j"]
+script = ExtResource("2_66tet")
+Name = "Rock Frequency"
+InitialValue = 0.93
+Min = 0.01
+Max = 0.99
+Step = 0.01
+metadata/_custom_type_script = "uid://rradq6tqhv60"
+
+[sub_resource type="Resource" id="Resource_mo76n"]
+script = ExtResource("2_66tet")
+Name = "Rock Octaves"
+InitialValue = 2.0
+Min = 1.0
+Max = 10.0
+Step = 1.0
+metadata/_custom_type_script = "uid://rradq6tqhv60"
+
+[sub_resource type="Resource" id="Resource_671wp"]
+script = ExtResource("2_66tet")
+Name = "Rock Lacunarity"
+InitialValue = 1.0
+Min = 1.0
+Max = 4.0
+Step = 0.1
+metadata/_custom_type_script = "uid://rradq6tqhv60"
+
+[sub_resource type="Resource" id="Resource_qwutr"]
+script = ExtResource("2_66tet")
+Name = "Rock Gain"
 InitialValue = 0.1
 Min = 0.01
 Max = 0.99
@@ -153,6 +117,42 @@ Max = 0.99
 Step = 0.01
 metadata/_custom_type_script = "uid://rradq6tqhv60"
 
+[sub_resource type="Resource" id="Resource_o4fqm"]
+script = ExtResource("2_66tet")
+Name = "Terrain Frequency"
+InitialValue = 0.006
+Min = 0.001
+Max = 0.07
+Step = 0.001
+metadata/_custom_type_script = "uid://rradq6tqhv60"
+
+[sub_resource type="Resource" id="Resource_gfmxp"]
+script = ExtResource("2_66tet")
+Name = "Terrain Octaves"
+InitialValue = 3.0
+Min = 1.0
+Max = 10.0
+Step = 1.0
+metadata/_custom_type_script = "uid://rradq6tqhv60"
+
+[sub_resource type="Resource" id="Resource_1n88h"]
+script = ExtResource("2_66tet")
+Name = "Terrain Lacunarity"
+InitialValue = 3.1
+Min = 1.0
+Max = 4.0
+Step = 0.1
+metadata/_custom_type_script = "uid://rradq6tqhv60"
+
+[sub_resource type="Resource" id="Resource_opjno"]
+script = ExtResource("2_66tet")
+Name = "Terrain Gain"
+InitialValue = 0.32
+Min = 0.01
+Max = 0.99
+Step = 0.01
+metadata/_custom_type_script = "uid://rradq6tqhv60"
+
 [sub_resource type="Resource" id="Resource_ak604"]
 script = ExtResource("11_42l1d")
 FirstIndex = -6
@@ -176,9 +176,6 @@ script = ExtResource("11_42l1d")
 FirstIndex = 4
 LastIndex = 6
 metadata/_custom_type_script = "uid://bn66bgttlo0pn"
-
-[sub_resource type="TileSet" id="TileSet_42l1d"]
-tile_size = Vector2i(4, 4)
 
 [node name="Node2D" type="Node2D"]
 
@@ -256,34 +253,29 @@ SubResource("Resource_meb7l"): 1,
 SubResource("Resource_u0ygc"): 2,
 SubResource("Resource_7th4q"): 3
 }
-TileMapLayer = NodePath("RootTileLayer")
+TileMapLayer = NodePath("")
 ChunkManager = NodePath("ChunkManager")
-
-[node name="RootTileLayer" type="TileMapLayer" parent="TerrainGen"]
-editor_description = "Transform parent for terrain layers. TileSet used for tile size reference only."
-tile_set = SubResource("TileSet_42l1d")
 
 [node name="GensLayer" type="Node" parent="TerrainGen"]
 
-[node name="GrassGen" type="Node" parent="TerrainGen/GensLayer" node_paths=PackedStringArray("TerrainGen")]
+[node name="GrassGen" type="Node" parent="TerrainGen/GensLayer" node_paths=PackedStringArray("ChunkManager")]
 script = ExtResource("11_mo76n")
-TerrainGen = NodePath("../..")
+ChunkManager = NodePath("../../ChunkManager")
 TerrainType = 1
 
-[node name="RockGen" type="Node" parent="TerrainGen/GensLayer" node_paths=PackedStringArray("TerrainGen")]
+[node name="RockGen" type="Node" parent="TerrainGen/GensLayer" node_paths=PackedStringArray("ChunkManager")]
 script = ExtResource("11_mo76n")
-TerrainGen = NodePath("../..")
+ChunkManager = NodePath("../../ChunkManager")
 TerrainType = 3
 
-[node name="SandGen" type="Node" parent="TerrainGen/GensLayer" node_paths=PackedStringArray("TerrainGen")]
+[node name="SandGen" type="Node" parent="TerrainGen/GensLayer" node_paths=PackedStringArray("ChunkManager")]
 script = ExtResource("11_mo76n")
-TerrainGen = NodePath("../..")
+ChunkManager = NodePath("../../ChunkManager")
 TerrainType = 2
 
-[node name="WaterGen" type="Node" parent="TerrainGen/GensLayer" node_paths=PackedStringArray("TerrainGen")]
+[node name="WaterGen" type="Node" parent="TerrainGen/GensLayer" node_paths=PackedStringArray("ChunkManager")]
 script = ExtResource("11_mo76n")
-TerrainGen = NodePath("../..")
-TerrainType = 0
+ChunkManager = NodePath("../../ChunkManager")
 
 [node name="ChunkManager" type="Node" parent="TerrainGen" node_paths=PackedStringArray("TerrainGen", "Camera")]
 script = ExtResource("10_qwutr")
