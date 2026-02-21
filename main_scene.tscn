@@ -1,4 +1,4 @@
-[gd_scene load_steps=21 format=3 uid="uid://byg548mddsuhp"]
+[gd_scene load_steps=22 format=3 uid="uid://byg548mddsuhp"]
 
 [ext_resource type="Script" uid="uid://rradq6tqhv60" path="res://SliderConfig.cs" id="2_66tet"]
 [ext_resource type="Script" uid="uid://dnb5iegcl3s5r" path="res://terrain/TerrainGen.cs" id="10_671wp"]
@@ -7,6 +7,7 @@
 [ext_resource type="Script" uid="uid://bn66bgttlo0pn" path="res://terrain/GenRange.cs" id="11_42l1d"]
 [ext_resource type="Script" uid="uid://d33brm7vp1jgy" path="res://terrain/SimplexGen.cs" id="11_mo76n"]
 [ext_resource type="Script" uid="uid://7o0j1gneru7r" path="res://terrain/SimplexGenConfig.cs" id="12_42l1d"]
+[ext_resource type="Script" path="res://CameraConfig.cs" id="13_cam01"]
 
 [sub_resource type="Resource" id="Resource_ak604"]
 script = ExtResource("11_42l1d")
@@ -208,3 +209,10 @@ ChunksToApplyPerFrame = 1
 [node name="Camera2D" type="Camera2D" parent="."]
 position = Vector2(576, 324)
 script = ExtResource("10_wr18j")
+
+[node name="CameraUI" type="Container" parent="." node_paths=PackedStringArray("Camera")]
+offset_top = 400.0
+offset_right = 40.0
+offset_bottom = 440.0
+script = ExtResource("13_cam01")
+Camera = NodePath("Camera2D")
