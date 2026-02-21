@@ -10,9 +10,6 @@ public partial class SimplexGen : Node, ISimplexGenConfigurable
     public TerrainGen TerrainGen;
     
     [Export]
-    public TileMapLayer TileMapLayer;
-    
-    [Export]
     public int TileSetIndex;
 
     /// <summary>
@@ -100,24 +97,6 @@ public partial class SimplexGen : Node, ISimplexGenConfigurable
         TerrainGen.InvalidateChunks();
     }
     
-    public void GenerateTerrain(int x, int y)
-    {
-        float noiseValue = _noise.GetNoise2D(x, y);
-        float absNoiseValue = Math.Abs(noiseValue);
-        
-        // Map noise (-1 to 1) to a tile index (0 to 3) for 4 color variants
-        int tileIndex = (int)Math.Floor(absNoiseValue * 4);
-        tileIndex = Math.Clamp(tileIndex, 0, 3);
-        
-        // Convert the index to a 2d vector for 2x2 atlas
-        int atlasWidth = 2;
-        int atlasX = tileIndex % atlasWidth;
-        int atlasY = tileIndex / atlasWidth;
-        Vector2I atlasCoords = new Vector2I(atlasX, atlasY);
-        
-        TileMapLayer.SetCell(new Vector2I(x, y), TileSetIndex, atlasCoords);
-    }
-
     /// <summary>
     /// Generates tile information without calling SetCell. Thread-safe for background generation.
     /// </summary>

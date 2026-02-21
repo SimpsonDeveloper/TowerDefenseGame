@@ -1,10 +1,6 @@
-[gd_scene load_steps=33 format=3 uid="uid://byg548mddsuhp"]
+[gd_scene load_steps=21 format=3 uid="uid://byg548mddsuhp"]
 
 [ext_resource type="Script" uid="uid://rradq6tqhv60" path="res://SliderConfig.cs" id="2_66tet"]
-[ext_resource type="Texture2D" uid="uid://borlm11nmqp5l" path="res://assets/4pxTilesGrass.png" id="3_7ycvg"]
-[ext_resource type="Texture2D" uid="uid://bk367j5ybqmrp" path="res://assets/4pxTilesRock.png" id="4_wr18j"]
-[ext_resource type="Texture2D" uid="uid://bj68uljao4uvj" path="res://assets/4pxTilesSand.png" id="5_qwutr"]
-[ext_resource type="Texture2D" uid="uid://bu4xhoq5eo5dg" path="res://assets/4pxTilesWater.png" id="6_671wp"]
 [ext_resource type="Script" uid="uid://dnb5iegcl3s5r" path="res://terrain/TerrainGen.cs" id="10_671wp"]
 [ext_resource type="Script" uid="uid://1njs0cvgv6a0" path="res://terrain/ChunkManager.cs" id="10_qwutr"]
 [ext_resource type="Script" uid="uid://d1rb4n55le2cp" path="res://CameraController.cs" id="10_wr18j"]
@@ -38,54 +34,6 @@ metadata/_custom_type_script = "uid://bn66bgttlo0pn"
 
 [sub_resource type="TileSet" id="TileSet_42l1d"]
 tile_size = Vector2i(4, 4)
-
-[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_mo76n"]
-texture = ExtResource("3_7ycvg")
-texture_region_size = Vector2i(4, 4)
-0:0/0 = 0
-1:0/0 = 0
-0:1/0 = 0
-1:1/0 = 0
-
-[sub_resource type="TileSet" id="TileSet_2jcla"]
-tile_size = Vector2i(4, 4)
-sources/0 = SubResource("TileSetAtlasSource_mo76n")
-
-[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_m35m6"]
-texture = ExtResource("4_wr18j")
-texture_region_size = Vector2i(4, 4)
-0:0/0 = 0
-1:0/0 = 0
-0:1/0 = 0
-1:1/0 = 0
-
-[sub_resource type="TileSet" id="TileSet_u0ygc"]
-tile_size = Vector2i(4, 4)
-sources/0 = SubResource("TileSetAtlasSource_m35m6")
-
-[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_7th4q"]
-texture = ExtResource("5_qwutr")
-texture_region_size = Vector2i(4, 4)
-0:0/0 = 0
-1:0/0 = 0
-0:1/0 = 0
-1:1/0 = 0
-
-[sub_resource type="TileSet" id="TileSet_6jybn"]
-tile_size = Vector2i(4, 4)
-sources/0 = SubResource("TileSetAtlasSource_7th4q")
-
-[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_84odl"]
-texture = ExtResource("6_671wp")
-texture_region_size = Vector2i(4, 4)
-0:0/0 = 0
-1:0/0 = 0
-0:1/0 = 0
-1:1/0 = 0
-
-[sub_resource type="TileSet" id="TileSet_ak604"]
-tile_size = Vector2i(4, 4)
-sources/0 = SubResource("TileSetAtlasSource_84odl")
 
 [sub_resource type="Resource" id="Resource_wr18j"]
 script = ExtResource("2_66tet")
@@ -177,24 +125,11 @@ ChunkManager = NodePath("ChunkManager")
 editor_description = "Root. No tiles from here are placed right now. Only tile size, and only transform. For the moment..."
 tile_set = SubResource("TileSet_42l1d")
 
-[node name="GrassTileLayer" type="TileMapLayer" parent="TerrainGen/RootTileLayer"]
-tile_set = SubResource("TileSet_2jcla")
-
-[node name="RockTileLayer" type="TileMapLayer" parent="TerrainGen/RootTileLayer"]
-tile_set = SubResource("TileSet_u0ygc")
-
-[node name="SandTileLayer" type="TileMapLayer" parent="TerrainGen/RootTileLayer"]
-tile_set = SubResource("TileSet_6jybn")
-
-[node name="WaterTileLayer" type="TileMapLayer" parent="TerrainGen/RootTileLayer"]
-tile_set = SubResource("TileSet_ak604")
-
 [node name="GensLayer" type="Node" parent="TerrainGen"]
 
-[node name="GrassGen" type="Node" parent="TerrainGen/GensLayer" node_paths=PackedStringArray("TerrainGen", "TileMapLayer")]
+[node name="GrassGen" type="Node" parent="TerrainGen/GensLayer" node_paths=PackedStringArray("TerrainGen")]
 script = ExtResource("11_mo76n")
 TerrainGen = NodePath("../..")
-TileMapLayer = NodePath("../../RootTileLayer/GrassTileLayer")
 
 [node name="GrassUI" type="Container" parent="TerrainGen/GensLayer/GrassGen" node_paths=PackedStringArray("SimplexGenNode")]
 offset_top = 100.0
@@ -207,10 +142,9 @@ LacunarityConfig = SubResource("Resource_671wp")
 GainConfig = SubResource("Resource_qwutr")
 SimplexGenNode = NodePath("..")
 
-[node name="RockGen" type="Node" parent="TerrainGen/GensLayer" node_paths=PackedStringArray("TerrainGen", "TileMapLayer")]
+[node name="RockGen" type="Node" parent="TerrainGen/GensLayer" node_paths=PackedStringArray("TerrainGen")]
 script = ExtResource("11_mo76n")
 TerrainGen = NodePath("../..")
-TileMapLayer = NodePath("../../RootTileLayer/RockTileLayer")
 
 [node name="RockUI" type="Container" parent="TerrainGen/GensLayer/RockGen" node_paths=PackedStringArray("SimplexGenNode")]
 offset_top = 200.0
@@ -223,10 +157,9 @@ LacunarityConfig = SubResource("Resource_671wp")
 GainConfig = SubResource("Resource_qwutr")
 SimplexGenNode = NodePath("..")
 
-[node name="SandGen" type="Node" parent="TerrainGen/GensLayer" node_paths=PackedStringArray("TerrainGen", "TileMapLayer")]
+[node name="SandGen" type="Node" parent="TerrainGen/GensLayer" node_paths=PackedStringArray("TerrainGen")]
 script = ExtResource("11_mo76n")
 TerrainGen = NodePath("../..")
-TileMapLayer = NodePath("../../RootTileLayer/SandTileLayer")
 
 [node name="SandUI" type="Container" parent="TerrainGen/GensLayer/SandGen" node_paths=PackedStringArray("SimplexGenNode")]
 offset_top = 300.0
@@ -239,10 +172,9 @@ LacunarityConfig = SubResource("Resource_671wp")
 GainConfig = SubResource("Resource_qwutr")
 SimplexGenNode = NodePath("..")
 
-[node name="WaterGen" type="Node" parent="TerrainGen/GensLayer" node_paths=PackedStringArray("TerrainGen", "TileMapLayer")]
+[node name="WaterGen" type="Node" parent="TerrainGen/GensLayer" node_paths=PackedStringArray("TerrainGen")]
 script = ExtResource("11_mo76n")
 TerrainGen = NodePath("../..")
-TileMapLayer = NodePath("../../RootTileLayer/WaterTileLayer")
 
 [node name="WaterUI" type="Container" parent="TerrainGen/GensLayer/WaterGen" node_paths=PackedStringArray("SimplexGenNode")]
 offset_left = 600.0

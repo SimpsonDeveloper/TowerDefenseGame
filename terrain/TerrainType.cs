@@ -14,23 +14,17 @@ public enum TerrainType
 }
 
 /// <summary>
-/// Manages terrain colors - can be loaded from textures or hard-coded.
+/// Manages terrain colors using hard-coded hex values.
 /// </summary>
 public static class TerrainColors
 {
     private const int TileSize = 16;
-    private const int SubTileSize = 4;
-    private const int VariantsPerTerrain = 4;  // 4 color variants per terrain
-    private const int AtlasWidth = 2;  // 2x2 atlas for variants
 
     // Color storage: [terrainType][variantIndex]
     private static Color[][] _colors;
     private static bool _initialized = false;
 
-    // Hard-coded colors (stub - fill these in after sampling from textures)
-    // Set UseHardCodedColors to true once you've filled in the values
     // Each terrain has 4 color variants
-    private static readonly bool UseHardCodedColors = true;
     private static readonly Color[][] HardCodedColors = new Color[][]
     {
         // Water variants (index 0)
@@ -43,17 +37,8 @@ public static class TerrainColors
         new Color[] { new Color("#916800"), new Color("#896200"), new Color("#825d00"), new Color("#7a5700") },
     };
 
-    // Texture paths for each terrain type
-    private static readonly string[] TexturePaths = new string[]
-    {
-        "res://assets/4pxTilesWater.png",
-        "res://assets/4pxTilesGrass.png",
-        "res://assets/4pxTilesSand.png",
-        "res://assets/4pxTilesRock.png",
-    };
-
     /// <summary>
-    /// Initializes terrain colors by sampling from textures.
+    /// Initializes terrain colors from hard-coded hex values.
     /// Call this once at game startup.
     /// </summary>
     public static void Initialize()
@@ -61,61 +46,9 @@ public static class TerrainColors
         if (_initialized)
             return;
 
-        if (UseHardCodedColors)
-        {
-            _colors = HardCodedColors;
-            _initialized = true;
-            GD.Print("[TerrainColors] Using hard-coded colors");
-            return;
-        }
-
-        _colors = new Color[TexturePaths.Length][];
-
-        for (int terrainIndex = 0; terrainIndex < TexturePaths.Length; terrainIndex++)
-        {
-            _colors[terrainIndex] = new Color[VariantsPerTerrain];
-            
-            string path = TexturePaths[terrainIndex];
-            var texture = GD.Load<Texture2D>(path);
-            
-            if (texture == null)
-            {
-                GD.PrintErr($"[TerrainColors] Failed to load texture: {path}");
-                // Fill with magenta as error color
-                for (int i = 0; i < VariantsPerTerrain; i++)
-                    _colors[terrainIndex][i] = new Color(1f, 0f, 1f);
-                continue;
-            }
-
-            var image = texture.GetImage();
-            
-            // Sample center pixel of each variant tile in the 2x2 atlas
-            for (int variantIndex = 0; variantIndex < VariantsPerTerrain; variantIndex++)
-            {
-                int atlasX = variantIndex % AtlasWidth;
-                int atlasY = variantIndex / AtlasWidth;
-                
-                // Get center pixel of the sub-tile (offset to get center of 4x4 sub-tile)
-                int pixelX = atlasX * SubTileSize + SubTileSize / 2;
-                int pixelY = atlasY * SubTileSize + SubTileSize / 2;
-                
-                Color color = image.GetPixel(pixelX, pixelY);
-                _colors[terrainIndex][variantIndex] = color;
-            }
-
-            // Log the colors for this terrain type
-            string terrainName = ((TerrainType)terrainIndex).ToString();
-            GD.Print($"[TerrainColors] {terrainName} colors:");
-            for (int i = 0; i < VariantsPerTerrain; i++)
-            {
-                Color c = _colors[terrainIndex][i];
-                string hex = c.ToHtml(false);
-                GD.Print($"  Variant {i}: #{hex}");
-            }
-        }
-
-        GD.Print("[TerrainColors] Initialization complete. Copy the hex values above to HardCodedColors if desired.");
+        _colors = HardCodedColors;
         _initialized = true;
+        GD.Print("[TerrainColors] Using hard-coded colors");
     }
 
     /// <summary>
@@ -133,7 +66,7 @@ public static class TerrainColors
         if (typeIndex < 0 || typeIndex >= _colors.Length)
             return new Color(1f, 0f, 1f);
 
-        variantIndex = Mathf.Clamp(variantIndex, 0, VariantsPerTerrain - 1);
+        variantIndex = Mathf.Clamp(variantIndex, 0, _colors[typeIndex].Length - 1);
         return _colors[typeIndex][variantIndex];
     }
 }

@@ -29,8 +29,6 @@ public partial class TerrainGen : Node, ISimplexGenConfigurable
 
     private int _maxGenIndex;
 
-    private Vector2I _tileSize;
-    
     private bool _initialized;
 
     /// <summary>
@@ -89,29 +87,14 @@ public partial class TerrainGen : Node, ISimplexGenConfigurable
             throw new Exception("SimplexGens must not be null or empty!");
         }
 
-        // Validate tile sizes are equal
-        Vector2I? tileSize = null;
         foreach (SimplexGen simplexGen in SimplexGens)
         {
             if (simplexGen == null)
             {
                 throw new Exception("SimplexGens contents must not be null!");
             }
-            if (simplexGen.TileMapLayer.TileSet.TileSize.Equals(Vector2I.Zero))
-            {
-                throw new Exception("SimplexGen.TileMapLayer.TileSet.TileSize must not be zero!");
-            } 
-            if (tileSize == null)
-            {
-                // first entry. set tileSize
-                tileSize = simplexGen.TileMapLayer.TileSet.TileSize;
-            } else if (!tileSize.Value.Equals(simplexGen.TileMapLayer.TileSet.TileSize))
-            {
-                // second or nth entry. compare tileSize
-                throw new Exception($"All SimplexGen.TileMapLayer.TileSet.TileSize must be equal! Got: {tileSize.Value} and {simplexGen.TileMapLayer.TileSet.TileSize}");
-            }
         }
-        
+
         if (GenRanges == null || GenRanges.Count == 0)
         {
             throw new Exception("GenRanges must not be null or empty!");
@@ -175,28 +158,7 @@ public partial class TerrainGen : Node, ISimplexGenConfigurable
     
     public void InvalidateChunks()
     {
-        ClearAllTiles();
         ChunkManager.ClearAllChunks();
-    }
-
-    /// <summary>
-    /// Generates terrain for a specific chunk region (synchronous, calls SetCell directly).
-    /// </summary>
-    /// <param name="startX">Starting tile X coordinate</param>
-    /// <param name="startY">Starting tile Y coordinate</param>
-    /// <param name="width">Width in tiles</param>
-    /// <param name="height">Height in tiles</param>
-    public void GenerateChunk(int startX, int startY, int width, int height)
-    {
-        for (int x = startX; x < startX + width; x++)
-        {
-            for (int y = startY; y < startY + height; y++)
-            {
-                float noiseValue = _noise.GetNoise2D(x, y);
-                int genIndex = (int)Math.Round(noiseValue * _maxGenIndex);
-                _simplexGenIndices[genIndex].GenerateTerrain(x, y);
-            }
-        }
     }
 
     /// <summary>
@@ -234,57 +196,6 @@ public partial class TerrainGen : Node, ISimplexGenConfigurable
         }
 
         return chunkData;
-    }
-
-    /// <summary>
-    /// Applies generated chunk data to the tile map layers. Must be called on main thread.
-    /// </summary>
-    /// <param name="chunkData">The chunk data to apply</param>
-    public void ApplyChunkData(ChunkData chunkData)
-    {
-        for (int x = 0; x < chunkData.Width; x++)
-        {
-            for (int y = 0; y < chunkData.Height; y++)
-            {
-                int worldX = chunkData.StartX + x;
-                int worldY = chunkData.StartY + y;
-                TileInfo tileInfo = chunkData.Tiles[x, y];
-
-                // Get the correct TileMapLayer and apply the tile
-                SimplexGen simplexGen = SimplexGens[tileInfo.SimplexGenIndex];
-                simplexGen.TileMapLayer.SetCell(
-                    new Vector2I(worldX, worldY),
-                    tileInfo.TileSetIndex,
-                    tileInfo.AtlasCoords
-                );
-            }
-        }
-    }
-
-    /// <summary>
-    /// Generates a single tile at the given coordinates.
-    /// </summary>
-    private void GenerateTile(int x, int y)
-    {
-        float noiseValue = _noise.GetNoise2D(x, y);
-        
-        // Map noise (-1 to 1) to a gen index
-        int multiplicand = _maxGenIndex;
-        int genIndex = (int)Math.Round(noiseValue * multiplicand);
-
-        // Tell the generator to set its tile
-        _simplexGenIndices[genIndex].GenerateTerrain(x, y);
-    }
-
-    /// <summary>
-    /// Clears all tiles from all tile map layers.
-    /// </summary>
-    private void ClearAllTiles()
-    {
-        foreach (var gen in SimplexGens)
-        {
-            gen.TileMapLayer.Clear();
-        }
     }
 
     public void InitNoiseConfig(double frequency, double lacunarity, double octaves, double gain)
@@ -329,8 +240,6 @@ public partial class TerrainGen : Node, ISimplexGenConfigurable
             }
         }
         
-        // init tile size. assume validation passed so index 0 should contain something
-        _tileSize = SimplexGens[0].TileMapLayer.TileSet.TileSize;
         // Don't generate terrain here - ChunkManager handles generation
         _initialized = true;
     }
