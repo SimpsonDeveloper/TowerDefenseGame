@@ -18,8 +18,6 @@ public enum TerrainType
 /// </summary>
 public static class TerrainColors
 {
-    private const int TileSize = 16;
-
     // Color storage: [terrainType][variantIndex]
     private static Color[][] _colors;
     private static bool _initialized = false;
@@ -48,7 +46,6 @@ public static class TerrainColors
 
         _colors = HardCodedColors;
         _initialized = true;
-        GD.Print("[TerrainColors] Using hard-coded colors");
     }
 
     /// <summary>

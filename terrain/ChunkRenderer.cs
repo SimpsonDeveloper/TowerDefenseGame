@@ -186,14 +186,11 @@ public partial class ChunkRenderer : Node2D
     /// <param name="localTileY">Local tile Y coordinate within the chunk</param>
     /// <param name="newTerrainType">The new terrain type</param>
     /// <param name="variantIndex">The color variant (0-3), defaults to 0</param>
-    public void ModifyTile(int localTileX, int localTileY, TerrainType newTerrainType, int variantIndex = 0)
+    public void ModifyTile(int localTileX, int localTileY, TerrainType newTerrainType)
     {
         // Update chunk data
         _chunkData.Tiles[localTileX, localTileY] = new TileInfo(
-            (int)newTerrainType,
-            0,  // TileSetIndex not used for texture rendering
-            Vector2I.Zero,  // AtlasCoords not used for texture rendering
-            variantIndex
+            (int)newTerrainType
         );
 
         // Update texture for this tile

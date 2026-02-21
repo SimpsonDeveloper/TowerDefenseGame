@@ -34,10 +34,8 @@ public class ChunkData
     public int Height { get; set; }
 
     /// <summary>
-    /// Tile data array. Each entry contains:
-    /// - TileMapLayer index (which SimplexGen to use)
-    /// - TileSetIndex (source ID for SetCell)
-    /// - Atlas coordinates
+    /// Tile data array. Each entry contains the SimplexGen index
+    /// used to look up terrain type and color in ChunkRenderer.
     /// </summary>
     public TileInfo[,] Tiles { get; set; }
 
@@ -53,35 +51,17 @@ public class ChunkData
 }
 
 /// <summary>
-/// Information about a single tile to be placed.
+/// Information about a single tile to be rendered.
 /// </summary>
 public struct TileInfo
 {
     /// <summary>
-    /// Index into SimplexGens array (determines terrain type).
+    /// Index into SimplexGens array (determines terrain type and color).
     /// </summary>
     public int SimplexGenIndex;
 
-    /// <summary>
-    /// The TileSetIndex (source ID) for SetCell.
-    /// </summary>
-    public int TileSetIndex;
-
-    /// <summary>
-    /// Atlas coordinates for the tile (determines which variant).
-    /// </summary>
-    public Vector2I AtlasCoords;
-
-    /// <summary>
-    /// The tile variant index (0-3) based on noise.
-    /// </summary>
-    public int VariantIndex;
-
-    public TileInfo(int simplexGenIndex, int tileSetIndex, Vector2I atlasCoords, int variantIndex = 0)
+    public TileInfo(int simplexGenIndex)
     {
         SimplexGenIndex = simplexGenIndex;
-        TileSetIndex = tileSetIndex;
-        AtlasCoords = atlasCoords;
-        VariantIndex = variantIndex;
     }
 }

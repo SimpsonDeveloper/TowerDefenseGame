@@ -1,4 +1,4 @@
-[gd_scene load_steps=22 format=3 uid="uid://byg548mddsuhp"]
+[gd_scene load_steps=30 format=3 uid="uid://byg548mddsuhp"]
 
 [ext_resource type="Script" uid="uid://rradq6tqhv60" path="res://SliderConfig.cs" id="2_66tet"]
 [ext_resource type="Script" uid="uid://dnb5iegcl3s5r" path="res://terrain/TerrainGen.cs" id="10_671wp"]
@@ -7,34 +7,7 @@
 [ext_resource type="Script" uid="uid://bn66bgttlo0pn" path="res://terrain/GenRange.cs" id="11_42l1d"]
 [ext_resource type="Script" uid="uid://d33brm7vp1jgy" path="res://terrain/SimplexGen.cs" id="11_mo76n"]
 [ext_resource type="Script" uid="uid://7o0j1gneru7r" path="res://terrain/SimplexGenConfig.cs" id="12_42l1d"]
-[ext_resource type="Script" path="res://CameraConfig.cs" id="13_cam01"]
-
-[sub_resource type="Resource" id="Resource_ak604"]
-script = ExtResource("11_42l1d")
-FirstIndex = -6
-LastIndex = -4
-metadata/_custom_type_script = "uid://bn66bgttlo0pn"
-
-[sub_resource type="Resource" id="Resource_meb7l"]
-script = ExtResource("11_42l1d")
-FirstIndex = -3
-LastIndex = 1
-metadata/_custom_type_script = "uid://bn66bgttlo0pn"
-
-[sub_resource type="Resource" id="Resource_u0ygc"]
-script = ExtResource("11_42l1d")
-FirstIndex = 2
-LastIndex = 3
-metadata/_custom_type_script = "uid://bn66bgttlo0pn"
-
-[sub_resource type="Resource" id="Resource_7th4q"]
-script = ExtResource("11_42l1d")
-FirstIndex = 4
-LastIndex = 6
-metadata/_custom_type_script = "uid://bn66bgttlo0pn"
-
-[sub_resource type="TileSet" id="TileSet_42l1d"]
-tile_size = Vector2i(4, 4)
+[ext_resource type="Script" uid="uid://g5eae7qke6uf" path="res://CameraConfig.cs" id="13_cam01"]
 
 [sub_resource type="Resource" id="Resource_wr18j"]
 script = ExtResource("2_66tet")
@@ -75,7 +48,7 @@ metadata/_custom_type_script = "uid://rradq6tqhv60"
 [sub_resource type="Resource" id="Resource_o4fqm"]
 script = ExtResource("2_66tet")
 Name = "Terrain Frequency"
-InitialValue = 0.001
+InitialValue = 0.006
 Min = 0.001
 Max = 0.07
 Step = 0.001
@@ -108,7 +81,171 @@ Max = 0.99
 Step = 0.01
 metadata/_custom_type_script = "uid://rradq6tqhv60"
 
+[sub_resource type="Resource" id="Resource_grass_freq"]
+script = ExtResource("2_66tet")
+Name = "Grass Frequency"
+InitialValue = 0.93
+Min = 0.01
+Max = 0.99
+Step = 0.01
+metadata/_custom_type_script = "uid://rradq6tqhv60"
+
+[sub_resource type="Resource" id="Resource_grass_oct"]
+script = ExtResource("2_66tet")
+Name = "Grass Octaves"
+InitialValue = 2.0
+Min = 1.0
+Max = 10.0
+Step = 1.0
+metadata/_custom_type_script = "uid://rradq6tqhv60"
+
+[sub_resource type="Resource" id="Resource_grass_lac"]
+script = ExtResource("2_66tet")
+Name = "Grass Lacunarity"
+InitialValue = 1.0
+Min = 1.0
+Max = 4.0
+Step = 0.1
+metadata/_custom_type_script = "uid://rradq6tqhv60"
+
+[sub_resource type="Resource" id="Resource_grass_gain"]
+script = ExtResource("2_66tet")
+Name = "Grass Gain"
+InitialValue = 0.1
+Min = 0.01
+Max = 0.99
+Step = 0.01
+metadata/_custom_type_script = "uid://rradq6tqhv60"
+
+[sub_resource type="Resource" id="Resource_sand_freq"]
+script = ExtResource("2_66tet")
+Name = "Sand Frequency"
+InitialValue = 0.93
+Min = 0.01
+Max = 0.99
+Step = 0.01
+metadata/_custom_type_script = "uid://rradq6tqhv60"
+
+[sub_resource type="Resource" id="Resource_sand_oct"]
+script = ExtResource("2_66tet")
+Name = "Sand Octaves"
+InitialValue = 2.0
+Min = 1.0
+Max = 10.0
+Step = 1.0
+metadata/_custom_type_script = "uid://rradq6tqhv60"
+
+[sub_resource type="Resource" id="Resource_sand_lac"]
+script = ExtResource("2_66tet")
+Name = "Sand Lacunarity"
+InitialValue = 1.0
+Min = 1.0
+Max = 4.0
+Step = 0.1
+metadata/_custom_type_script = "uid://rradq6tqhv60"
+
+[sub_resource type="Resource" id="Resource_sand_gain"]
+script = ExtResource("2_66tet")
+Name = "Sand Gain"
+InitialValue = 0.1
+Min = 0.01
+Max = 0.99
+Step = 0.01
+metadata/_custom_type_script = "uid://rradq6tqhv60"
+
+[sub_resource type="Resource" id="Resource_ak604"]
+script = ExtResource("11_42l1d")
+FirstIndex = -6
+LastIndex = -4
+metadata/_custom_type_script = "uid://bn66bgttlo0pn"
+
+[sub_resource type="Resource" id="Resource_meb7l"]
+script = ExtResource("11_42l1d")
+FirstIndex = -3
+LastIndex = 1
+metadata/_custom_type_script = "uid://bn66bgttlo0pn"
+
+[sub_resource type="Resource" id="Resource_u0ygc"]
+script = ExtResource("11_42l1d")
+FirstIndex = 2
+LastIndex = 3
+metadata/_custom_type_script = "uid://bn66bgttlo0pn"
+
+[sub_resource type="Resource" id="Resource_7th4q"]
+script = ExtResource("11_42l1d")
+FirstIndex = 4
+LastIndex = 6
+metadata/_custom_type_script = "uid://bn66bgttlo0pn"
+
+[sub_resource type="TileSet" id="TileSet_42l1d"]
+tile_size = Vector2i(4, 4)
+
 [node name="Node2D" type="Node2D"]
+
+[node name="UILayer" type="CanvasLayer" parent="."]
+layer = 10
+
+[node name="GrassUI" type="Container" parent="UILayer" node_paths=PackedStringArray("SimplexGenNode")]
+offset_top = 100.0
+offset_right = 40.0
+offset_bottom = 140.0
+script = ExtResource("12_42l1d")
+FrequencyConfig = SubResource("Resource_grass_freq")
+OctavesConfig = SubResource("Resource_grass_oct")
+LacunarityConfig = SubResource("Resource_grass_lac")
+GainConfig = SubResource("Resource_grass_gain")
+SimplexGenNode = NodePath("../../TerrainGen/GensLayer/GrassGen")
+
+[node name="RockUI" type="Container" parent="UILayer" node_paths=PackedStringArray("SimplexGenNode")]
+offset_top = 200.0
+offset_right = 40.0
+offset_bottom = 240.0
+script = ExtResource("12_42l1d")
+FrequencyConfig = SubResource("Resource_wr18j")
+OctavesConfig = SubResource("Resource_mo76n")
+LacunarityConfig = SubResource("Resource_671wp")
+GainConfig = SubResource("Resource_qwutr")
+SimplexGenNode = NodePath("../../TerrainGen/GensLayer/RockGen")
+
+[node name="SandUI" type="Container" parent="UILayer" node_paths=PackedStringArray("SimplexGenNode")]
+offset_top = 300.0
+offset_right = 40.0
+offset_bottom = 340.0
+script = ExtResource("12_42l1d")
+FrequencyConfig = SubResource("Resource_sand_freq")
+OctavesConfig = SubResource("Resource_sand_oct")
+LacunarityConfig = SubResource("Resource_sand_lac")
+GainConfig = SubResource("Resource_sand_gain")
+SimplexGenNode = NodePath("../../TerrainGen/GensLayer/SandGen")
+
+[node name="WaterUI" type="Container" parent="UILayer" node_paths=PackedStringArray("SimplexGenNode")]
+offset_left = 600.0
+offset_right = 640.0
+offset_bottom = 40.0
+script = ExtResource("12_42l1d")
+FrequencyConfig = SubResource("Resource_wr18j")
+OctavesConfig = SubResource("Resource_mo76n")
+LacunarityConfig = SubResource("Resource_671wp")
+GainConfig = SubResource("Resource_qwutr")
+SimplexGenNode = NodePath("../../TerrainGen/GensLayer/WaterGen")
+
+[node name="TerrainGenUI" type="Container" parent="UILayer" node_paths=PackedStringArray("SimplexGenNode")]
+offset_right = 40.0
+offset_bottom = 40.0
+script = ExtResource("12_42l1d")
+ShowUI = true
+FrequencyConfig = SubResource("Resource_o4fqm")
+OctavesConfig = SubResource("Resource_gfmxp")
+LacunarityConfig = SubResource("Resource_1n88h")
+GainConfig = SubResource("Resource_opjno")
+SimplexGenNode = NodePath("../../TerrainGen")
+
+[node name="CameraUI" type="Container" parent="UILayer" node_paths=PackedStringArray("Camera")]
+offset_top = 400.0
+offset_right = 40.0
+offset_bottom = 440.0
+script = ExtResource("13_cam01")
+Camera = NodePath("../../Camera2D")
 
 [node name="TerrainGen" type="Node" parent="." node_paths=PackedStringArray("SimplexGens", "TileMapLayer", "ChunkManager")]
 script = ExtResource("10_671wp")
@@ -123,7 +260,7 @@ TileMapLayer = NodePath("RootTileLayer")
 ChunkManager = NodePath("ChunkManager")
 
 [node name="RootTileLayer" type="TileMapLayer" parent="TerrainGen"]
-editor_description = "Root. No tiles from here are placed right now. Only tile size, and only transform. For the moment..."
+editor_description = "Transform parent for terrain layers. TileSet used for tile size reference only."
 tile_set = SubResource("TileSet_42l1d")
 
 [node name="GensLayer" type="Node" parent="TerrainGen"]
@@ -132,87 +269,24 @@ tile_set = SubResource("TileSet_42l1d")
 script = ExtResource("11_mo76n")
 TerrainGen = NodePath("../..")
 
-[node name="GrassUI" type="Container" parent="TerrainGen/GensLayer/GrassGen" node_paths=PackedStringArray("SimplexGenNode")]
-offset_top = 100.0
-offset_right = 40.0
-offset_bottom = 140.0
-script = ExtResource("12_42l1d")
-FrequencyConfig = SubResource("Resource_wr18j")
-OctavesConfig = SubResource("Resource_mo76n")
-LacunarityConfig = SubResource("Resource_671wp")
-GainConfig = SubResource("Resource_qwutr")
-SimplexGenNode = NodePath("..")
-
 [node name="RockGen" type="Node" parent="TerrainGen/GensLayer" node_paths=PackedStringArray("TerrainGen")]
 script = ExtResource("11_mo76n")
 TerrainGen = NodePath("../..")
-
-[node name="RockUI" type="Container" parent="TerrainGen/GensLayer/RockGen" node_paths=PackedStringArray("SimplexGenNode")]
-offset_top = 200.0
-offset_right = 40.0
-offset_bottom = 240.0
-script = ExtResource("12_42l1d")
-FrequencyConfig = SubResource("Resource_wr18j")
-OctavesConfig = SubResource("Resource_mo76n")
-LacunarityConfig = SubResource("Resource_671wp")
-GainConfig = SubResource("Resource_qwutr")
-SimplexGenNode = NodePath("..")
 
 [node name="SandGen" type="Node" parent="TerrainGen/GensLayer" node_paths=PackedStringArray("TerrainGen")]
 script = ExtResource("11_mo76n")
 TerrainGen = NodePath("../..")
 
-[node name="SandUI" type="Container" parent="TerrainGen/GensLayer/SandGen" node_paths=PackedStringArray("SimplexGenNode")]
-offset_top = 300.0
-offset_right = 40.0
-offset_bottom = 340.0
-script = ExtResource("12_42l1d")
-FrequencyConfig = SubResource("Resource_wr18j")
-OctavesConfig = SubResource("Resource_mo76n")
-LacunarityConfig = SubResource("Resource_671wp")
-GainConfig = SubResource("Resource_qwutr")
-SimplexGenNode = NodePath("..")
-
 [node name="WaterGen" type="Node" parent="TerrainGen/GensLayer" node_paths=PackedStringArray("TerrainGen")]
 script = ExtResource("11_mo76n")
 TerrainGen = NodePath("../..")
-
-[node name="WaterUI" type="Container" parent="TerrainGen/GensLayer/WaterGen" node_paths=PackedStringArray("SimplexGenNode")]
-offset_left = 600.0
-offset_right = 640.0
-offset_bottom = 40.0
-script = ExtResource("12_42l1d")
-FrequencyConfig = SubResource("Resource_wr18j")
-OctavesConfig = SubResource("Resource_mo76n")
-LacunarityConfig = SubResource("Resource_671wp")
-GainConfig = SubResource("Resource_qwutr")
-SimplexGenNode = NodePath("..")
-
-[node name="TerrainGenUI" type="Container" parent="TerrainGen" node_paths=PackedStringArray("SimplexGenNode")]
-offset_right = 40.0
-offset_bottom = 40.0
-script = ExtResource("12_42l1d")
-ShowUI = true
-FrequencyConfig = SubResource("Resource_o4fqm")
-OctavesConfig = SubResource("Resource_gfmxp")
-LacunarityConfig = SubResource("Resource_1n88h")
-GainConfig = SubResource("Resource_opjno")
-SimplexGenNode = NodePath("..")
 
 [node name="ChunkManager" type="Node" parent="TerrainGen" node_paths=PackedStringArray("TerrainGen", "Camera")]
 script = ExtResource("10_qwutr")
 TerrainGen = NodePath("..")
 Camera = NodePath("../../Camera2D")
 ChunkSize = 20
-ChunksToApplyPerFrame = 1
 
 [node name="Camera2D" type="Camera2D" parent="."]
 position = Vector2(576, 324)
 script = ExtResource("10_wr18j")
-
-[node name="CameraUI" type="Container" parent="." node_paths=PackedStringArray("Camera")]
-offset_top = 400.0
-offset_right = 40.0
-offset_bottom = 440.0
-script = ExtResource("13_cam01")
-Camera = NodePath("Camera2D")

@@ -70,8 +70,6 @@ public partial class ChunkManager : Node
     // Collision TileMapLayer (shared across all chunks)
     private TileMapLayer _collisionTileMap;
 
-    private Vector2I _lastCameraChunk = new Vector2I(int.MinValue, int.MinValue);
-
     public override void _Ready()
     {
         if (TerrainGen == null)
@@ -379,8 +377,6 @@ public partial class ChunkManager : Node
         
         // Clear the failed chunks queue
         while (_failedChunks.TryDequeue(out _)) { }
-        
-        _lastCameraChunk = new Vector2I(int.MinValue, int.MinValue);
     }
 
     /// <summary>
@@ -414,7 +410,7 @@ public partial class ChunkManager : Node
     /// <param name="newTerrainType">The new terrain type</param>
     /// <param name="variantIndex">The color variant (0-3), defaults to 0</param>
     /// <returns>True if the tile was modified, false if chunk not loaded</returns>
-    public bool ModifyTileAtWorldPos(Vector2 worldPos, TerrainType newTerrainType, int variantIndex = 0)
+    public bool ModifyTileAtWorldPos(Vector2 worldPos, TerrainType newTerrainType)
     {
         Vector2I chunkCoord = WorldToChunkCoords(worldPos);
         
@@ -431,7 +427,7 @@ public partial class ChunkManager : Node
             localTileY < 0 || localTileY >= renderer.ChunkData.Height)
             return false;
 
-        renderer.ModifyTile(localTileX, localTileY, newTerrainType, variantIndex);
+        renderer.ModifyTile(localTileX, localTileY, newTerrainType);
         return true;
     }
 
@@ -443,13 +439,13 @@ public partial class ChunkManager : Node
     /// <param name="newTerrainType">The new terrain type</param>
     /// <param name="variantIndex">The color variant (0-3), defaults to 0</param>
     /// <returns>True if the tile was modified, false if chunk not loaded</returns>
-    public bool ModifyTile(int tileX, int tileY, TerrainType newTerrainType, int variantIndex = 0)
+    public bool ModifyTile(int tileX, int tileY, TerrainType newTerrainType)
     {
         Vector2 worldPos = new Vector2(
             tileX * ChunkRenderer.TilePixelSize,
             tileY * ChunkRenderer.TilePixelSize
         );
-        return ModifyTileAtWorldPos(worldPos, newTerrainType, variantIndex);
+        return ModifyTileAtWorldPos(worldPos, newTerrainType);
     }
 
     /// <summary>

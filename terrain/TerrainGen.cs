@@ -36,14 +36,6 @@ public partial class TerrainGen : Node, ISimplexGenConfigurable
     /// </summary>
     public bool IsInitialized => _initialized;
     
-    public override void _EnterTree()
-    {
-        if (!CanProcess())
-        {
-            QueueFree();
-        }
-    }
-    
     public override void _ExitTree()
     {
         // Proper cleanup when node is removed from the scene tree
@@ -65,19 +57,10 @@ public partial class TerrainGen : Node, ISimplexGenConfigurable
     
     public override void _Ready()
     {
-        if (!CanProcess())
-        {
-            QueueFree();
-            return;
-        }
-        
         if (!_initialized)
         {
             throw new Exception("TerrainGen not initialized yet!");
         }
-        
-        // Don't generate terrain here - ChunkManager handles generation
-        Console.WriteLine($"TerrainGen {GetName()} Ready!");
     }
 
     private void ValidateConfig()

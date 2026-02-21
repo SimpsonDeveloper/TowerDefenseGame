@@ -24,30 +24,14 @@ public partial class SimplexGenConfig : Container
     [Export]
     public Node SimplexGenNode;
     
-    private readonly Dictionary<string, HSlider> _noiseSliders = new();
-    
     private readonly Dictionary<string, Label> _noiseLabels = new();
     
     // this node must have a SimplexGen parent of type ISimplexGenConfigurable
     private ISimplexGenConfigurable _simplexGen;
     
     
-    public override void _EnterTree()
-    {
-        if (!CanProcess())
-        {
-            QueueFree();
-        }
-    }
-    
     public override void _Ready()
     {
-        if (!CanProcess())
-        {
-            QueueFree();
-            return;
-        }
-        
         if (SimplexGenNode is ISimplexGenConfigurable config)
         {
             _simplexGen = config;
@@ -58,8 +42,6 @@ public partial class SimplexGenConfig : Container
         }
         // Initialize sliders
         CreateNoiseSliders();
-        
-        Console.WriteLine($"SimplexGenConfig {GetName()} Ready!");
     }
     
     private void CreateNoiseSliders()
@@ -116,7 +98,6 @@ public partial class SimplexGenConfig : Container
                 label.LabelSettings = labelSettings;
 
                 // Store reference for later use
-                _noiseSliders[config.Name] = slider;
                 _noiseLabels[config.Name] = label;
             }
         }

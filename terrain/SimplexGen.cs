@@ -9,9 +9,6 @@ public partial class SimplexGen : Node, ISimplexGenConfigurable
     [Export]
     public TerrainGen TerrainGen;
     
-    [Export]
-    public int TileSetIndex;
-
     /// <summary>
     /// Index of this SimplexGen in the TerrainGen.SimplexGens array.
     /// Set during initialization.
@@ -21,14 +18,6 @@ public partial class SimplexGen : Node, ISimplexGenConfigurable
     private FastNoiseLite _noise;
 
     private bool _initialized;
-    
-    public override void _EnterTree()
-    {
-        if (!CanProcess())
-        {
-            QueueFree();
-        }
-    }
     
     public override void _ExitTree()
     {
@@ -42,18 +31,10 @@ public partial class SimplexGen : Node, ISimplexGenConfigurable
 
     public override void _Ready()
     {
-        if (!CanProcess())
-        {
-            QueueFree();
-            return;
-        }
-
         if (!_initialized)
         {
             throw new Exception("SimplexGen not initialized yet!");
         }
-        
-        Console.WriteLine($"SimplexGen {GetName()} Ready!");
     }
     
     public void InitNoiseConfig(double frequency, double lacunarity, double octaves, double gain)
@@ -105,22 +86,7 @@ public partial class SimplexGen : Node, ISimplexGenConfigurable
     /// <returns>TileInfo containing all data needed to place the tile</returns>
     public TileInfo GenerateTileInfo(int x, int y)
     {
-        float noiseValue = _noise.GetNoise2D(x, y);
-        float absNoiseValue = Math.Abs(noiseValue);
-        
-        // Map noise (-1 to 1) to a tile index (0 to 3) for 4 color variants
-        int tileIndex = (int)Math.Floor(absNoiseValue * 4);
-        
-        // Clamp to valid range
-        tileIndex = Math.Clamp(tileIndex, 0, 3);
-        
-        // Convert the index to a 2d vector for 2x2 atlas
-        int atlasWidth = 2;
-        int atlasX = tileIndex % atlasWidth;
-        int atlasY = tileIndex / atlasWidth;
-        Vector2I atlasCoords = new Vector2I(atlasX, atlasY);
-
-        return new TileInfo(SimplexGenIndex, TileSetIndex, atlasCoords, tileIndex);
+        return new TileInfo(SimplexGenIndex);
     }
 
     /// <summary>
