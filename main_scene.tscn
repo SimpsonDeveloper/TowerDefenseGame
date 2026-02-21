@@ -268,18 +268,22 @@ tile_set = SubResource("TileSet_42l1d")
 [node name="GrassGen" type="Node" parent="TerrainGen/GensLayer" node_paths=PackedStringArray("TerrainGen")]
 script = ExtResource("11_mo76n")
 TerrainGen = NodePath("../..")
+TerrainType = 1
 
 [node name="RockGen" type="Node" parent="TerrainGen/GensLayer" node_paths=PackedStringArray("TerrainGen")]
 script = ExtResource("11_mo76n")
 TerrainGen = NodePath("../..")
+TerrainType = 3
 
 [node name="SandGen" type="Node" parent="TerrainGen/GensLayer" node_paths=PackedStringArray("TerrainGen")]
 script = ExtResource("11_mo76n")
 TerrainGen = NodePath("../..")
+TerrainType = 2
 
 [node name="WaterGen" type="Node" parent="TerrainGen/GensLayer" node_paths=PackedStringArray("TerrainGen")]
 script = ExtResource("11_mo76n")
 TerrainGen = NodePath("../..")
+TerrainType = 0
 
 [node name="ChunkManager" type="Node" parent="TerrainGen" node_paths=PackedStringArray("TerrainGen", "Camera")]
 script = ExtResource("10_qwutr")

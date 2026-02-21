@@ -56,12 +56,12 @@ public class ChunkData
 public struct TileInfo
 {
     /// <summary>
-    /// Index into SimplexGens array (determines terrain type and color).
+    /// The terrain type at this tile position.
     /// </summary>
-    public int SimplexGenIndex;
+    public TerrainType TerrainType;
 
-    public TileInfo(int simplexGenIndex)
+    public TileInfo(TerrainType terrainType)
     {
-        SimplexGenIndex = simplexGenIndex;
+        TerrainType = terrainType;
     }
 }

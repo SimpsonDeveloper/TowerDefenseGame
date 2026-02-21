@@ -299,7 +299,7 @@ public partial class ChunkManager : Node
             // Create and initialize chunk renderer
             var renderer = new ChunkRenderer();
             renderer.CollisionTileMap = _collisionTileMap;
-            renderer.SimplexGens = TerrainGen.SimplexGens;
+            renderer.SimplexGens = TerrainGen.SimplexGensMapped;
             _chunkContainer.AddChild(renderer);
             renderer.Initialize(chunkData);
 
@@ -468,7 +468,7 @@ public partial class ChunkManager : Node
             localTileY < 0 || localTileY >= renderer.ChunkData.Height)
             return null;
 
-        return (TerrainType)renderer.ChunkData.Tiles[localTileX, localTileY].SimplexGenIndex;
+        return renderer.ChunkData.Tiles[localTileX, localTileY].TerrainType;
     }
 
     /// <summary>

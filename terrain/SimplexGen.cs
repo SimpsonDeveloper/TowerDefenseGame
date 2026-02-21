@@ -8,12 +8,9 @@ public partial class SimplexGen : Node, ISimplexGenConfigurable
 {
     [Export]
     public TerrainGen TerrainGen;
-    
-    /// <summary>
-    /// Index of this SimplexGen in the TerrainGen.SimplexGens array.
-    /// Set during initialization.
-    /// </summary>
-    public int SimplexGenIndex { get; set; }
+
+    [Export]
+    public TerrainType TerrainType { get; set; }
     
     private FastNoiseLite _noise;
 
@@ -86,7 +83,7 @@ public partial class SimplexGen : Node, ISimplexGenConfigurable
     /// <returns>TileInfo containing all data needed to place the tile</returns>
     public TileInfo GenerateTileInfo(int x, int y)
     {
-        return new TileInfo(SimplexGenIndex);
+        return new TileInfo(TerrainType);
     }
 
     /// <summary>

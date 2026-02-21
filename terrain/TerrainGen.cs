@@ -22,6 +22,8 @@ public partial class TerrainGen : Node, ISimplexGenConfigurable
     
     [Export]
     public ChunkManager ChunkManager;
+
+    public Dictionary<TerrainType, SimplexGen> SimplexGensMapped { get; private set; }
         
     private FastNoiseLite _noise;
     
@@ -202,12 +204,6 @@ public partial class TerrainGen : Node, ISimplexGenConfigurable
         _noise.FractalOctaves = (int)octaves;
         _noise.FractalGain = (float)gain;
         
-        // Set SimplexGenIndex on each SimplexGen for async tile generation
-        for (int i = 0; i < SimplexGens.Length; i++)
-        {
-            SimplexGens[i].SimplexGenIndex = i;
-        }
-
         // set up Gen index ranges
         _simplexGenIndices = new Godot.Collections.Dictionary<int, SimplexGen>();
         foreach (KeyValuePair<GenRange, int> entry in GenRanges)
@@ -222,6 +218,8 @@ public partial class TerrainGen : Node, ISimplexGenConfigurable
                 _simplexGenIndices.Add(i, SimplexGens[entry.Value]);
             }
         }
+
+        SimplexGensMapped = BuildSimplexGenLookup();
         
         // Don't generate terrain here - ChunkManager handles generation
         _initialized = true;
@@ -249,5 +247,16 @@ public partial class TerrainGen : Node, ISimplexGenConfigurable
     {
         _noise.FractalGain = (float)value;
         InvalidateChunks();
+    }
+    
+    /// <summary>
+    /// Builds a lookup from TerrainType to its SimplexGen.
+    /// </summary>
+    private Dictionary<TerrainType, SimplexGen> BuildSimplexGenLookup()
+    {
+        var lookup = new Dictionary<TerrainType, SimplexGen>();
+        foreach (var gen in SimplexGens)
+            lookup[gen.TerrainType] = gen;
+        return lookup;
     }
 }

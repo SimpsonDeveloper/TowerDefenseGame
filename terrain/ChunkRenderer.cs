@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using Godot;
 
 namespace towerdefensegame;
@@ -28,7 +30,7 @@ public partial class ChunkRenderer : Node2D
     private Image _image;
     private ImageTexture _texture;
     private ChunkData _chunkData;
-    private SimplexGen[] _simplexGens;
+    private Dictionary<TerrainType, SimplexGen> _simplexGens;
 
     /// <summary>
     /// Reference to the collision TileMapLayer for placing collision tiles.
@@ -36,9 +38,9 @@ public partial class ChunkRenderer : Node2D
     public TileMapLayer CollisionTileMap { get; set; }
 
     /// <summary>
-    /// Reference to SimplexGen array for sub-tile noise sampling.
+    /// Lookup from terrain type to its SimplexGen for sub-tile noise sampling.
     /// </summary>
-    public SimplexGen[] SimplexGens
+    public Dictionary<TerrainType, SimplexGen> SimplexGens
     {
         get => _simplexGens;
         set => _simplexGens = value;
@@ -113,8 +115,12 @@ public partial class ChunkRenderer : Node2D
     private void DrawTileToImage(int tileX, int tileY)
     {
         TileInfo tileInfo = _chunkData.Tiles[tileX, tileY];
-        TerrainType terrainType = (TerrainType)tileInfo.SimplexGenIndex;
-        SimplexGen simplexGen = _simplexGens?[tileInfo.SimplexGenIndex];
+        TerrainType terrainType = tileInfo.TerrainType;
+        if (!(_simplexGens?.TryGetValue(terrainType, out SimplexGen simplexGen) ?? false))
+        {
+            throw new Exception("Simplex gen not found");
+        }
+        
         int variantCount = terrainType.GetVariantCount();
 
         // Calculate base pixel coordinates for this tile
@@ -165,9 +171,8 @@ public partial class ChunkRenderer : Node2D
             for (int tileY = 0; tileY < _chunkData.Height; tileY++)
             {
                 TileInfo tileInfo = _chunkData.Tiles[tileX, tileY];
-                TerrainType terrainType = (TerrainType)tileInfo.SimplexGenIndex;
 
-                if (terrainType.HasCollision())
+                if (tileInfo.TerrainType.HasCollision())
                 {
                     int worldTileX = _chunkData.StartX + tileX;
                     int worldTileY = _chunkData.StartY + tileY;
@@ -190,9 +195,7 @@ public partial class ChunkRenderer : Node2D
     public void ModifyTile(int localTileX, int localTileY, TerrainType newTerrainType)
     {
         // Update chunk data
-        _chunkData.Tiles[localTileX, localTileY] = new TileInfo(
-            (int)newTerrainType
-        );
+        _chunkData.Tiles[localTileX, localTileY] = new TileInfo(newTerrainType);
 
         // Update texture for this tile
         DrawTileToImage(localTileX, localTileY);
