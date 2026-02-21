@@ -115,6 +115,7 @@ public partial class ChunkRenderer : Node2D
         TileInfo tileInfo = _chunkData.Tiles[tileX, tileY];
         TerrainType terrainType = (TerrainType)tileInfo.SimplexGenIndex;
         SimplexGen simplexGen = _simplexGens?[tileInfo.SimplexGenIndex];
+        int variantCount = terrainType.GetVariantCount();
 
         // Calculate base pixel coordinates for this tile
         int basePixelX = tileX * TilePixelSize;
@@ -134,8 +135,8 @@ public partial class ChunkRenderer : Node2D
                 float subWorldX = worldTileX * VariationsPerAxis + subTileX;
                 float subWorldY = worldTileY * VariationsPerAxis + subTileY;
 
-                // Get variant index (0-3) from noise at sub-tile position
-                int variantIndex = simplexGen?.GetVariantIndex(subWorldX, subWorldY) ?? 0;
+                // Get variant index from noise at sub-tile position, range driven by color array size
+                int variantIndex = simplexGen?.GetVariantIndex(subWorldX, subWorldY, variantCount) ?? 0;
                 Color color = terrainType.GetColor(variantIndex);
 
                 // Calculate pixel position for this sub-tile

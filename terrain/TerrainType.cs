@@ -49,6 +49,17 @@ public static class TerrainColors
     }
 
     /// <summary>
+    /// Gets the number of color variants defined for a terrain type.
+    /// </summary>
+    public static int GetVariantCount(TerrainType type)
+    {
+        int typeIndex = (int)type;
+        if (typeIndex < 0 || typeIndex >= _colors.Length)
+            return 1;
+        return _colors[typeIndex].Length;
+    }
+
+    /// <summary>
     /// Gets the color for a terrain type and variant.
     /// </summary>
     public static Color GetColor(TerrainType type, int variantIndex = 0)
@@ -73,6 +84,14 @@ public static class TerrainColors
 /// </summary>
 public static class TerrainTypeExtensions
 {
+    /// <summary>
+    /// Gets the number of color variants defined for this terrain type.
+    /// </summary>
+    public static int GetVariantCount(this TerrainType type)
+    {
+        return TerrainColors.GetVariantCount(type);
+    }
+
     /// <summary>
     /// Gets the color for a terrain type and variant.
     /// </summary>

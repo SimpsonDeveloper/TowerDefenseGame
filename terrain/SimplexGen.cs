@@ -90,19 +90,18 @@ public partial class SimplexGen : Node, ISimplexGenConfigurable
     }
 
     /// <summary>
-    /// Gets just the variant index (0-3) for a given position based on noise.
+    /// Gets a variant index for a given position based on noise.
     /// Used by ChunkRenderer for sub-tile color variation.
     /// </summary>
     /// <param name="x">World X coordinate (can be sub-tile position)</param>
     /// <param name="y">World Y coordinate (can be sub-tile position)</param>
-    /// <returns>Variant index 0-3</returns>
-    public int GetVariantIndex(float x, float y)
+    /// <param name="variantCount">Number of variants to map noise into — should match the terrain's color array length</param>
+    /// <returns>Variant index in range [0, variantCount - 1]</returns>
+    public int GetVariantIndex(float x, float y, int variantCount)
     {
         float noiseValue = _noise.GetNoise2D(x, y);
         float absNoiseValue = Math.Abs(noiseValue);
-        
-        // Map noise to variant index (0 to 3)
-        int variantIndex = (int)Math.Floor(absNoiseValue * 4);
-        return Math.Clamp(variantIndex, 0, 3);
+        int variantIndex = (int)Math.Floor(absNoiseValue * variantCount);
+        return Math.Clamp(variantIndex, 0, variantCount - 1);
     }
 }
