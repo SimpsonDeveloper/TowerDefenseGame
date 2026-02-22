@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using Godot;
 
 namespace towerdefensegame;
@@ -13,70 +15,10 @@ public enum TerrainType
     Rock = 3
 }
 
-/// <summary>
-/// Manages terrain colors using hard-coded hex values.
-/// </summary>
-public static class TerrainColors
+public class TerrainTypeData(Color[] colors, bool hasCollision)
 {
-    // Color storage: [terrainType][variantIndex]
-    private static Color[][] _colors;
-    private static bool _initialized = false;
-
-    // Each terrain has 4 color variants
-    private static readonly Color[][] HardCodedColors = new Color[][]
-    {
-        // Water variants (index 0)
-        new Color[] { new Color("#0068d8"), new Color("#0064d1"), new Color("#0060c9"), new Color("#005cc1") },
-        // Grass variants (index 1)
-        new Color[] { new Color("#00b756"), new Color("#00af53"), new Color("#00a850"), new Color("#00a04b") },
-        // Sand variants (index 2)
-        new Color[] { new Color("#ffcc4a"), new Color("#f7c546"), new Color("#efbd42"), new Color("#e8b941") },
-        // Rock variants (index 3)
-        new Color[] { new Color("#916800"), new Color("#896200"), new Color("#825d00"), new Color("#7a5700") },
-    };
-
-    /// <summary>
-    /// Initializes terrain colors from hard-coded hex values.
-    /// Call this once at game startup.
-    /// </summary>
-    public static void Initialize()
-    {
-        if (_initialized)
-            return;
-
-        _colors = HardCodedColors;
-        _initialized = true;
-    }
-
-    /// <summary>
-    /// Gets the number of color variants defined for a terrain type.
-    /// </summary>
-    public static int GetVariantCount(TerrainType type)
-    {
-        int typeIndex = (int)type;
-        if (typeIndex < 0 || typeIndex >= _colors.Length)
-            return 1;
-        return _colors[typeIndex].Length;
-    }
-
-    /// <summary>
-    /// Gets the color for a terrain type and variant.
-    /// </summary>
-    public static Color GetColor(TerrainType type, int variantIndex = 0)
-    {
-        if (!_initialized)
-        {
-            GD.PrintErr("[TerrainColors] Not initialized! Call Initialize() first.");
-            return new Color(1f, 0f, 1f);
-        }
-
-        int typeIndex = (int)type;
-        if (typeIndex < 0 || typeIndex >= _colors.Length)
-            return new Color(1f, 0f, 1f);
-
-        variantIndex = Mathf.Clamp(variantIndex, 0, _colors[typeIndex].Length - 1);
-        return _colors[typeIndex][variantIndex];
-    }
+    public readonly Color[] Colors = colors;
+    public readonly bool HasCollision = hasCollision;
 }
 
 /// <summary>
@@ -84,12 +26,49 @@ public static class TerrainColors
 /// </summary>
 public static class TerrainTypeExtensions
 {
+    private static readonly Dictionary<TerrainType, TerrainTypeData> TerrainData = new()
+    {
+        {
+            TerrainType.Water,
+            new TerrainTypeData
+            (
+                [ new Color("#0068d8"), new Color("#0064d1"), new Color("#0060c9"), new Color("#005cc1") ], 
+                true
+            )
+        },
+        {
+            TerrainType.Grass,
+            new TerrainTypeData
+            (
+                [ new Color("#00b756"), new Color("#00af53"), new Color("#00a850"), new Color("#00a04b") ],
+                false
+            )
+        },
+        {
+            TerrainType.Sand,
+            new TerrainTypeData
+            (
+                [ new Color("#ffcc4a"), new Color("#f7c546"), new Color("#efbd42"), new Color("#e8b941") ],
+                false
+            )
+        },
+        {
+            TerrainType.Rock,
+            new TerrainTypeData
+            (
+                [ new Color("#916800"), new Color("#896200"), new Color("#825d00"), new Color("#7a5700") ],
+                false
+            )
+        }
+    };
+    
     /// <summary>
-    /// Gets the number of color variants defined for this terrain type.
+    /// Gets the number of color variants defined for a terrain type.
     /// </summary>
     public static int GetVariantCount(this TerrainType type)
     {
-        return TerrainColors.GetVariantCount(type);
+        Color[] colors = GetColors(type);
+        return colors.Length;
     }
 
     /// <summary>
@@ -97,7 +76,8 @@ public static class TerrainTypeExtensions
     /// </summary>
     public static Color GetColor(this TerrainType type, int variantIndex = 0)
     {
-        return TerrainColors.GetColor(type, variantIndex);
+        Color[] colors = GetColors(type);
+        return colors[variantIndex];
     }
 
     /// <summary>
@@ -105,11 +85,21 @@ public static class TerrainTypeExtensions
     /// </summary>
     public static bool HasCollision(this TerrainType type)
     {
-        return type switch
-        {
-            TerrainType.Water => true,
-            TerrainType.Rock => true,
-            _ => false
-        };
+        return GetTerrainTypeData(type).HasCollision;
+    }
+
+    private static Color[] GetColors(TerrainType type)
+    {
+        TerrainTypeData terrainData = GetTerrainTypeData(type);
+        if (terrainData.Colors == null)
+            throw new InvalidOperationException($"Terrain data for '{type}' has invalid or missing color data.");
+        return terrainData.Colors;
+    }
+    
+    private static TerrainTypeData GetTerrainTypeData(TerrainType type)
+    {
+        if (!TerrainData.TryGetValue(type, out var terrainData))
+            throw new ArgumentException($"Terrain type '{type}' is not supported.", nameof(type));
+        return terrainData;
     }
 }

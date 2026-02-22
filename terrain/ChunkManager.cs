@@ -84,9 +84,6 @@ public partial class ChunkManager : Node
             return;
         }
 
-        // Initialize terrain colors from textures
-        TerrainColors.Initialize();
-
         // Create container for chunk renderers
         _chunkContainer = new Node2D();
         _chunkContainer.Name = "ChunkContainer";
