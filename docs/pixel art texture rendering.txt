@@ -1,0 +1,3 @@
+to view textures as completely uncompressed requires a combination of settings:
+1. set import settings to VRAM uncompressed
+2. Project -> Project Settings -> Rendering -> Textures -> Set Default Texture Filter to "Nearest" or "Nearest Mipmap"
