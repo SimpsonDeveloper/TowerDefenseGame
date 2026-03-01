@@ -1,14 +1,22 @@
-[gd_scene load_steps=38 format=3 uid="uid://byg548mddsuhp"]
+[gd_scene load_steps=51 format=3 uid="uid://byg548mddsuhp"]
 
 [ext_resource type="Script" uid="uid://rradq6tqhv60" path="res://SliderConfig.cs" id="2_66tet"]
 [ext_resource type="Texture2D" uid="uid://bkmbml217snyk" path="res://assets/dimension spritesheet.png" id="9_7ycvg"]
 [ext_resource type="Script" uid="uid://dnb5iegcl3s5r" path="res://terrain/TerrainGen.cs" id="10_671wp"]
+[ext_resource type="Shader" uid="uid://dhenq7n7w3f5" path="res://main_scene.gdshader" id="10_mo76n"]
 [ext_resource type="Script" uid="uid://1njs0cvgv6a0" path="res://terrain/ChunkManager.cs" id="10_qwutr"]
 [ext_resource type="Script" uid="uid://d1rb4n55le2cp" path="res://CameraController.cs" id="10_wr18j"]
 [ext_resource type="Script" uid="uid://bn66bgttlo0pn" path="res://terrain/GenRange.cs" id="11_42l1d"]
+[ext_resource type="Shader" uid="uid://b5b6c4tbr141y" path="res://cloud_circle_nofade_cw.gdshader" id="11_671wp"]
 [ext_resource type="Script" uid="uid://d33brm7vp1jgy" path="res://terrain/SimplexGen.cs" id="11_mo76n"]
+[ext_resource type="Texture2D" uid="uid://cl3kiv6h4frsf" path="res://assets/32px circle.png" id="11_qwutr"]
 [ext_resource type="Script" uid="uid://7o0j1gneru7r" path="res://terrain/SimplexGenConfig.cs" id="12_42l1d"]
 [ext_resource type="Script" uid="uid://g5eae7qke6uf" path="res://CameraConfig.cs" id="13_cam01"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_qwutr"]
+shader = ExtResource("10_mo76n")
+shader_parameter/pixel_size = 4
+shader_parameter/screen_size = Vector2(1152, 648)
 
 [sub_resource type="Resource" id="Resource_grass_freq"]
 script = ExtResource("2_66tet")
@@ -235,10 +243,81 @@ animations = [{
 "speed": 5.0
 }]
 
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_mo76n"]
+shader = ExtResource("11_671wp")
+shader_parameter/speed = 0.5390000256025
+shader_parameter/swirl_strength = 4.0
+shader_parameter/noise_scale = 5.5
+shader_parameter/cloud_coverage = 0.5
+shader_parameter/cloud_shadow = 0.8590000408025
+
+[sub_resource type="Gradient" id="Gradient_mo76n"]
+offsets = PackedFloat32Array(0, 0.003984064, 1)
+colors = PackedColorArray(0, 0, 0, 1, 0.067729086, 0.067729086, 0.067729086, 1, 1, 1, 1, 1)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_42l1d"]
+gradient = SubResource("Gradient_mo76n")
+
+[sub_resource type="Curve" id="Curve_2jcla"]
+_data = [Vector2(0, 0.25298506), 0.0, 0.0, 0, 0, Vector2(0.50180507, 0.99029857), 0.0, 0.0, 0, 0, Vector2(1, 0.25298506), 0.0, 0.0, 0, 0]
+point_count = 3
+
+[sub_resource type="CurveTexture" id="CurveTexture_m35m6"]
+curve = SubResource("Curve_2jcla")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_u0ygc"]
+particle_flag_disable_z = true
+emission_shape = 1
+emission_sphere_radius = 14.0
+angular_velocity_min = -100.000015
+angular_velocity_max = 9.999984
+orbit_velocity_min = -0.19999991
+orbit_velocity_max = -0.19999991
+gravity = Vector3(0, 0, 0)
+scale_min = 4.0
+scale_max = 4.0
+scale_curve = SubResource("CurveTexture_m35m6")
+color = Color(0.6967576, 0.70061207, 0.7436198, 1)
+color_ramp = SubResource("GradientTexture1D_42l1d")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_wr18j"]
+particle_flag_disable_z = true
+emission_shape = 1
+emission_sphere_radius = 15.0
+orbit_velocity_min = -0.99999994
+orbit_velocity_max = -0.99999994
+gravity = Vector3(0, 0, 0)
+scale_min = 2.0
+scale_max = 2.0
+color = Color(0.18601495, 0.34978524, 0.9529374, 1)
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_7ycvg"]
+particle_flag_disable_z = true
+emission_shape = 1
+emission_sphere_radius = 15.0
+direction = Vector3(0, 0, 0)
+spread = 0.0
+orbit_velocity_min = -0.99999994
+orbit_velocity_max = -0.99999994
+gravity = Vector3(0, 0, 0)
+scale_min = 2.0
+scale_max = 2.0
+color = Color(0.8862745, 0, 0, 1)
+
+[sub_resource type="ViewportTexture" id="ViewportTexture_671wp"]
+viewport_path = NodePath("PlayerPrototype/SubViewport")
+
 [node name="Node2D" type="Node2D"]
 
 [node name="UILayer" type="CanvasLayer" parent="."]
 layer = 10
+
+[node name="PixelationShaderRegion" type="ColorRect" parent="UILayer"]
+visible = false
+z_index = 1
+material = SubResource("ShaderMaterial_qwutr")
+offset_right = 110.0
+offset_bottom = 127.0
 
 [node name="GrassUI" type="Container" parent="UILayer" node_paths=PackedStringArray("SimplexGenNode")]
 offset_top = 100.0
@@ -344,12 +423,55 @@ ChunkSize = 20
 position = Vector2(576, 324)
 script = ExtResource("10_wr18j")
 
-[node name="Sprite2D" type="Sprite2D" parent="."]
-position = Vector2(507, 286)
-
-[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+[node name="OldPlayePrototype" type="AnimatedSprite2D" parent="."]
 z_index = 1
 z_as_relative = false
-position = Vector2(516, 303)
+position = Vector2(457, 241)
 sprite_frames = SubResource("SpriteFrames_m35m6")
 autoplay = "default"
+frame = 4
+frame_progress = 0.34795603
+
+[node name="Experiments" type="Node2D" parent="."]
+
+[node name="PlayerPrototype" type="Node2D" parent="."]
+position = Vector2(559, 243)
+scale = Vector2(2, 2)
+
+[node name="SubViewport" type="SubViewport" parent="PlayerPrototype"]
+disable_3d = true
+transparent_bg = true
+size = Vector2i(32, 32)
+
+[node name="Particles" type="Node2D" parent="PlayerPrototype/SubViewport"]
+position = Vector2(16, 16)
+
+[node name="GreyCircle" type="Sprite2D" parent="PlayerPrototype/SubViewport/Particles"]
+material = SubResource("ShaderMaterial_mo76n")
+texture = ExtResource("11_qwutr")
+
+[node name="GPUParticles2DClouds" type="GPUParticles2D" parent="PlayerPrototype/SubViewport/Particles"]
+z_index = 1
+amount = 40
+local_coords = true
+trail_lifetime = 1.0
+process_material = SubResource("ParticleProcessMaterial_u0ygc")
+
+[node name="GPUParticles2DBlue" type="GPUParticles2D" parent="PlayerPrototype/SubViewport/Particles"]
+z_index = 1
+amount = 5
+local_coords = true
+trail_enabled = true
+process_material = SubResource("ParticleProcessMaterial_wr18j")
+
+[node name="GPUParticles2DRed" type="GPUParticles2D" parent="PlayerPrototype/SubViewport/Particles"]
+z_index = 1
+amount = 5
+local_coords = true
+trail_enabled = true
+trail_lifetime = 0.2
+process_material = SubResource("ParticleProcessMaterial_7ycvg")
+
+[node name="SubViewportSprite" type="Sprite2D" parent="PlayerPrototype"]
+z_index = 1
+texture = SubResource("ViewportTexture_671wp")
