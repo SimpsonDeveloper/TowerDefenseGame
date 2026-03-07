@@ -1,7 +1,6 @@
-[gd_scene load_steps=51 format=3 uid="uid://byg548mddsuhp"]
+[gd_scene load_steps=43 format=3 uid="uid://byg548mddsuhp"]
 
 [ext_resource type="Script" uid="uid://rradq6tqhv60" path="res://SliderConfig.cs" id="2_66tet"]
-[ext_resource type="Texture2D" uid="uid://bkmbml217snyk" path="res://assets/dimension spritesheet.png" id="9_7ycvg"]
 [ext_resource type="Script" uid="uid://dnb5iegcl3s5r" path="res://terrain/TerrainGen.cs" id="10_671wp"]
 [ext_resource type="Shader" uid="uid://dhenq7n7w3f5" path="res://main_scene.gdshader" id="10_mo76n"]
 [ext_resource type="Script" uid="uid://1njs0cvgv6a0" path="res://terrain/ChunkManager.cs" id="10_qwutr"]
@@ -12,6 +11,7 @@
 [ext_resource type="Texture2D" uid="uid://cl3kiv6h4frsf" path="res://assets/32px circle.png" id="11_qwutr"]
 [ext_resource type="Script" uid="uid://7o0j1gneru7r" path="res://terrain/SimplexGenConfig.cs" id="12_42l1d"]
 [ext_resource type="Script" uid="uid://g5eae7qke6uf" path="res://CameraConfig.cs" id="13_cam01"]
+[ext_resource type="Script" uid="uid://bmttg70ob2ksw" path="res://PlayerController.cs" id="14_pctrl"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_qwutr"]
 shader = ExtResource("10_mo76n")
@@ -185,63 +185,6 @@ script = ExtResource("11_42l1d")
 FirstIndex = 4
 LastIndex = 6
 metadata/_custom_type_script = "uid://bn66bgttlo0pn"
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_7ycvg"]
-atlas = ExtResource("9_7ycvg")
-region = Rect2(0, 0, 36, 44)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_wr18j"]
-atlas = ExtResource("9_7ycvg")
-region = Rect2(36, 0, 36, 44)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_qwutr"]
-atlas = ExtResource("9_7ycvg")
-region = Rect2(72, 0, 36, 44)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_671wp"]
-atlas = ExtResource("9_7ycvg")
-region = Rect2(108, 0, 36, 44)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_mo76n"]
-atlas = ExtResource("9_7ycvg")
-region = Rect2(144, 0, 36, 44)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_42l1d"]
-atlas = ExtResource("9_7ycvg")
-region = Rect2(180, 0, 36, 44)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_2jcla"]
-atlas = ExtResource("9_7ycvg")
-region = Rect2(216, 0, 36, 44)
-
-[sub_resource type="SpriteFrames" id="SpriteFrames_m35m6"]
-animations = [{
-"frames": [{
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_7ycvg")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_wr18j")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_qwutr")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_671wp")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_mo76n")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_42l1d")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_2jcla")
-}],
-"loop": true,
-"name": &"default",
-"speed": 5.0
-}]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_mo76n"]
 shader = ExtResource("11_671wp")
@@ -419,24 +362,17 @@ TerrainGen = NodePath("..")
 Camera = NodePath("../../Camera2D")
 ChunkSize = 20
 
-[node name="Camera2D" type="Camera2D" parent="."]
+[node name="Camera2D" type="Camera2D" parent="." node_paths=PackedStringArray("Player")]
 position = Vector2(576, 324)
 script = ExtResource("10_wr18j")
-
-[node name="OldPlayePrototype" type="AnimatedSprite2D" parent="."]
-z_index = 1
-z_as_relative = false
-position = Vector2(457, 241)
-sprite_frames = SubResource("SpriteFrames_m35m6")
-autoplay = "default"
-frame = 4
-frame_progress = 0.34795603
+Player = NodePath("../PlayerPrototype")
 
 [node name="Experiments" type="Node2D" parent="."]
 
 [node name="PlayerPrototype" type="Node2D" parent="."]
 position = Vector2(559, 243)
 scale = Vector2(2, 2)
+script = ExtResource("14_pctrl")
 
 [node name="SubViewport" type="SubViewport" parent="PlayerPrototype"]
 disable_3d = true

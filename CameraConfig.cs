@@ -5,7 +5,7 @@ public partial class CameraConfig : Container
 	[Export]
 	public CameraController Camera { get; set; }
 
-	private Label _moveSpeedLabel;
+	private Label _smoothSpeedLabel;
 	private Label _minZoomLabel;
 	private Label _maxZoomLabel;
 
@@ -22,7 +22,7 @@ public partial class CameraConfig : Container
 
 	private void CreateSliders()
 	{
-		AddSlider("Move Speed", 100f, 2000f, 50f, Camera.MoveSpeed, 0, 0, OnMoveSpeedChanged, out _moveSpeedLabel);
+		AddSlider("Smooth Speed", 1f, 20f, 0.5f, Camera.SmoothSpeed, 0, 0, OnSmoothSpeedChanged, out _smoothSpeedLabel);
 		AddSlider("Min Zoom", 0.1f, 2.0f, 0.1f, Camera.MinZoom, 1, 0, OnMinZoomChanged, out _minZoomLabel);
 		AddSlider("Max Zoom", 0.5f, 5.0f, 0.1f, Camera.MaxZoom, 1, 1, OnMaxZoomChanged, out _maxZoomLabel);
 	}
@@ -54,10 +54,10 @@ public partial class CameraConfig : Container
 
 	private string FormatLabel(string name, float value) => $"{name}: {value:F1}";
 
-	private void OnMoveSpeedChanged(double value)
+	private void OnSmoothSpeedChanged(double value)
 	{
-		Camera.MoveSpeed = (float)value;
-		_moveSpeedLabel.Text = FormatLabel("Move Speed", (float)value);
+		Camera.SmoothSpeed = (float)value;
+		_smoothSpeedLabel.Text = FormatLabel("Smooth Speed", (float)value);
 	}
 
 	private void OnMinZoomChanged(double value)
