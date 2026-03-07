@@ -1,11 +1,11 @@
 using Godot;
 
-public partial class PlayerController : Node2D
+public partial class PlayerController : CharacterBody2D
 {
 	[Export]
 	public float MoveSpeed { get; set; } = 200.0f;
 
-	public override void _Process(double delta)
+	public override void _PhysicsProcess(double delta)
 	{
 		Vector2 moveDirection = Vector2.Zero;
 
@@ -18,7 +18,10 @@ public partial class PlayerController : Node2D
 		if (Input.IsKeyPressed(Key.D) || Input.IsKeyPressed(Key.Right))
 			moveDirection.X += 1;
 
-		if (moveDirection != Vector2.Zero)
-			Position += moveDirection.Normalized() * MoveSpeed * (float)delta;
+		Velocity = moveDirection == Vector2.Zero
+			? Vector2.Zero
+			: moveDirection.Normalized() * MoveSpeed;
+
+		MoveAndSlide();
 	}
 }

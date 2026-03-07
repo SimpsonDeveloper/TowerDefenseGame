@@ -127,13 +127,16 @@ public partial class ChunkManager : Node
         var physicsLayerIdx = 0;
         var tileData = atlasSource.GetTileData(Vector2I.Zero, 0);
         
-        // Create a square collision polygon covering the full tile
+        // Create a square collision polygon covering the full tile.
+        // Godot 4 tile local space has its origin at the tile CENTER, so the
+        // polygon must be centered on (0,0) rather than starting at the corner.
+        float half = ChunkRenderer.TilePixelSize / 2f;
         var polygon = new Vector2[]
         {
-            new Vector2(0, 0),
-            new Vector2(ChunkRenderer.TilePixelSize, 0),
-            new Vector2(ChunkRenderer.TilePixelSize, ChunkRenderer.TilePixelSize),
-            new Vector2(0, ChunkRenderer.TilePixelSize)
+            new Vector2(-half, -half),
+            new Vector2( half, -half),
+            new Vector2( half,  half),
+            new Vector2(-half,  half)
         };
         tileData.AddCollisionPolygon(physicsLayerIdx);
         tileData.SetCollisionPolygonPoints(physicsLayerIdx, 0, polygon);

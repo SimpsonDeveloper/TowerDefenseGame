@@ -1,4 +1,4 @@
-[gd_scene load_steps=41 format=3 uid="uid://byg548mddsuhp"]
+[gd_scene load_steps=42 format=3 uid="uid://byg548mddsuhp"]
 
 [ext_resource type="Script" uid="uid://rradq6tqhv60" path="res://SliderConfig.cs" id="2_66tet"]
 [ext_resource type="Script" uid="uid://dnb5iegcl3s5r" path="res://terrain/TerrainGen.cs" id="10_671wp"]
@@ -241,6 +241,9 @@ scale_min = 2.0
 scale_max = 2.0
 color = Color(0.8862745, 0, 0, 1)
 
+[sub_resource type="CircleShape2D" id="CircleShape2D_player"]
+radius = 14.0
+
 [sub_resource type="ViewportTexture" id="ViewportTexture_671wp"]
 viewport_path = NodePath("PlayerPrototype/SubViewport")
 
@@ -356,10 +359,13 @@ Player = NodePath("../PlayerPrototype")
 
 [node name="Experiments" type="Node2D" parent="."]
 
-[node name="PlayerPrototype" type="Node2D" parent="."]
+[node name="PlayerPrototype" type="CharacterBody2D" parent="."]
 position = Vector2(559, 243)
 scale = Vector2(2, 2)
 script = ExtResource("14_pctrl")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="PlayerPrototype"]
+shape = SubResource("CircleShape2D_player")
 
 [node name="SubViewport" type="SubViewport" parent="PlayerPrototype"]
 disable_3d = true

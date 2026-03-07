@@ -57,7 +57,7 @@ public static class TerrainTypeExtensions
             new TerrainTypeData
             (
                 [ new Color("#916800"), new Color("#896200"), new Color("#825d00"), new Color("#7a5700") ],
-                false
+                true
             )
         }
     };
