@@ -22,53 +22,26 @@ public partial class CameraConfig : Container
 
 	private void CreateSliders()
 	{
-		AddSlider("Smooth Speed", 1f, 20f, 0.5f, Camera.SmoothSpeed, 0, 0, OnSmoothSpeedChanged, out _smoothSpeedLabel);
-		AddSlider("Min Zoom", 0.1f, 2.0f, 0.1f, Camera.MinZoom, 1, 0, OnMinZoomChanged, out _minZoomLabel);
-		AddSlider("Max Zoom", 0.5f, 5.0f, 0.1f, Camera.MaxZoom, 1, 1, OnMaxZoomChanged, out _maxZoomLabel);
+		_smoothSpeedLabel = SliderBuilder.AddSlider(this, "Smooth Speed", 1f, 20f, 0.5f, Camera.SmoothSpeed, 0, 0, OnSmoothSpeedChanged);
+		_minZoomLabel     = SliderBuilder.AddSlider(this, "Min Zoom",     0.1f, 2.0f, 0.1f, Camera.MinZoom,     1, 0, OnMinZoomChanged);
+		_maxZoomLabel     = SliderBuilder.AddSlider(this, "Max Zoom",     0.5f, 5.0f, 0.1f, Camera.MaxZoom,     1, 1, OnMaxZoomChanged);
 	}
-
-	private void AddSlider(string name, float min, float max, float step, float initialValue,
-		int row, int col, Range.ValueChangedEventHandler callback, out Label label)
-	{
-		var slider = new HSlider();
-		AddChild(slider);
-		slider.Size = new Vector2(200, 16);
-		slider.Position = new Vector2(8 + 247 * col, 24 + 53 * row);
-		slider.MinValue = min;
-		slider.MaxValue = max;
-		slider.Step = step;
-		slider.Value = initialValue;
-		slider.ValueChanged += callback;
-
-		var lbl = new Label();
-		slider.AddChild(lbl);
-		lbl.Size = new Vector2(120, 23);
-		lbl.Position = new Vector2(0, -24);
-		lbl.Text = FormatLabel(name, initialValue);
-		var labelSettings = new LabelSettings();
-		labelSettings.SetFontColor(new Color(0, 0, 0, 1));
-		lbl.LabelSettings = labelSettings;
-
-		label = lbl;
-	}
-
-	private string FormatLabel(string name, float value) => $"{name}: {value:F1}";
 
 	private void OnSmoothSpeedChanged(double value)
 	{
 		Camera.SmoothSpeed = (float)value;
-		_smoothSpeedLabel.Text = FormatLabel("Smooth Speed", (float)value);
+		_smoothSpeedLabel.Text = SliderBuilder.FormatLabel("Smooth Speed", (float)value);
 	}
 
 	private void OnMinZoomChanged(double value)
 	{
 		Camera.MinZoom = (float)value;
-		_minZoomLabel.Text = FormatLabel("Min Zoom", (float)value);
+		_minZoomLabel.Text = SliderBuilder.FormatLabel("Min Zoom", (float)value);
 	}
 
 	private void OnMaxZoomChanged(double value)
 	{
 		Camera.MaxZoom = (float)value;
-		_maxZoomLabel.Text = FormatLabel("Max Zoom", (float)value);
+		_maxZoomLabel.Text = SliderBuilder.FormatLabel("Max Zoom", (float)value);
 	}
 }

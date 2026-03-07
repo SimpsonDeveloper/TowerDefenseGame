@@ -1,8 +1,7 @@
-[gd_scene load_steps=43 format=3 uid="uid://byg548mddsuhp"]
+[gd_scene load_steps=41 format=3 uid="uid://byg548mddsuhp"]
 
 [ext_resource type="Script" uid="uid://rradq6tqhv60" path="res://SliderConfig.cs" id="2_66tet"]
 [ext_resource type="Script" uid="uid://dnb5iegcl3s5r" path="res://terrain/TerrainGen.cs" id="10_671wp"]
-[ext_resource type="Shader" uid="uid://dhenq7n7w3f5" path="res://main_scene.gdshader" id="10_mo76n"]
 [ext_resource type="Script" uid="uid://1njs0cvgv6a0" path="res://terrain/ChunkManager.cs" id="10_qwutr"]
 [ext_resource type="Script" uid="uid://d1rb4n55le2cp" path="res://CameraController.cs" id="10_wr18j"]
 [ext_resource type="Script" uid="uid://bn66bgttlo0pn" path="res://terrain/GenRange.cs" id="11_42l1d"]
@@ -12,11 +11,6 @@
 [ext_resource type="Script" uid="uid://7o0j1gneru7r" path="res://terrain/SimplexGenConfig.cs" id="12_42l1d"]
 [ext_resource type="Script" uid="uid://g5eae7qke6uf" path="res://CameraConfig.cs" id="13_cam01"]
 [ext_resource type="Script" uid="uid://bmttg70ob2ksw" path="res://PlayerController.cs" id="14_pctrl"]
-
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_qwutr"]
-shader = ExtResource("10_mo76n")
-shader_parameter/pixel_size = 4
-shader_parameter/screen_size = Vector2(1152, 648)
 
 [sub_resource type="Resource" id="Resource_grass_freq"]
 script = ExtResource("2_66tet")
@@ -254,13 +248,6 @@ viewport_path = NodePath("PlayerPrototype/SubViewport")
 
 [node name="UILayer" type="CanvasLayer" parent="."]
 layer = 10
-
-[node name="PixelationShaderRegion" type="ColorRect" parent="UILayer"]
-visible = false
-z_index = 1
-material = SubResource("ShaderMaterial_qwutr")
-offset_right = 110.0
-offset_bottom = 127.0
 
 [node name="GrassUI" type="Container" parent="UILayer" node_paths=PackedStringArray("SimplexGenNode")]
 offset_top = 100.0
