@@ -53,6 +53,7 @@ public partial class TerrainGen : Node, ISimplexGenConfigurable
         if (@event.IsActionPressed("ui_accept"))
         {
             _noise.Seed = (int)GD.Randi();
+            GD.Print($"Seed: {_noise.Seed}");
             ChunkManager.ClearAllChunks();
         }
     }
@@ -189,6 +190,7 @@ public partial class TerrainGen : Node, ISimplexGenConfigurable
         ValidateConfig();
         _noise = new FastNoiseLite();
         _noise.Seed = (int)GD.Randi();
+        GD.Print($"Seed: {_noise.Seed}");
         _noise.NoiseType = FastNoiseLite.NoiseTypeEnum.Simplex;
         
         // Enable fractal noise (required for octaves, lacunarity, gain)
