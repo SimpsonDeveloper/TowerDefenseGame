@@ -11,7 +11,7 @@
 [ext_resource type="Script" uid="uid://7o0j1gneru7r" path="res://terrain/SimplexGenConfig.cs" id="12_42l1d"]
 [ext_resource type="Script" uid="uid://g5eae7qke6uf" path="res://CameraConfig.cs" id="13_cam01"]
 [ext_resource type="Script" uid="uid://bmttg70ob2ksw" path="res://PlayerController.cs" id="14_pctrl"]
-[ext_resource type="Script" path="res://SpawnFadeOverlay.cs" id="15_sfade"]
+[ext_resource type="Script" uid="uid://dc1qoqdmljdl1" path="res://SpawnFadeOverlay.cs" id="15_sfade"]
 
 [sub_resource type="Resource" id="Resource_grass_freq"]
 script = ExtResource("2_66tet")
@@ -365,7 +365,7 @@ Player = NodePath("../PlayerPrototype")
 [node name="Experiments" type="Node2D" parent="."]
 
 [node name="PlayerPrototype" type="CharacterBody2D" parent="." node_paths=PackedStringArray("ChunkManager")]
-position = Vector2(559, 243)
+position = Vector2(576, 324)
 scale = Vector2(2, 2)
 script = ExtResource("14_pctrl")
 ChunkManager = NodePath("../TerrainGen/ChunkManager")
