@@ -10,19 +10,26 @@ public static class SpawnHelper
 {
     /// <summary>
     /// Scans outward ring-by-ring from <paramref name="desiredWorldPos"/> and returns
-    /// the center of the nearest loaded tile that has no collision.
+    /// the center of the nearest loaded tile where a clear area of at least
+    /// <paramref name="minClearance"/> tiles in every direction is guaranteed.
     ///
     /// Returns null when either:
     ///   - The surrounding chunks aren't loaded yet (retry next frame), or
-    ///   - No clear tile was found within <paramref name="maxRadius"/> tiles.
+    ///   - No sufficiently open tile was found within <paramref name="maxRadius"/> tiles.
     /// </summary>
     /// <param name="chunkManager">Source of terrain type data.</param>
     /// <param name="desiredWorldPos">Preferred spawn point in world pixels.</param>
     /// <param name="maxRadius">How many tiles outward to search before giving up.</param>
+    /// <param name="minClearance">
+    /// Minimum tile radius of open space required around the candidate tile.
+    /// 0 = only the tile itself must be clear.
+    /// 2 = a 5x5 area around the tile must all be clear (good default for breathing room).
+    /// </param>
     public static Vector2? FindValidSpawnPosition(
         ChunkManager chunkManager,
         Vector2 desiredWorldPos,
-        int maxRadius = 20)
+        int maxRadius = 20,
+        int minClearance = 2)
     {
         int tileSize = ChunkRenderer.TilePixelSize;
         int originTileX = Mathf.FloorToInt(desiredWorldPos.X / tileSize);
@@ -40,17 +47,40 @@ public static class SpawnHelper
                         && Mathf.Abs(ty - originTileY) < radius)
                         continue;
 
-                    // Sample the center of the tile so FloorToInt maps back to the same cell.
-                    Vector2 tileCenter = new Vector2((tx + 0.5f) * tileSize, (ty + 0.5f) * tileSize);
-                    TerrainType? type = chunkManager.GetTerrainTypeAtWorldPos(tileCenter);
-
-                    // null → chunk not loaded yet, keep searching other tiles this ring.
-                    if (type.HasValue && !type.Value.HasCollision())
-                        return tileCenter;
+                    if (HasClearance(chunkManager, tx, ty, tileSize, minClearance))
+                        return new Vector2((tx + 0.5f) * tileSize, (ty + 0.5f) * tileSize);
                 }
             }
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// Returns true only if every tile within <paramref name="clearanceRadius"/> of
+    /// (<paramref name="centerTileX"/>, <paramref name="centerTileY"/>) is loaded
+    /// and has no collision.
+    /// </summary>
+    private static bool HasClearance(
+        ChunkManager chunkManager,
+        int centerTileX, int centerTileY,
+        int tileSize, int clearanceRadius)
+    {
+        for (int dx = -clearanceRadius; dx <= clearanceRadius; dx++)
+        {
+            for (int dy = -clearanceRadius; dy <= clearanceRadius; dy++)
+            {
+                Vector2 tileCenter = new Vector2(
+                    (centerTileX + dx + 0.5f) * tileSize,
+                    (centerTileY + dy + 0.5f) * tileSize);
+
+                TerrainType? type = chunkManager.GetTerrainTypeAtWorldPos(tileCenter);
+
+                // Unloaded or colliding — this candidate fails.
+                if (!type.HasValue || type.Value.HasCollision())
+                    return false;
+            }
+        }
+        return true;
     }
 }
