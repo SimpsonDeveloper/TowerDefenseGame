@@ -1,7 +1,8 @@
-[gd_scene load_steps=43 format=3 uid="uid://byg548mddsuhp"]
+[gd_scene load_steps=47 format=3 uid="uid://byg548mddsuhp"]
 
 [ext_resource type="Script" uid="uid://rradq6tqhv60" path="res://SliderConfig.cs" id="2_66tet"]
 [ext_resource type="Script" uid="uid://dnb5iegcl3s5r" path="res://terrain/TerrainGen.cs" id="10_671wp"]
+[ext_resource type="Texture2D" uid="uid://c8vmrx3as2u78" path="res://assets/Crystal.png" id="10_mo76n"]
 [ext_resource type="Script" uid="uid://1njs0cvgv6a0" path="res://terrain/ChunkManager.cs" id="10_qwutr"]
 [ext_resource type="Script" uid="uid://d1rb4n55le2cp" path="res://CameraController.cs" id="10_wr18j"]
 [ext_resource type="Script" uid="uid://bn66bgttlo0pn" path="res://terrain/GenRange.cs" id="11_42l1d"]
@@ -12,6 +13,8 @@
 [ext_resource type="Script" uid="uid://g5eae7qke6uf" path="res://CameraConfig.cs" id="13_cam01"]
 [ext_resource type="Script" uid="uid://bmttg70ob2ksw" path="res://PlayerController.cs" id="14_pctrl"]
 [ext_resource type="Script" uid="uid://dc1qoqdmljdl1" path="res://SpawnFadeOverlay.cs" id="15_sfade"]
+[ext_resource type="Script" uid="uid://b4350bcui80cy" path="res://HarvestComponent.cs" id="16_hcomp"]
+[ext_resource type="Script" uid="uid://b1mov0qvgdmcc" path="res://Harvestable.cs" id="17_harv"]
 
 [sub_resource type="Resource" id="Resource_grass_freq"]
 script = ExtResource("2_66tet")
@@ -183,6 +186,9 @@ metadata/_custom_type_script = "uid://bn66bgttlo0pn"
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_player"]
 radius = 14.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_harvest"]
+radius = 16.0
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_mo76n"]
 shader = ExtResource("11_671wp")
@@ -364,6 +370,18 @@ Player = NodePath("../PlayerPrototype")
 
 [node name="Experiments" type="Node2D" parent="."]
 
+[node name="HarvestableCrystal" type="StaticBody2D" parent="."]
+position = Vector2(740, 321)
+scale = Vector2(2, 2)
+script = ExtResource("17_harv")
+
+[node name="Sprite2D" type="Sprite2D" parent="HarvestableCrystal"]
+z_index = 1
+texture = ExtResource("10_mo76n")
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="HarvestableCrystal"]
+polygon = PackedVector2Array(-27.5, 4.5, -25.5, 13.5, -7.5, 21, -17.5, 33, 25, 32.5, 11, 13, 27, -13, 19, -29.5, 5, -24, -7, -32, -18, -16.5, -9.5, 4, -12, 6)
+
 [node name="PlayerPrototype" type="CharacterBody2D" parent="." node_paths=PackedStringArray("ChunkManager")]
 position = Vector2(576, 324)
 scale = Vector2(2, 2)
@@ -372,6 +390,12 @@ ChunkManager = NodePath("../TerrainGen/ChunkManager")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="PlayerPrototype"]
 shape = SubResource("CircleShape2D_player")
+
+[node name="HarvestComponent" type="Area2D" parent="PlayerPrototype"]
+script = ExtResource("16_hcomp")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="PlayerPrototype/HarvestComponent"]
+shape = SubResource("CircleShape2D_harvest")
 
 [node name="SubViewport" type="SubViewport" parent="PlayerPrototype"]
 disable_3d = true
