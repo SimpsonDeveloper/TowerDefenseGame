@@ -56,6 +56,7 @@ public partial class ChunkRenderer : Node2D
         _sprite = new Sprite2D();
         _sprite.Centered = false;  // Position from top-left
         _sprite.TextureFilter = TextureFilterEnum.Nearest;  // Pixel-perfect scaling
+        _sprite.ZIndex = -1;
         AddChild(_sprite);
     }
 

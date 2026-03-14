@@ -1,0 +1,31 @@
+[gd_scene load_steps=7 format=3 uid="uid://xtobc48aarc7"]
+
+[ext_resource type="Script" uid="uid://bia7o0bu4ms1r" path="res://scripts/world/drops/HarvestDrop.cs" id="1_harvd"]
+[ext_resource type="Script" uid="uid://b308t5jfrhlvv" path="res://scripts/world/drops/InventoryPickup.cs" id="2_invpu"]
+[ext_resource type="Script" uid="uid://chr0avfu2nwee" path="res://scripts/components/DetectionZone.cs" id="3_hitbx"]
+[ext_resource type="Script" uid="uid://ccu4vr8pgyovi" path="res://scripts/components/SpriteComponent.cs" id="4_sprc"]
+[ext_resource type="Texture2D" uid="uid://c8vmrx3as2u78" path="res://assets/Crystal.png" id="5_cryst"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_pickup"]
+radius = 32.0
+
+[node name="CrystalDrop" type="Node2D"]
+
+[node name="HarvestDrop" type="Node" parent="."]
+script = ExtResource("1_harvd")
+
+[node name="InventoryPickup" type="Node" parent="." node_paths=PackedStringArray("HitBox", "Sprite")]
+script = ExtResource("2_invpu")
+ItemName = "Crystal"
+HitBox = NodePath("../PickupDetectionZone")
+Sprite = NodePath("../CrystalSprite")
+
+[node name="PickupDetectionZone" type="Area2D" parent="."]
+script = ExtResource("3_hitbx")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="PickupDetectionZone"]
+shape = SubResource("CircleShape2D_pickup")
+
+[node name="CrystalSprite" type="Sprite2D" parent="."]
+texture = ExtResource("5_cryst")
+script = ExtResource("4_sprc")

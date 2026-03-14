@@ -6,6 +6,7 @@ using Godot;
 /// Each harvest tick applies a crack shader step, a shake, and color-sampled particles.
 /// When HP reaches zero the node frees itself; particles linger independently because
 /// each burst is a fresh GpuParticles2D added directly to the scene root.
+/// On destruction, spawns HarvestDropScene if set and it contains a HarvestDrop child.
 /// </summary>
 public partial class Harvestable : StaticBody2D
 {
@@ -17,11 +18,19 @@ public partial class Harvestable : StaticBody2D
     [Export]
     public int ParticlesPerTick { get; set; } = 6;
 
+    /// <summary>
+    /// Scene to instantiate when this harvestable breaks. The scene root must be a Node2D
+    /// with a HarvestDrop component as a direct child, otherwise a warning is logged and
+    /// no drop is spawned.
+    /// </summary>
+    [Export]
+    public PackedScene HarvestDropScene { get; set; }
+
     [Signal]
     public delegate void BrokenEventHandler();
 
     private int             _hp;
-    private Sprite2D        _sprite;
+    private SpriteComponent _sprite;
     private Vector2         _spriteOrigin;
     private ShaderMaterial  _crackMaterial;
     private Image           _spriteImage;
@@ -31,7 +40,7 @@ public partial class Harvestable : StaticBody2D
     public override void _Ready()
     {
         _hp     = MaxHp;
-        _sprite = GetNode<Sprite2D>("Sprite2D");
+        _sprite = GetNode<SpriteComponent>("Sprite2D");
         _spriteOrigin = _sprite.Position;
         _rng.Randomize();
 
@@ -152,7 +161,43 @@ public partial class Harvestable : StaticBody2D
     private void Break()
     {
         SpawnParticles(ParticlesPerTick * 2);
+        TrySpawnDrop();
         EmitSignal(SignalName.Broken);
         QueueFree();
+    }
+
+    private void TrySpawnDrop()
+    {
+        if (HarvestDropScene == null)
+            return;
+
+        var drop = HarvestDropScene.Instantiate();
+
+        if (drop is not Node2D dropNode)
+        {
+            GD.PushWarning($"Harvestable '{Name}': HarvestDropScene root must be a Node2D.");
+            drop.QueueFree();
+            return;
+        }
+
+        bool hasHarvestDrop = false;
+        foreach (var child in dropNode.GetChildren())
+        {
+            if (child is HarvestDrop)
+            {
+                hasHarvestDrop = true;
+                break;
+            }
+        }
+
+        if (!hasHarvestDrop)
+        {
+            GD.PushWarning($"Harvestable '{Name}': HarvestDropScene has no HarvestDrop component as a direct child. Drop not spawned.");
+            dropNode.QueueFree();
+            return;
+        }
+
+        GetTree().CurrentScene.AddChild(dropNode);
+        dropNode.GlobalPosition = GlobalPosition;
     }
 }
