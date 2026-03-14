@@ -2,29 +2,26 @@ using System.Collections.Generic;
 using Godot;
 
 /// <summary>
-/// A StaticBody2D that can be harvested by a HarvestComponent.
+/// A StaticBody2D that can be harvested by a HarvesterComponent.
 /// Each harvest tick applies a crack shader step, a shake, and color-sampled particles.
-/// When HP reaches zero the node frees itself; particles linger independently because
-/// each burst is a fresh GpuParticles2D added directly to the scene root.
-/// On destruction, spawns HarvestDropScene if set and it contains a HarvestDrop child.
+/// When HP reaches zero the node frees itself and spawns 1–3 drops.
 /// </summary>
 public partial class Harvestable : StaticBody2D
 {
     /// <summary>Number of harvest ticks before this node breaks.</summary>
-    [Export]
-    public int MaxHp { get; set; } = 5;
+    [Export] public int MaxHp { get; set; } = 5;
 
     /// <summary>Particles emitted per tick. Doubled on the final breaking tick.</summary>
-    [Export]
-    public int ParticlesPerTick { get; set; } = 6;
+    [Export] public int ParticlesPerTick { get; set; } = 6;
 
     /// <summary>
-    /// Scene to instantiate when this harvestable breaks. The scene root must be a Node2D
-    /// with a HarvestDrop component as a direct child, otherwise a warning is logged and
-    /// no drop is spawned.
+    /// Scene to instantiate when this harvestable breaks. The root must be a Node2D
+    /// with a HarvestDrop as a direct child, otherwise a warning is logged and no drop spawns.
     /// </summary>
-    [Export]
-    public PackedScene HarvestDropScene { get; set; }
+    [Export] public PackedScene HarvestDropScene { get; set; }
+
+    [Export] public int MinDropCount { get; set; } = 1;
+    [Export] public int MaxDropCount { get; set; } = 3;
 
     [Signal]
     public delegate void BrokenEventHandler();
@@ -51,7 +48,7 @@ public partial class Harvestable : StaticBody2D
         _spriteImage = _sprite.Texture.GetImage();
     }
 
-    /// <summary>Called by HarvestComponent on each harvest tick.</summary>
+    /// <summary>Called by HarvesterComponent on each harvest tick.</summary>
     public void ApplyHarvestTick()
     {
         _hp = Mathf.Max(_hp - 1, 0);
@@ -127,12 +124,10 @@ public partial class Harvestable : StaticBody2D
             Explosiveness   = 1.0f,
             LocalCoords     = false,
             ProcessMaterial = material,
-            ZIndex          = 2,
         };
 
         emitter.Finished += emitter.QueueFree;
 
-        // Parent directly to the scene root so bursts outlive the crystal node
         GetTree().CurrentScene.AddChild(emitter);
         emitter.GlobalPosition = GlobalPosition;
     }
@@ -161,16 +156,23 @@ public partial class Harvestable : StaticBody2D
     private void Break()
     {
         SpawnParticles(ParticlesPerTick * 2);
-        TrySpawnDrop();
+        SpawnDrops();
         EmitSignal(SignalName.Broken);
         QueueFree();
     }
 
-    private void TrySpawnDrop()
+    private void SpawnDrops()
     {
         if (HarvestDropScene == null)
             return;
 
+        int count = _rng.RandiRange(MinDropCount, MaxDropCount);
+        for (int i = 0; i < count; i++)
+            TrySpawnDrop();
+    }
+
+    private void TrySpawnDrop()
+    {
         var drop = HarvestDropScene.Instantiate();
 
         if (drop is not Node2D dropNode)
@@ -192,7 +194,7 @@ public partial class Harvestable : StaticBody2D
 
         if (!hasHarvestDrop)
         {
-            GD.PushWarning($"Harvestable '{Name}': HarvestDropScene has no HarvestDrop component as a direct child. Drop not spawned.");
+            GD.PushWarning($"Harvestable '{Name}': HarvestDropScene has no HarvestDrop component as a direct child.");
             dropNode.QueueFree();
             return;
         }

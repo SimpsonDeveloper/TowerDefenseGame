@@ -1,25 +1,20 @@
 using Godot;
 
 /// <summary>
-/// Component that allows its parent drop Node2D to be picked up by the player when
-/// the player enters the HitBox. Requires a HitBoxComponent for proximity detection
-/// and a SpriteComponent so the InventoryUI can render the item's sprite.
-/// When picked up, the entire parent node is freed.
+/// Picks up the parent drop Node2D when the player enters the HitBox.
+/// Also despawns the drop after DespawnTime seconds if never collected.
+/// Movement and magnetize behaviour live in DropBehavior.
 /// </summary>
 public partial class InventoryPickup : Node
 {
-    [Export]
-    public string ItemName { get; set; } = "Unknown";
+    [Export] public string ItemName { get; set; } = "Unknown";
 
-    [Export]
-    public DetectionZone HitBox { get; set; }
+    [Export] public DetectionZone HitBox { get; set; }
 
-    [Export]
-    public SpriteComponent Sprite { get; set; }
+    [Export] public SpriteComponent Sprite { get; set; }
 
-    /// <summary>Seconds before an unpicked-up drop despawns. Default is 5 minutes.</summary>
-    [Export]
-    public float DespawnTime { get; set; } = 300f;
+    /// <summary>Seconds before an uncollected drop despawns. Default is 5 minutes.</summary>
+    [Export] public float DespawnTime { get; set; } = 300f;
 
     private bool  _pickedUp;
     private float _age;
