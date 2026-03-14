@@ -19,18 +19,23 @@ public partial class InventoryUI : CanvasLayer
     {
         Layer = 20;
 
-        // Full-screen anchor so child layout can reference screen edges
+        // Full-screen anchor so child layout can reference screen edges.
+        // MouseFilter.Ignore on all layout containers so they don't swallow input
+        // intended for UI on layers below (e.g. terrain sliders).
         var root = new Control();
         root.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+        root.MouseFilter = Control.MouseFilterEnum.Ignore;
         AddChild(root);
 
         // VBoxContainer fills the screen; a spacer pushes slots to the bottom
         var vbox = new VBoxContainer();
         vbox.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+        vbox.MouseFilter = Control.MouseFilterEnum.Ignore;
         root.AddChild(vbox);
 
         var spacer = new Control();
         spacer.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
+        spacer.MouseFilter = Control.MouseFilterEnum.Ignore;
         vbox.AddChild(spacer);
 
         _slotsContainer = new HBoxContainer
@@ -40,8 +45,12 @@ public partial class InventoryUI : CanvasLayer
         _slotsContainer.AddThemeConstantOverride("separation", SlotPadding);
         vbox.AddChild(_slotsContainer);
 
-        // Bottom margin panel so slots don't sit flush with the screen edge
-        var bottomPad = new Control { CustomMinimumSize = new Vector2(0, SlotPadding) };
+        // Bottom margin so slots don't sit flush with the screen edge
+        var bottomPad = new Control
+        {
+            CustomMinimumSize = new Vector2(0, SlotPadding),
+            MouseFilter       = Control.MouseFilterEnum.Ignore,
+        };
         vbox.AddChild(bottomPad);
 
         if (Inventory != null)

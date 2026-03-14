@@ -1,0 +1,18 @@
+[gd_scene load_steps=6 format=3 uid="uid://dw7guwm5ixpgi"]
+
+[ext_resource type="Script" uid="uid://b1mov0qvgdmcc" path="res://scripts/world/Harvestable.cs" id="1_harv"]
+[ext_resource type="Script" uid="uid://ccu4vr8pgyovi" path="res://scripts/components/SpriteComponent.cs" id="2_sprc"]
+[ext_resource type="Texture2D" uid="uid://c8vmrx3as2u78" path="res://assets/Crystal.png" id="3_cryst"]
+[ext_resource type="PackedScene" uid="uid://xtobc48aarc7" path="res://crystal_drop.tscn" id="4_drop"]
+
+[node name="HarvestableCrystal" type="StaticBody2D"]
+scale = Vector2(2, 2)
+script = ExtResource("1_harv")
+HarvestDropScene = ExtResource("4_drop")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+script = ExtResource("2_sprc")
+texture = ExtResource("3_cryst")
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="."]
+polygon = PackedVector2Array(-27.5, 4.5, -25.5, 13.5, -7.5, 21, -17.5, 33, 25, 32.5, 11, 13, 27, -13, 19, -29.5, 5, -24, -7, -32, -18, -16.5, -9.5, 4, -12, 6)

@@ -20,6 +20,8 @@
 [ext_resource type="Script" uid="uid://wwkhwblavkv8" path="res://scripts/inventory/Inventory.cs" id="22_inv"]
 [ext_resource type="Script" uid="uid://elwkft26lg3n" path="res://scripts/inventory/InventoryUI.cs" id="23_invui"]
 [ext_resource type="PackedScene" uid="uid://xtobc48aarc7" path="res://crystal_drop.tscn" id="24_drop"]
+[ext_resource type="Script" path="res://scripts/world/CrystalSpawner.cs" id="25_cspawn"]
+[ext_resource type="PackedScene" path="res://harvestable_crystal.tscn" id="26_hcryst"]
 
 [sub_resource type="Resource" id="Resource_grass_freq"]
 script = ExtResource("2_66tet")
@@ -377,20 +379,15 @@ position = Vector2(576, 324)
 script = ExtResource("10_wr18j")
 Player = NodePath("../PlayerController")
 
-[node name="HarvestableCrystal" type="StaticBody2D" parent="."]
-position = Vector2(862, 324)
-scale = Vector2(2, 2)
-script = ExtResource("17_harv")
-HarvestDropScene = ExtResource("24_drop")
+[node name="CrystalSpawner" type="Node" parent="." node_paths=PackedStringArray("Player")]
+script = ExtResource("25_cspawn")
+CrystalScene = ExtResource("26_hcryst")
+Player = NodePath("../PlayerController")
+SpawnCount = 8
+SpawnRadius = 300.0
+CrystalColors = PackedColorArray(0.4, 0.9, 1.0, 1.0, 0.8, 0.4, 1.0, 1.0, 0.4, 1.0, 0.5, 1.0)
 
-[node name="Sprite2D" type="Sprite2D" parent="HarvestableCrystal"]
-texture = ExtResource("10_mo76n")
-script = ExtResource("19_sprc")
-
-[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="HarvestableCrystal"]
-polygon = PackedVector2Array(-27.5, 4.5, -25.5, 13.5, -7.5, 21, -17.5, 33, 25, 32.5, 11, 13, 27, -13, 19, -29.5, 5, -24, -7, -32, -18, -16.5, -9.5, 4, -12, 6)
-
-[node name="PlayerController" type="CharacterBody2D" parent="." node_paths=PackedStringArray("ChunkManager")]
+[node name="PlayerController" type="CharacterBody2D" parent="." groups=["Player"] node_paths=PackedStringArray("ChunkManager")]
 position = Vector2(576, 324)
 scale = Vector2(2, 2)
 script = ExtResource("14_pctrl")
