@@ -12,36 +12,20 @@ namespace towerdefensegame;
 /// </summary>
 public partial class ChunkManager : Node
 {
-    [Export]
-    public TerrainGen TerrainGen { get; set; }
+    [Export] public TerrainGen TerrainGen { get; set; }
+    [Export] public Camera2D Camera { get; set; }
 
-    [Export]
-    public Camera2D Camera { get; set; }
+    /// <summary>Size of each chunk in tiles (NxN).</summary>
+    [Export] public int ChunkSize { get; set; } = 600;
 
-    /// <summary>
-    /// Size of each chunk in tiles (NxN).
-    /// </summary>
-    [Export]
-    public int ChunkSize { get; set; } = 600;
+    /// <summary>How many chunks to generate beyond the visible area (buffer).</summary>
+    [Export] public int ChunkBuffer { get; set; } = 1;
 
-    /// <summary>
-    /// How many chunks to generate beyond the visible area (buffer).
-    /// </summary>
-    [Export]
-    public int ChunkBuffer { get; set; } = 1;
+    /// <summary>Maximum number of chunks to apply per frame (SetCell calls on main thread). Higher values = faster tile placement but more stutter.</summary>
+    [Export] public int ChunksToApplyPerFrame { get; set; } = 2;
 
-    /// <summary>
-    /// Maximum number of chunks to apply per frame (SetCell calls on main thread).
-    /// Higher values = faster tile placement but more stutter.
-    /// </summary>
-    [Export]
-    public int ChunksToApplyPerFrame { get; set; } = 2;
-
-    /// <summary>
-    /// Maximum number of async chunk generation tasks to run concurrently.
-    /// </summary>
-    [Export]
-    public int MaxConcurrentGenerations { get; set; } = 4;
+    /// <summary>Maximum number of async chunk generation tasks to run concurrently.</summary>
+    [Export] public int MaxConcurrentGenerations { get; set; } = 4;
 
     // Tracks which chunks have been fully generated and applied
     private HashSet<Vector2I> _generatedChunks = new HashSet<Vector2I>();

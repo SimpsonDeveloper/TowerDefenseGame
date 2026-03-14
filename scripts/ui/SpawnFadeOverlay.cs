@@ -6,11 +6,8 @@ using Godot;
 /// </summary>
 public partial class SpawnFadeOverlay : CanvasLayer
 {
-	[Export]
-	public float FadeDuration { get; set; } = 0.6f;
-
-	[Export]
-	public PlayerController Player { get; set; }
+	[Export] public float FadeDuration { get; set; } = 0.6f;
+	[Export] public PlayerController Player { get; set; }
 
 	private ColorRect _fadeRect;
 

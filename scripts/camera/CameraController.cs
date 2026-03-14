@@ -2,20 +2,11 @@ using Godot;
 
 public partial class CameraController : Camera2D
 {
-	[Export]
-	public float ZoomSpeed { get; set; } = 0.1f;
-
-	[Export]
-	public float MinZoom { get; set; } = 0.5f;
-
-	[Export]
-	public float MaxZoom { get; set; } = 2.0f;
-
-	[Export]
-	public float SmoothSpeed { get; set; } = 5.0f;
-
-	[Export]
-	public Node2D Player { get; set; }
+	[Export] public float ZoomSpeed { get; set; } = 0.1f;
+	[Export] public float MinZoom { get; set; } = 0.5f;
+	[Export] public float MaxZoom { get; set; } = 2.0f;
+	[Export] public float SmoothSpeed { get; set; } = 5.0f;
+	[Export] public Node2D Player { get; set; }
 
 	private float _targetZoom;
 

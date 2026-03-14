@@ -6,22 +6,14 @@ namespace towerdefensegame;
 
 public partial class TerrainGen : Node, ISimplexGenConfigurable
 {
-    [Export]
-    public SimplexGen[] SimplexGens;
-    
-    /**
-     * Remap the indices from SimplexGens to custom indices.
-     * This is so you can specify which gen to use at a certain noise range
-    */
-    [Export]
-    public Godot.Collections.Dictionary<GenRange, int> GenRanges;
+    [Export] public SimplexGen[] SimplexGens;
+
+    /// <summary>Remap the indices from SimplexGens to custom indices so you can specify which gen to use at a certain noise range.</summary>
+    [Export] public Godot.Collections.Dictionary<GenRange, int> GenRanges;
 
     // Mainly using this for transform parenting of other tile map layers at the moment
-    [Export]
-    public TileMapLayer TileMapLayer;
-    
-    [Export]
-    public ChunkManager ChunkManager;
+    [Export] public TileMapLayer TileMapLayer;
+    [Export] public ChunkManager ChunkManager;
 
     public Dictionary<TerrainType, SimplexGen> SimplexGensMapped { get; private set; }
         

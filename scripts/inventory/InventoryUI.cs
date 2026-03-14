@@ -7,8 +7,7 @@ using Godot;
 /// </summary>
 public partial class InventoryUI : CanvasLayer
 {
-    [Export]
-    public Inventory Inventory { get; set; }
+    [Export] public Inventory Inventory { get; set; }
 
     private HBoxContainer _slotsContainer;
 

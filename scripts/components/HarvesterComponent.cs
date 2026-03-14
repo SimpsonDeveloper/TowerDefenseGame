@@ -7,12 +7,10 @@ using Godot;
 public partial class HarvesterComponent : Node
 {
     /// <summary>Seconds between harvest ticks while in contact with a harvestable.</summary>
-    [Export]
-    public float HarvestTickInterval { get; set; } = 0.5f;
+    [Export] public float HarvestTickInterval { get; set; } = 0.5f;
 
     /// <summary>DetectionZone used to detect nearby Harvestables.</summary>
-    [Export]
-    public DetectionZone HitBox { get; set; }
+    [Export] public DetectionZone HitBox { get; set; }
 
     private Harvestable _currentTarget;
     private float       _tickTimer;

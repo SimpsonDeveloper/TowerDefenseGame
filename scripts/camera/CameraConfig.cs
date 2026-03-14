@@ -2,8 +2,7 @@ using Godot;
 
 public partial class CameraConfig : Container
 {
-	[Export]
-	public CameraController Camera { get; set; }
+	[Export] public CameraController Camera { get; set; }
 
 	private Label _smoothSpeedLabel;
 	private Label _minZoomLabel;

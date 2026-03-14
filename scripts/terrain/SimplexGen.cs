@@ -6,11 +6,8 @@ namespace towerdefensegame;
 [GlobalClass]
 public partial class SimplexGen : Node, ISimplexGenConfigurable
 {
-    [Export]
-    public ChunkManager ChunkManager;
-
-    [Export]
-    public TerrainType TerrainType { get; set; }
+    [Export] public ChunkManager ChunkManager;
+    [Export] public TerrainType TerrainType { get; set; }
     
     private FastNoiseLite _noise;
 

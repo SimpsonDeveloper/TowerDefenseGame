@@ -6,23 +6,12 @@ namespace towerdefensegame;
 
 public partial class SimplexGenConfig : Container
 {
-    [Export]
-    public bool ShowUI;
-
-    [Export]
-    public SliderConfig FrequencyConfig { get; set; }
-
-    [Export]
-    public SliderConfig OctavesConfig { get; set; }
-
-    [Export]
-    public SliderConfig LacunarityConfig { get; set; }
-
-    [Export]
-    public SliderConfig GainConfig { get; set; }
-
-    [Export]
-    public Node SimplexGenNode;
+    [Export] public bool ShowUI;
+    [Export] public SliderConfig FrequencyConfig { get; set; }
+    [Export] public SliderConfig OctavesConfig { get; set; }
+    [Export] public SliderConfig LacunarityConfig { get; set; }
+    [Export] public SliderConfig GainConfig { get; set; }
+    [Export] public Node SimplexGenNode;
 
     private readonly Dictionary<string, Label> _noiseLabels = new();
 

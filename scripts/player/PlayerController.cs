@@ -7,18 +7,14 @@ public partial class PlayerController : CharacterBody2D
 	[Signal]
 	public delegate void SpawnedEventHandler();
 
-	[Export]
-	public float MoveSpeed { get; set; } = 200.0f;
-
-	[Export]
-	public ChunkManager ChunkManager { get; set; }
+	[Export] public float MoveSpeed { get; set; } = 200.0f;
+	[Export] public ChunkManager ChunkManager { get; set; }
 
 	/// <summary>
 	/// Minimum tile radius of open space required around the spawn point.
 	/// 2 means a 5x5 tile area must be fully clear, giving the player breathing room.
 	/// </summary>
-	[Export]
-	public int SpawnClearance { get; set; } = 2;
+	[Export] public int SpawnClearance { get; set; } = 2;
 
 	private bool _spawnReady;
 
