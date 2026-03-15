@@ -1,8 +1,7 @@
-[gd_scene load_steps=52 format=3 uid="uid://byg548mddsuhp"]
+[gd_scene load_steps=56 format=3 uid="uid://byg548mddsuhp"]
 
 [ext_resource type="Script" uid="uid://rradq6tqhv60" path="res://scripts/ui/SliderConfig.cs" id="2_66tet"]
 [ext_resource type="Script" uid="uid://dnb5iegcl3s5r" path="res://scripts/terrain/TerrainGen.cs" id="10_671wp"]
-[ext_resource type="Texture2D" uid="uid://c8vmrx3as2u78" path="res://assets/Crystal.png" id="10_mo76n"]
 [ext_resource type="Script" uid="uid://1njs0cvgv6a0" path="res://scripts/terrain/ChunkManager.cs" id="10_qwutr"]
 [ext_resource type="Script" uid="uid://d1rb4n55le2cp" path="res://scripts/camera/CameraController.cs" id="10_wr18j"]
 [ext_resource type="Script" uid="uid://bn66bgttlo0pn" path="res://scripts/terrain/GenRange.cs" id="11_42l1d"]
@@ -11,17 +10,20 @@
 [ext_resource type="Texture2D" uid="uid://cl3kiv6h4frsf" path="res://assets/32px circle.png" id="11_qwutr"]
 [ext_resource type="Script" uid="uid://7o0j1gneru7r" path="res://scripts/terrain/SimplexGenConfig.cs" id="12_42l1d"]
 [ext_resource type="Script" uid="uid://g5eae7qke6uf" path="res://scripts/camera/CameraConfig.cs" id="13_cam01"]
+[ext_resource type="Resource" uid="uid://xy1eclrvo3n5" path="res://assets/resource/crystal/crystal_variant_blue.tres" id="13_fv2he"]
+[ext_resource type="Resource" uid="uid://b8jemsaw2ge3g" path="res://assets/resource/crystal/crystal_variant_green.tres" id="14_5smuj"]
 [ext_resource type="Script" uid="uid://bmttg70ob2ksw" path="res://scripts/player/PlayerController.cs" id="14_pctrl"]
 [ext_resource type="Script" uid="uid://dc1qoqdmljdl1" path="res://scripts/ui/SpawnFadeOverlay.cs" id="15_sfade"]
+[ext_resource type="Resource" uid="uid://dl04mqg0y28qf" path="res://assets/resource/crystal/crystal_variant_pink.tres" id="15_y5ved"]
+[ext_resource type="Resource" uid="uid://cq0ed2xdk5qpl" path="res://assets/resource/crystal/crystal_variant_purple.tres" id="16_kv3aw"]
 [ext_resource type="Script" uid="uid://chr0avfu2nwee" path="res://scripts/components/DetectionZone.cs" id="17_84odl"]
 [ext_resource type="Script" uid="uid://b4350bcui80cy" path="res://scripts/components/HarvesterComponent.cs" id="17_ak604"]
-[ext_resource type="Script" uid="uid://b1mov0qvgdmcc" path="res://scripts/world/Harvestable.cs" id="17_harv"]
-[ext_resource type="Script" uid="uid://ccu4vr8pgyovi" path="res://scripts/components/SpriteComponent.cs" id="19_sprc"]
+[ext_resource type="Resource" uid="uid://ckum4aocvikdm" path="res://assets/resource/crystal/crystal_variant_red.tres" id="17_o7u2a"]
+[ext_resource type="Resource" uid="uid://dfds2240tu2v7" path="res://assets/resource/crystal/crystal_variant_yellow.tres" id="18_ijoax"]
 [ext_resource type="Script" uid="uid://wwkhwblavkv8" path="res://scripts/inventory/Inventory.cs" id="22_inv"]
 [ext_resource type="Script" uid="uid://elwkft26lg3n" path="res://scripts/inventory/InventoryUI.cs" id="23_invui"]
-[ext_resource type="PackedScene" uid="uid://xtobc48aarc7" path="res://crystal_drop.tscn" id="24_drop"]
-[ext_resource type="Script" path="res://scripts/world/CrystalSpawner.cs" id="25_cspawn"]
-[ext_resource type="PackedScene" path="res://harvestable_crystal.tscn" id="26_hcryst"]
+[ext_resource type="Script" uid="uid://b23qwvleaaa37" path="res://scripts/world/CrystalSpawner.cs" id="25_cspawn"]
+[ext_resource type="PackedScene" uid="uid://dw7guwm5ixpgi" path="res://harvestable_crystal.tscn" id="26_hcryst"]
 
 [sub_resource type="Resource" id="Resource_grass_freq"]
 script = ExtResource("2_66tet")
@@ -383,11 +385,9 @@ Player = NodePath("../PlayerController")
 script = ExtResource("25_cspawn")
 CrystalScene = ExtResource("26_hcryst")
 Player = NodePath("../PlayerController")
-SpawnCount = 8
-SpawnRadius = 300.0
-CrystalColors = PackedColorArray(0.4, 0.9, 1.0, 1.0, 0.8, 0.4, 1.0, 1.0, 0.4, 1.0, 0.5, 1.0)
+Variants = Array[Object]([ExtResource("13_fv2he"), ExtResource("14_5smuj"), ExtResource("15_y5ved"), ExtResource("16_kv3aw"), ExtResource("17_o7u2a"), ExtResource("18_ijoax")])
 
-[node name="PlayerController" type="CharacterBody2D" parent="." groups=["Player"] node_paths=PackedStringArray("ChunkManager")]
+[node name="PlayerController" type="CharacterBody2D" parent="." node_paths=PackedStringArray("ChunkManager") groups=["Player"]]
 position = Vector2(576, 324)
 scale = Vector2(2, 2)
 script = ExtResource("14_pctrl")

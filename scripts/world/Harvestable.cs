@@ -2,50 +2,39 @@ using System.Collections.Generic;
 using Godot;
 
 /// <summary>
-/// A StaticBody2D that can be harvested by a HarvesterComponent.
-/// Each harvest tick applies a crack shader step, a shake, and color-sampled particles.
-/// When HP reaches zero the node frees itself and spawns 1–3 drops.
+/// Component that handles harvesting behaviour: HP, crack shader, shake, and
+/// colour-sampled particles. Emits Broken when HP reaches zero, which frees the
+/// parent body. Connect Broken → HarvestableResource.OnHarvestableBroken in the scene.
 /// </summary>
-public partial class Harvestable : StaticBody2D
+public partial class Harvestable : Node
 {
-    /// <summary>Number of harvest ticks before this node breaks.</summary>
     [Export] public int MaxHp { get; set; } = 5;
-
-    /// <summary>Particles emitted per tick. Doubled on the final breaking tick.</summary>
     [Export] public int ParticlesPerTick { get; set; } = 6;
-
-    /// <summary>
-    /// Scene to instantiate when this harvestable breaks. The root must be a Node2D
-    /// with a HarvestDrop as a direct child, otherwise a warning is logged and no drop spawns.
-    /// </summary>
-    [Export] public PackedScene HarvestDropScene { get; set; }
-
-    [Export] public int MinDropCount { get; set; } = 1;
-    [Export] public int MaxDropCount { get; set; } = 3;
+    [Export] public SpriteComponent Sprite { get; set; }
 
     [Signal]
     public delegate void BrokenEventHandler();
 
-    private int             _hp;
-    private SpriteComponent _sprite;
-    private Vector2         _spriteOrigin;
-    private ShaderMaterial  _crackMaterial;
-    private Image           _spriteImage;
-    private Tween           _shakeTween;
+    private int            _hp;
+    private Node2D         _root;
+    private Vector2        _spriteOrigin;
+    private ShaderMaterial _crackMaterial;
+    private Image          _spriteImage;
+    private Tween          _shakeTween;
     private RandomNumberGenerator _rng = new();
 
     public override void _Ready()
     {
-        _hp     = MaxHp;
-        _sprite = GetNode<SpriteComponent>("Sprite2D");
-        _spriteOrigin = _sprite.Position;
+        _hp   = MaxHp;
+        _root = GetParent<Node2D>();
+        _spriteOrigin = Sprite.Position;
         _rng.Randomize();
 
         var shader = GD.Load<Shader>("res://crystal_crack.gdshader");
         _crackMaterial = new ShaderMaterial { Shader = shader };
-        _sprite.Material = _crackMaterial;
+        Sprite.Material = _crackMaterial;
 
-        _spriteImage = _sprite.Texture.GetImage();
+        _spriteImage = Sprite.Texture.GetImage();
     }
 
     /// <summary>Called by HarvesterComponent on each harvest tick.</summary>
@@ -77,9 +66,9 @@ public partial class Harvestable : StaticBody2D
         float stepTime = 0.04f;
 
         _shakeTween = CreateTween();
-        _shakeTween.TweenProperty(_sprite, "position", _spriteOrigin + new Vector2( amount, 0), stepTime);
-        _shakeTween.TweenProperty(_sprite, "position", _spriteOrigin + new Vector2(-amount, 0), stepTime);
-        _shakeTween.TweenProperty(_sprite, "position", _spriteOrigin,                           stepTime);
+        _shakeTween.TweenProperty(Sprite, "position", _spriteOrigin + new Vector2( amount, 0), stepTime);
+        _shakeTween.TweenProperty(Sprite, "position", _spriteOrigin + new Vector2(-amount, 0), stepTime);
+        _shakeTween.TweenProperty(Sprite, "position", _spriteOrigin,                           stepTime);
     }
 
     private void SpawnParticles(int count)
@@ -129,7 +118,7 @@ public partial class Harvestable : StaticBody2D
         emitter.Finished += emitter.QueueFree;
 
         GetTree().CurrentScene.AddChild(emitter);
-        emitter.GlobalPosition = GlobalPosition;
+        emitter.GlobalPosition = _root.GlobalPosition;
     }
 
     private List<Color> SampleSpriteColors(int count)
@@ -156,50 +145,7 @@ public partial class Harvestable : StaticBody2D
     private void Break()
     {
         SpawnParticles(ParticlesPerTick * 2);
-        SpawnDrops();
         EmitSignal(SignalName.Broken);
-        QueueFree();
-    }
-
-    private void SpawnDrops()
-    {
-        if (HarvestDropScene == null)
-            return;
-
-        int count = _rng.RandiRange(MinDropCount, MaxDropCount);
-        for (int i = 0; i < count; i++)
-            TrySpawnDrop();
-    }
-
-    private void TrySpawnDrop()
-    {
-        var drop = HarvestDropScene.Instantiate();
-
-        if (drop is not Node2D dropNode)
-        {
-            GD.PushWarning($"Harvestable '{Name}': HarvestDropScene root must be a Node2D.");
-            drop.QueueFree();
-            return;
-        }
-
-        bool hasHarvestDrop = false;
-        foreach (var child in dropNode.GetChildren())
-        {
-            if (child is HarvestDrop)
-            {
-                hasHarvestDrop = true;
-                break;
-            }
-        }
-
-        if (!hasHarvestDrop)
-        {
-            GD.PushWarning($"Harvestable '{Name}': HarvestDropScene has no HarvestDrop component as a direct child.");
-            dropNode.QueueFree();
-            return;
-        }
-
-        GetTree().CurrentScene.AddChild(dropNode);
-        dropNode.GlobalPosition = GlobalPosition;
+        _root.QueueFree();
     }
 }

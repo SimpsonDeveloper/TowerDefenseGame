@@ -7,7 +7,6 @@ using Godot;
 /// </summary>
 public partial class InventoryPickup : Node
 {
-    [Export] public string ItemName { get; set; } = "Unknown";
 
     [Export] public DetectionZone HitBox { get; set; }
 
@@ -16,6 +15,7 @@ public partial class InventoryPickup : Node
     /// <summary>Seconds before an uncollected drop despawns. Default is 5 minutes.</summary>
     [Export] public float DespawnTime { get; set; } = 300f;
 
+    public string ItemName { get; set; } = "Unknown";
     private bool  _pickedUp;
     private float _age;
 

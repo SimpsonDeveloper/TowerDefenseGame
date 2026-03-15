@@ -2,8 +2,8 @@ using Godot;
 
 /// <summary>
 /// Spawns a ring of crystals around the player after they have found a valid spawn
-/// position. Supports multiple crystal types defined by color; each spawned crystal
-/// is assigned a random color from the list.
+/// position. Each spawned crystal is assigned a random <see cref="ResourceVariant"/>
+/// from the <see cref="Variants"/> array.
 /// </summary>
 public partial class CrystalSpawner : Node
 {
@@ -19,10 +19,10 @@ public partial class CrystalSpawner : Node
     [Export] public float SpawnRadius { get; set; } = 300f;
 
     /// <summary>
-    /// One color per crystal type. Each spawned crystal picks one at random.
-    /// Leave empty to use the sprite's default colors.
+    /// Available resource variants. Each spawned crystal picks one at random.
+    /// Leave empty to use the scene's default textures.
     /// </summary>
-    [Export] public Color[] CrystalColors { get; set; } = [];
+    [Export] public ResourceVariant[] Variants { get; set; } = [];
 
     private RandomNumberGenerator _rng = new();
 
@@ -54,16 +54,28 @@ public partial class CrystalSpawner : Node
             float radius = SpawnRadius + _rng.RandfRange(-40f, 40f);
             var   pos    = Player.GlobalPosition + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * radius;
 
-            var crystal = CrystalScene.Instantiate<Harvestable>();
+            var crystal = CrystalScene.Instantiate<Node2D>();
 
-            if (CrystalColors.Length > 0)
+            if (Variants.Length > 0)
             {
-                var color = CrystalColors[_rng.RandiRange(0, CrystalColors.Length - 1)];
-                crystal.GetNode<SpriteComponent>("Sprite2D").Modulate = color;
+                var variant = Variants[_rng.RandiRange(0, Variants.Length - 1)];
+                ApplyVariant(crystal, variant);
             }
 
             GetTree().CurrentScene.AddChild(crystal);
             crystal.GlobalPosition = pos;
+        }
+    }
+
+    private static void ApplyVariant(Node2D crystal, ResourceVariant variant)
+    {
+        foreach (var child in crystal.GetChildren())
+        {
+            if (child is HarvestableResource resource)
+            {
+                resource.Variant = variant;
+                return;
+            }
         }
     }
 }

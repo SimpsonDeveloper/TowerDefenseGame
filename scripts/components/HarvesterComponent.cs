@@ -38,11 +38,15 @@ public partial class HarvesterComponent : Node
         Harvestable found = null;
         foreach (var body in HitBox.GetOverlappingBodies())
         {
-            if (body is Harvestable harvestable)
+            foreach (var child in body.GetChildren())
             {
-                found = harvestable;
-                break;
+                if (child is Harvestable h)
+                {
+                    found = h;
+                    break;
+                }
             }
+            if (found != null) break;
         }
 
         if (found == _currentTarget)
