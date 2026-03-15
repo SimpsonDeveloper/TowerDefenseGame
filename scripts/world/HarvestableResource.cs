@@ -71,7 +71,7 @@ public partial class HarvestableResource : Node
 
         if (Variant?.DropTexture != null)
         {
-            var dropSprite = dropNode.GetNodeOrNull<SpriteComponent>("CrystalSprite");
+            var dropSprite = dropNode.GetNodeOrNull<SpriteComponent>("DropSprite");
             if (dropSprite != null)
                 dropSprite.Texture = Variant.DropTexture;
         }

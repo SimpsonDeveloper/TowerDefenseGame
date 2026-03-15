@@ -1,12 +1,11 @@
-[gd_scene load_steps=12 format=3 uid="uid://xtobc48aarc7"]
+[gd_scene load_steps=11 format=3]
 
 [ext_resource type="Script" uid="uid://bia7o0bu4ms1r" path="res://scripts/world/drops/HarvestDrop.cs" id="1_harvd"]
 [ext_resource type="Script" uid="uid://b308t5jfrhlvv" path="res://scripts/world/drops/InventoryPickup.cs" id="2_invpu"]
 [ext_resource type="Script" uid="uid://chr0avfu2nwee" path="res://scripts/components/DetectionZone.cs" id="3_dzone"]
 [ext_resource type="Script" uid="uid://ccu4vr8pgyovi" path="res://scripts/components/SpriteComponent.cs" id="4_sprc"]
-[ext_resource type="Script" uid="uid://dhfspxmpyq63g" path="res://scripts/world/drops/DropPhysics.cs" id="6_dropb"]
-[ext_resource type="Texture2D" uid="uid://cc1kh3yitkc8c" path="res://assets/resource/crystal/crystal_pink_shard.png" id="6_j57nh"]
-[ext_resource type="Shader" uid="uid://bwjkkckjygltl" path="res://shaders/sprite_outline.gdshader" id="7_outln"]
+[ext_resource type="Script" uid="uid://dhfspxmpyq63g" path="res://scripts/world/drops/DropPhysics.cs" id="5_dropb"]
+[ext_resource type="Shader" uid="uid://bwjkkckjygltl" path="res://shaders/sprite_outline.gdshader" id="6_outln"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_body"]
 radius = 6.0
@@ -18,12 +17,12 @@ radius = 6.0
 radius = 36.0
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_outline"]
-shader = ExtResource("7_outln")
+shader = ExtResource("6_outln")
 shader_parameter/outline_width = 3.0
 shader_parameter/outline_color = Color(1, 1, 1, 1)
 shader_parameter/glow_intensity = 1.5
 
-[node name="CrystalDrop" type="RigidBody2D"]
+[node name="Drop" type="RigidBody2D"]
 gravity_scale = 0.0
 lock_rotation = true
 linear_damp = 3.0
@@ -35,13 +34,13 @@ shape = SubResource("CircleShape2D_body")
 script = ExtResource("1_harvd")
 
 [node name="DropPhysics" type="Node" parent="." node_paths=PackedStringArray("MagnetZone")]
-script = ExtResource("6_dropb")
+script = ExtResource("5_dropb")
 MagnetZone = NodePath("../MagnetDetectionZone")
 
 [node name="InventoryPickup" type="Node" parent="." node_paths=PackedStringArray("HitBox", "Sprite")]
 script = ExtResource("2_invpu")
 HitBox = NodePath("../PickupDetectionZone")
-Sprite = NodePath("../CrystalShardSprite")
+Sprite = NodePath("../DropSprite")
 
 [node name="PickupDetectionZone" type="Area2D" parent="."]
 script = ExtResource("3_dzone")
@@ -55,7 +54,6 @@ script = ExtResource("3_dzone")
 [node name="CollisionShape2D" type="CollisionShape2D" parent="MagnetDetectionZone"]
 shape = SubResource("CircleShape2D_magnet")
 
-[node name="CrystalShardSprite" type="Sprite2D" parent="."]
+[node name="DropSprite" type="Sprite2D" parent="."]
 material = SubResource("ShaderMaterial_outline")
-texture = ExtResource("6_j57nh")
 script = ExtResource("4_sprc")
