@@ -1,8 +1,8 @@
 [gd_resource type="Resource" script_class="ResourceVariant" load_steps=4 format=3 uid="uid://b8jemsaw2ge3g"]
 
 [ext_resource type="Script" uid="uid://crt2c3ejj8hxo" path="res://scripts/world/ResourceVariant.cs" id="1_a4us1"]
-[ext_resource type="Texture2D" uid="uid://pycxuqn6t7nx" path="res://assets/resource/crystal/crystal_green_shard.png" id="1_x3x6i"]
-[ext_resource type="Texture2D" uid="uid://dowoyu826hp3e" path="res://assets/resource/crystal/crystal_green.png" id="2_7fwyl"]
+[ext_resource type="Texture2D" uid="uid://pycxuqn6t7nx" path="res://assets/world_resources/sprites/crystal/crystal_green_shard.png" id="1_x3x6i"]
+[ext_resource type="Texture2D" uid="uid://dowoyu826hp3e" path="res://assets/world_resources/sprites/crystal/crystal_green.png" id="2_7fwyl"]
 
 [resource]
 script = ExtResource("1_a4us1")

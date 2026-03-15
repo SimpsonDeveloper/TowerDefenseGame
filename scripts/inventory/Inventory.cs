@@ -15,16 +15,15 @@ public partial class Inventory : Node
 
     public class InventoryItem
     {
-        public string   Name;
-        public Texture2D Sprite;
-        public int      Count;
+        public string Name;
+        public int    Count;
     }
 
     private readonly List<InventoryItem> _items = new();
 
     public IReadOnlyList<InventoryItem> Items => _items;
 
-    public void AddItem(string name, Texture2D sprite)
+    public void AddItem(string name)
     {
         var existing = _items.LastOrDefault(i => i.Name == name && i.Count < MaxStackSize);
         if (existing != null)
@@ -33,7 +32,7 @@ public partial class Inventory : Node
         }
         else
         {
-            _items.Add(new InventoryItem { Name = name, Sprite = sprite, Count = 1 });
+            _items.Add(new InventoryItem { Name = name, Count = 1 });
         }
 
         EmitSignal(SignalName.InventoryChanged);

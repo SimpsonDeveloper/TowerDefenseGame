@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bxspw1uoeyj5i"
-path="res://.godot/imported/crystal_yellow.png-8f602320edaab230cd9cd5c32b70a707.ctex"
+uid="uid://cc1kh3yitkc8c"
+path="res://.godot/imported/crystal_pink_shard.png-7c55553a541cc76386934115c3bd7ce6.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/resource/crystal/crystal_yellow.png"
-dest_files=["res://.godot/imported/crystal_yellow.png-8f602320edaab230cd9cd5c32b70a707.ctex"]
+source_file="res://assets/world_resources/sprites/crystal/crystal_pink_shard.png"
+dest_files=["res://.godot/imported/crystal_pink_shard.png-7c55553a541cc76386934115c3bd7ce6.ctex"]
 
 [params]
 

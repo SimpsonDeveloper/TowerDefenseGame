@@ -74,11 +74,12 @@ public partial class InventoryUI : CanvasLayer
             CustomMinimumSize = new Vector2(SlotSize, SlotSize),
         };
 
-        if (item.Sprite != null)
+        var dropTexture = ItemRegistry.Instance?.Get(item.Name)?.DropTexture;
+        if (dropTexture != null)
         {
             var texture = new TextureRect
             {
-                Texture     = item.Sprite,
+                Texture     = dropTexture,
                 ExpandMode  = TextureRect.ExpandModeEnum.IgnoreSize,
                 StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
             };

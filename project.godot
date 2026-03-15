@@ -15,6 +15,10 @@ run/main_scene="uid://byg548mddsuhp"
 config/features=PackedStringArray("4.5", "C#", "Forward Plus")
 config/icon="res://icon.svg"
 
+[autoload]
+
+ItemRegistry="*res://scripts/ItemRegistry.cs"
+
 [dotnet]
 
 project/assembly_name="tower-defense-game"

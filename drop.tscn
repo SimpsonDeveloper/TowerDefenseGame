@@ -1,4 +1,4 @@
-[gd_scene load_steps=11 format=3]
+[gd_scene load_steps=11 format=3 uid="uid://c38yeabg3j00p"]
 
 [ext_resource type="Script" uid="uid://bia7o0bu4ms1r" path="res://scripts/world/drops/HarvestDrop.cs" id="1_harvd"]
 [ext_resource type="Script" uid="uid://b308t5jfrhlvv" path="res://scripts/world/drops/InventoryPickup.cs" id="2_invpu"]
@@ -37,10 +37,9 @@ script = ExtResource("1_harvd")
 script = ExtResource("5_dropb")
 MagnetZone = NodePath("../MagnetDetectionZone")
 
-[node name="InventoryPickup" type="Node" parent="." node_paths=PackedStringArray("HitBox", "Sprite")]
+[node name="InventoryPickup" type="Node" parent="." node_paths=PackedStringArray("HitBox")]
 script = ExtResource("2_invpu")
 HitBox = NodePath("../PickupDetectionZone")
-Sprite = NodePath("../DropSprite")
 
 [node name="PickupDetectionZone" type="Area2D" parent="."]
 script = ExtResource("3_dzone")

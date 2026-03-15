@@ -10,8 +10,6 @@ public partial class InventoryPickup : Node
 
     [Export] public DetectionZone HitBox { get; set; }
 
-    [Export] public SpriteComponent Sprite { get; set; }
-
     /// <summary>Seconds before an uncollected drop despawns. Default is 5 minutes.</summary>
     [Export] public float DespawnTime { get; set; } = 300f;
 
@@ -50,7 +48,7 @@ public partial class InventoryPickup : Node
             }
 
             _pickedUp = true;
-            inventory.AddItem(ItemName, Sprite?.Texture);
+            inventory.AddItem(ItemName);
             GetParent().QueueFree();
             return;
         }
