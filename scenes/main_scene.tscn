@@ -1,32 +1,32 @@
 [gd_scene load_steps=56 format=3 uid="uid://byg548mddsuhp"]
 
-[ext_resource type="Script" uid="uid://rradq6tqhv60" path="res://scripts/ui/SliderConfig.cs" id="2_66tet"]
-[ext_resource type="Script" uid="uid://dnb5iegcl3s5r" path="res://scripts/terrain/TerrainGen.cs" id="10_671wp"]
-[ext_resource type="Script" uid="uid://1njs0cvgv6a0" path="res://scripts/terrain/ChunkManager.cs" id="10_qwutr"]
-[ext_resource type="Script" uid="uid://d1rb4n55le2cp" path="res://scripts/camera/CameraController.cs" id="10_wr18j"]
-[ext_resource type="Script" uid="uid://bn66bgttlo0pn" path="res://scripts/terrain/GenRange.cs" id="11_42l1d"]
-[ext_resource type="Shader" uid="uid://b5b6c4tbr141y" path="res://cloud_circle_nofade_cw.gdshader" id="11_671wp"]
-[ext_resource type="Script" uid="uid://d33brm7vp1jgy" path="res://scripts/terrain/SimplexGen.cs" id="11_mo76n"]
-[ext_resource type="Texture2D" uid="uid://cl3kiv6h4frsf" path="res://assets/32px circle.png" id="11_qwutr"]
-[ext_resource type="Script" uid="uid://7o0j1gneru7r" path="res://scripts/terrain/SimplexGenConfig.cs" id="12_42l1d"]
-[ext_resource type="Script" uid="uid://g5eae7qke6uf" path="res://scripts/camera/CameraConfig.cs" id="13_cam01"]
-[ext_resource type="Resource" uid="uid://xy1eclrvo3n5" path="res://assets/world_resources/variants/crystal_variant_blue.tres" id="13_fv2he"]
-[ext_resource type="Resource" uid="uid://b8jemsaw2ge3g" path="res://assets/world_resources/variants/crystal_variant_green.tres" id="14_5smuj"]
-[ext_resource type="Script" uid="uid://bmttg70ob2ksw" path="res://scripts/player/PlayerController.cs" id="14_pctrl"]
-[ext_resource type="Script" uid="uid://dc1qoqdmljdl1" path="res://scripts/ui/SpawnFadeOverlay.cs" id="15_sfade"]
-[ext_resource type="Resource" uid="uid://dl04mqg0y28qf" path="res://assets/world_resources/variants/crystal_variant_pink.tres" id="15_y5ved"]
-[ext_resource type="Resource" uid="uid://cq0ed2xdk5qpl" path="res://assets/world_resources/variants/crystal_variant_purple.tres" id="16_kv3aw"]
-[ext_resource type="Script" uid="uid://chr0avfu2nwee" path="res://scripts/components/DetectionZone.cs" id="17_84odl"]
-[ext_resource type="Script" uid="uid://b4350bcui80cy" path="res://scripts/components/HarvesterComponent.cs" id="17_ak604"]
-[ext_resource type="Resource" uid="uid://ckum4aocvikdm" path="res://assets/world_resources/variants/crystal_variant_red.tres" id="17_o7u2a"]
-[ext_resource type="Resource" uid="uid://dfds2240tu2v7" path="res://assets/world_resources/variants/crystal_variant_yellow.tres" id="18_ijoax"]
-[ext_resource type="Script" uid="uid://wwkhwblavkv8" path="res://scripts/inventory/Inventory.cs" id="22_inv"]
-[ext_resource type="Script" uid="uid://elwkft26lg3n" path="res://scripts/inventory/InventoryUI.cs" id="23_invui"]
-[ext_resource type="Script" uid="uid://b23qwvleaaa37" path="res://scripts/world/CrystalSpawner.cs" id="25_cspawn"]
-[ext_resource type="PackedScene" uid="uid://dw7guwm5ixpgi" path="res://harvestable_crystal.tscn" id="26_hcryst"]
+[ext_resource type="Script" uid="uid://dc1qoqdmljdl1" path="res://scripts/ui/SpawnFadeOverlay.cs" id="1_to7gp"]
+[ext_resource type="Script" uid="uid://elwkft26lg3n" path="res://scripts/inventory/InventoryUI.cs" id="2_u0fll"]
+[ext_resource type="Script" uid="uid://7o0j1gneru7r" path="res://scripts/terrain/SimplexGenConfig.cs" id="3_6p3nn"]
+[ext_resource type="Script" uid="uid://rradq6tqhv60" path="res://scripts/ui/SliderConfig.cs" id="4_k67gn"]
+[ext_resource type="Script" uid="uid://g5eae7qke6uf" path="res://scripts/camera/CameraConfig.cs" id="5_k3g67"]
+[ext_resource type="Script" uid="uid://dnb5iegcl3s5r" path="res://scripts/terrain/TerrainGen.cs" id="6_4bgka"]
+[ext_resource type="Script" uid="uid://bn66bgttlo0pn" path="res://scripts/terrain/GenRange.cs" id="7_02d50"]
+[ext_resource type="Script" uid="uid://d33brm7vp1jgy" path="res://scripts/terrain/SimplexGen.cs" id="8_pgk25"]
+[ext_resource type="Script" uid="uid://1njs0cvgv6a0" path="res://scripts/terrain/ChunkManager.cs" id="9_kkokr"]
+[ext_resource type="Script" uid="uid://d1rb4n55le2cp" path="res://scripts/camera/CameraController.cs" id="10_lhwp2"]
+[ext_resource type="Script" uid="uid://b23qwvleaaa37" path="res://scripts/world/CrystalSpawner.cs" id="11_l40q6"]
+[ext_resource type="PackedScene" uid="uid://dw7guwm5ixpgi" path="res://scenes/harvestable_crystal.tscn" id="12_iav3h"]
+[ext_resource type="Resource" uid="uid://xy1eclrvo3n5" path="res://assets/world_resources/variants/crystal_variant_blue.tres" id="13_womr8"]
+[ext_resource type="Resource" uid="uid://b8jemsaw2ge3g" path="res://assets/world_resources/variants/crystal_variant_green.tres" id="14_onjth"]
+[ext_resource type="Resource" uid="uid://dl04mqg0y28qf" path="res://assets/world_resources/variants/crystal_variant_pink.tres" id="15_xa0eo"]
+[ext_resource type="Resource" uid="uid://cq0ed2xdk5qpl" path="res://assets/world_resources/variants/crystal_variant_purple.tres" id="16_3mjum"]
+[ext_resource type="Resource" uid="uid://ckum4aocvikdm" path="res://assets/world_resources/variants/crystal_variant_red.tres" id="17_p27gv"]
+[ext_resource type="Resource" uid="uid://dfds2240tu2v7" path="res://assets/world_resources/variants/crystal_variant_yellow.tres" id="18_cn4eu"]
+[ext_resource type="Script" uid="uid://bmttg70ob2ksw" path="res://scripts/player/PlayerController.cs" id="19_0wyf6"]
+[ext_resource type="Script" uid="uid://wwkhwblavkv8" path="res://scripts/inventory/Inventory.cs" id="20_xp01v"]
+[ext_resource type="Script" uid="uid://b4350bcui80cy" path="res://scripts/components/HarvesterComponent.cs" id="21_jix7a"]
+[ext_resource type="Script" uid="uid://chr0avfu2nwee" path="res://scripts/components/DetectionZone.cs" id="22_segjr"]
+[ext_resource type="Shader" uid="uid://b5b6c4tbr141y" path="res://cloud_circle_nofade_cw.gdshader" id="23_beobj"]
+[ext_resource type="Texture2D" uid="uid://cl3kiv6h4frsf" path="res://assets/32px circle.png" id="24_267kh"]
 
 [sub_resource type="Resource" id="Resource_grass_freq"]
-script = ExtResource("2_66tet")
+script = ExtResource("4_k67gn")
 Name = "Grass Frequency"
 InitialValue = 0.93
 Min = 0.01
@@ -35,7 +35,7 @@ Step = 0.01
 metadata/_custom_type_script = "uid://rradq6tqhv60"
 
 [sub_resource type="Resource" id="Resource_grass_oct"]
-script = ExtResource("2_66tet")
+script = ExtResource("4_k67gn")
 Name = "Grass Octaves"
 InitialValue = 2.0
 Min = 1.0
@@ -44,7 +44,7 @@ Step = 1.0
 metadata/_custom_type_script = "uid://rradq6tqhv60"
 
 [sub_resource type="Resource" id="Resource_grass_lac"]
-script = ExtResource("2_66tet")
+script = ExtResource("4_k67gn")
 Name = "Grass Lacunarity"
 InitialValue = 1.0
 Min = 1.0
@@ -53,7 +53,7 @@ Step = 0.1
 metadata/_custom_type_script = "uid://rradq6tqhv60"
 
 [sub_resource type="Resource" id="Resource_grass_gain"]
-script = ExtResource("2_66tet")
+script = ExtResource("4_k67gn")
 Name = "Grass Gain"
 InitialValue = 0.1
 Min = 0.01
@@ -62,7 +62,7 @@ Step = 0.01
 metadata/_custom_type_script = "uid://rradq6tqhv60"
 
 [sub_resource type="Resource" id="Resource_wr18j"]
-script = ExtResource("2_66tet")
+script = ExtResource("4_k67gn")
 Name = "Rock Frequency"
 InitialValue = 0.93
 Min = 0.01
@@ -71,7 +71,7 @@ Step = 0.01
 metadata/_custom_type_script = "uid://rradq6tqhv60"
 
 [sub_resource type="Resource" id="Resource_mo76n"]
-script = ExtResource("2_66tet")
+script = ExtResource("4_k67gn")
 Name = "Rock Octaves"
 InitialValue = 2.0
 Min = 1.0
@@ -80,7 +80,7 @@ Step = 1.0
 metadata/_custom_type_script = "uid://rradq6tqhv60"
 
 [sub_resource type="Resource" id="Resource_671wp"]
-script = ExtResource("2_66tet")
+script = ExtResource("4_k67gn")
 Name = "Rock Lacunarity"
 InitialValue = 1.0
 Min = 1.0
@@ -89,7 +89,7 @@ Step = 0.1
 metadata/_custom_type_script = "uid://rradq6tqhv60"
 
 [sub_resource type="Resource" id="Resource_qwutr"]
-script = ExtResource("2_66tet")
+script = ExtResource("4_k67gn")
 Name = "Rock Gain"
 InitialValue = 0.1
 Min = 0.01
@@ -98,7 +98,7 @@ Step = 0.01
 metadata/_custom_type_script = "uid://rradq6tqhv60"
 
 [sub_resource type="Resource" id="Resource_sand_freq"]
-script = ExtResource("2_66tet")
+script = ExtResource("4_k67gn")
 Name = "Sand Frequency"
 InitialValue = 0.93
 Min = 0.01
@@ -107,7 +107,7 @@ Step = 0.01
 metadata/_custom_type_script = "uid://rradq6tqhv60"
 
 [sub_resource type="Resource" id="Resource_sand_oct"]
-script = ExtResource("2_66tet")
+script = ExtResource("4_k67gn")
 Name = "Sand Octaves"
 InitialValue = 2.0
 Min = 1.0
@@ -116,7 +116,7 @@ Step = 1.0
 metadata/_custom_type_script = "uid://rradq6tqhv60"
 
 [sub_resource type="Resource" id="Resource_sand_lac"]
-script = ExtResource("2_66tet")
+script = ExtResource("4_k67gn")
 Name = "Sand Lacunarity"
 InitialValue = 1.0
 Min = 1.0
@@ -125,7 +125,7 @@ Step = 0.1
 metadata/_custom_type_script = "uid://rradq6tqhv60"
 
 [sub_resource type="Resource" id="Resource_sand_gain"]
-script = ExtResource("2_66tet")
+script = ExtResource("4_k67gn")
 Name = "Sand Gain"
 InitialValue = 0.1
 Min = 0.01
@@ -134,7 +134,7 @@ Step = 0.01
 metadata/_custom_type_script = "uid://rradq6tqhv60"
 
 [sub_resource type="Resource" id="Resource_o4fqm"]
-script = ExtResource("2_66tet")
+script = ExtResource("4_k67gn")
 Name = "Terrain Frequency"
 InitialValue = 0.006
 Min = 0.001
@@ -143,7 +143,7 @@ Step = 0.001
 metadata/_custom_type_script = "uid://rradq6tqhv60"
 
 [sub_resource type="Resource" id="Resource_gfmxp"]
-script = ExtResource("2_66tet")
+script = ExtResource("4_k67gn")
 Name = "Terrain Octaves"
 InitialValue = 3.0
 Min = 1.0
@@ -152,7 +152,7 @@ Step = 1.0
 metadata/_custom_type_script = "uid://rradq6tqhv60"
 
 [sub_resource type="Resource" id="Resource_1n88h"]
-script = ExtResource("2_66tet")
+script = ExtResource("4_k67gn")
 Name = "Terrain Lacunarity"
 InitialValue = 3.1
 Min = 1.0
@@ -161,7 +161,7 @@ Step = 0.1
 metadata/_custom_type_script = "uid://rradq6tqhv60"
 
 [sub_resource type="Resource" id="Resource_opjno"]
-script = ExtResource("2_66tet")
+script = ExtResource("4_k67gn")
 Name = "Terrain Gain"
 InitialValue = 0.32
 Min = 0.01
@@ -170,25 +170,25 @@ Step = 0.01
 metadata/_custom_type_script = "uid://rradq6tqhv60"
 
 [sub_resource type="Resource" id="Resource_ak604"]
-script = ExtResource("11_42l1d")
+script = ExtResource("7_02d50")
 FirstIndex = -6
 LastIndex = -4
 metadata/_custom_type_script = "uid://bn66bgttlo0pn"
 
 [sub_resource type="Resource" id="Resource_meb7l"]
-script = ExtResource("11_42l1d")
+script = ExtResource("7_02d50")
 FirstIndex = -3
 LastIndex = 1
 metadata/_custom_type_script = "uid://bn66bgttlo0pn"
 
 [sub_resource type="Resource" id="Resource_u0ygc"]
-script = ExtResource("11_42l1d")
+script = ExtResource("7_02d50")
 FirstIndex = 2
 LastIndex = 3
 metadata/_custom_type_script = "uid://bn66bgttlo0pn"
 
 [sub_resource type="Resource" id="Resource_7th4q"]
-script = ExtResource("11_42l1d")
+script = ExtResource("7_02d50")
 FirstIndex = 4
 LastIndex = 6
 metadata/_custom_type_script = "uid://bn66bgttlo0pn"
@@ -200,7 +200,7 @@ radius = 14.0
 radius = 16.0
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_mo76n"]
-shader = ExtResource("11_671wp")
+shader = ExtResource("23_beobj")
 shader_parameter/speed = 0.5390000256025
 shader_parameter/swirl_strength = 4.0
 shader_parameter/noise_scale = 5.5
@@ -266,11 +266,11 @@ viewport_path = NodePath("PlayerController/SubViewport")
 [node name="Node2D" type="Node2D"]
 
 [node name="SpawnFadeOverlay" type="CanvasLayer" parent="." node_paths=PackedStringArray("Player")]
-script = ExtResource("15_sfade")
+script = ExtResource("1_to7gp")
 Player = NodePath("../PlayerController")
 
 [node name="InventoryUI" type="CanvasLayer" parent="." node_paths=PackedStringArray("Inventory")]
-script = ExtResource("23_invui")
+script = ExtResource("2_u0fll")
 Inventory = NodePath("../PlayerController/Inventory")
 
 [node name="GensUI" type="CanvasLayer" parent="."]
@@ -280,7 +280,7 @@ layer = 10
 offset_top = 100.0
 offset_right = 40.0
 offset_bottom = 140.0
-script = ExtResource("12_42l1d")
+script = ExtResource("3_6p3nn")
 FrequencyConfig = SubResource("Resource_grass_freq")
 OctavesConfig = SubResource("Resource_grass_oct")
 LacunarityConfig = SubResource("Resource_grass_lac")
@@ -291,7 +291,7 @@ SimplexGenNode = NodePath("../../TerrainGen/GensLayer/GrassGen")
 offset_top = 200.0
 offset_right = 40.0
 offset_bottom = 240.0
-script = ExtResource("12_42l1d")
+script = ExtResource("3_6p3nn")
 FrequencyConfig = SubResource("Resource_wr18j")
 OctavesConfig = SubResource("Resource_mo76n")
 LacunarityConfig = SubResource("Resource_671wp")
@@ -302,7 +302,7 @@ SimplexGenNode = NodePath("../../TerrainGen/GensLayer/RockGen")
 offset_top = 300.0
 offset_right = 40.0
 offset_bottom = 340.0
-script = ExtResource("12_42l1d")
+script = ExtResource("3_6p3nn")
 FrequencyConfig = SubResource("Resource_sand_freq")
 OctavesConfig = SubResource("Resource_sand_oct")
 LacunarityConfig = SubResource("Resource_sand_lac")
@@ -313,7 +313,7 @@ SimplexGenNode = NodePath("../../TerrainGen/GensLayer/SandGen")
 offset_left = 600.0
 offset_right = 640.0
 offset_bottom = 40.0
-script = ExtResource("12_42l1d")
+script = ExtResource("3_6p3nn")
 FrequencyConfig = SubResource("Resource_wr18j")
 OctavesConfig = SubResource("Resource_mo76n")
 LacunarityConfig = SubResource("Resource_671wp")
@@ -323,7 +323,7 @@ SimplexGenNode = NodePath("../../TerrainGen/GensLayer/WaterGen")
 [node name="TerrainGenUI" type="Container" parent="GensUI" node_paths=PackedStringArray("SimplexGenNode")]
 offset_right = 40.0
 offset_bottom = 40.0
-script = ExtResource("12_42l1d")
+script = ExtResource("3_6p3nn")
 ShowUI = true
 FrequencyConfig = SubResource("Resource_o4fqm")
 OctavesConfig = SubResource("Resource_gfmxp")
@@ -335,11 +335,11 @@ SimplexGenNode = NodePath("../../TerrainGen")
 offset_top = 400.0
 offset_right = 40.0
 offset_bottom = 440.0
-script = ExtResource("13_cam01")
+script = ExtResource("5_k3g67")
 Camera = NodePath("../../PlayerCamera2D")
 
 [node name="TerrainGen" type="Node" parent="." node_paths=PackedStringArray("SimplexGens", "ChunkManager")]
-script = ExtResource("10_671wp")
+script = ExtResource("6_4bgka")
 SimplexGens = [NodePath("GensLayer/WaterGen"), NodePath("GensLayer/GrassGen"), NodePath("GensLayer/SandGen"), NodePath("GensLayer/RockGen")]
 GenRanges = {
 SubResource("Resource_ak604"): 0,
@@ -352,59 +352,59 @@ ChunkManager = NodePath("ChunkManager")
 [node name="GensLayer" type="Node" parent="TerrainGen"]
 
 [node name="GrassGen" type="Node" parent="TerrainGen/GensLayer" node_paths=PackedStringArray("ChunkManager")]
-script = ExtResource("11_mo76n")
+script = ExtResource("8_pgk25")
 ChunkManager = NodePath("../../ChunkManager")
 TerrainType = 1
 
 [node name="RockGen" type="Node" parent="TerrainGen/GensLayer" node_paths=PackedStringArray("ChunkManager")]
-script = ExtResource("11_mo76n")
+script = ExtResource("8_pgk25")
 ChunkManager = NodePath("../../ChunkManager")
 TerrainType = 3
 
 [node name="SandGen" type="Node" parent="TerrainGen/GensLayer" node_paths=PackedStringArray("ChunkManager")]
-script = ExtResource("11_mo76n")
+script = ExtResource("8_pgk25")
 ChunkManager = NodePath("../../ChunkManager")
 TerrainType = 2
 
 [node name="WaterGen" type="Node" parent="TerrainGen/GensLayer" node_paths=PackedStringArray("ChunkManager")]
-script = ExtResource("11_mo76n")
+script = ExtResource("8_pgk25")
 ChunkManager = NodePath("../../ChunkManager")
 
 [node name="ChunkManager" type="Node" parent="TerrainGen" node_paths=PackedStringArray("TerrainGen", "Camera")]
-script = ExtResource("10_qwutr")
+script = ExtResource("9_kkokr")
 TerrainGen = NodePath("..")
 Camera = NodePath("../../PlayerCamera2D")
 ChunkSize = 20
 
 [node name="PlayerCamera2D" type="Camera2D" parent="." node_paths=PackedStringArray("Player")]
 position = Vector2(576, 324)
-script = ExtResource("10_wr18j")
+script = ExtResource("10_lhwp2")
 Player = NodePath("../PlayerController")
 
 [node name="CrystalSpawner" type="Node" parent="." node_paths=PackedStringArray("Player")]
-script = ExtResource("25_cspawn")
-CrystalScene = ExtResource("26_hcryst")
+script = ExtResource("11_l40q6")
+CrystalScene = ExtResource("12_iav3h")
 Player = NodePath("../PlayerController")
-Variants = Array[Object]([ExtResource("13_fv2he"), ExtResource("14_5smuj"), ExtResource("15_y5ved"), ExtResource("16_kv3aw"), ExtResource("17_o7u2a"), ExtResource("18_ijoax")])
+Variants = Array[Object]([ExtResource("13_womr8"), ExtResource("14_onjth"), ExtResource("15_xa0eo"), ExtResource("16_3mjum"), ExtResource("17_p27gv"), ExtResource("18_cn4eu")])
 
 [node name="PlayerController" type="CharacterBody2D" parent="." node_paths=PackedStringArray("ChunkManager") groups=["Player"]]
 position = Vector2(576, 324)
 scale = Vector2(2, 2)
-script = ExtResource("14_pctrl")
+script = ExtResource("19_0wyf6")
 ChunkManager = NodePath("../TerrainGen/ChunkManager")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="PlayerController"]
 shape = SubResource("CircleShape2D_player")
 
 [node name="Inventory" type="Node" parent="PlayerController"]
-script = ExtResource("22_inv")
+script = ExtResource("20_xp01v")
 
 [node name="HarvesterComponent" type="Node" parent="PlayerController" node_paths=PackedStringArray("HitBox")]
-script = ExtResource("17_ak604")
+script = ExtResource("21_jix7a")
 HitBox = NodePath("../HarvestHitBox")
 
 [node name="HarvestHitBox" type="Area2D" parent="PlayerController"]
-script = ExtResource("17_84odl")
+script = ExtResource("22_segjr")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="PlayerController/HarvestHitBox"]
 shape = SubResource("CircleShape2D_harvest")
@@ -419,7 +419,7 @@ position = Vector2(16, 16)
 
 [node name="GreyCircle" type="Sprite2D" parent="PlayerController/SubViewport/Particles"]
 material = SubResource("ShaderMaterial_mo76n")
-texture = ExtResource("11_qwutr")
+texture = ExtResource("24_267kh")
 
 [node name="GPUParticles2DClouds" type="GPUParticles2D" parent="PlayerController/SubViewport/Particles"]
 amount = 40

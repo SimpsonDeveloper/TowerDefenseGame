@@ -17,7 +17,7 @@ config/icon="res://icon.svg"
 
 [autoload]
 
-ItemRegistry="*res://scripts/ItemRegistry.cs"
+ItemRegistry="*res://scenes/item_registry.tscn"
 
 [dotnet]
 

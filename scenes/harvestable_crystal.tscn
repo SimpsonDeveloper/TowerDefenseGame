@@ -3,7 +3,7 @@
 [ext_resource type="Script" uid="uid://cqm5ak22ldw0g" path="res://scripts/world/HarvestableResource.cs" id="1_harvr"]
 [ext_resource type="Script" uid="uid://b1mov0qvgdmcc" path="res://scripts/world/Harvestable.cs" id="2_harv"]
 [ext_resource type="Script" uid="uid://ccu4vr8pgyovi" path="res://scripts/components/SpriteComponent.cs" id="3_sprc"]
-[ext_resource type="PackedScene" path="res://drop.tscn" id="4_drop"]
+[ext_resource type="PackedScene" uid="uid://c38yeabg3j00p" path="res://scenes/drop.tscn" id="4_drop"]
 
 [node name="HarvestableCrystal" type="StaticBody2D"]
 scale = Vector2(2, 2)
