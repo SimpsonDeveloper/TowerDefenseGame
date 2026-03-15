@@ -4,7 +4,7 @@
 [ext_resource type="Script" uid="uid://b308t5jfrhlvv" path="res://scripts/world/drops/InventoryPickup.cs" id="2_invpu"]
 [ext_resource type="Script" uid="uid://chr0avfu2nwee" path="res://scripts/components/DetectionZone.cs" id="3_dzone"]
 [ext_resource type="Script" uid="uid://ccu4vr8pgyovi" path="res://scripts/components/SpriteComponent.cs" id="4_sprc"]
-[ext_resource type="Script" uid="uid://dhfspxmpyq63g" path="res://scripts/world/drops/DropBehavior.cs" id="6_dropb"]
+[ext_resource type="Script" uid="uid://dhfspxmpyq63g" path="res://scripts/world/drops/DropPhysics.cs" id="6_dropb"]
 [ext_resource type="Texture2D" uid="uid://cc1kh3yitkc8c" path="res://assets/resource/crystal/crystal_pink_shard.png" id="6_j57nh"]
 [ext_resource type="Shader" uid="uid://bwjkkckjygltl" path="res://shaders/sprite_outline.gdshader" id="7_outln"]
 
@@ -34,13 +34,12 @@ shape = SubResource("CircleShape2D_body")
 [node name="HarvestDrop" type="Node" parent="."]
 script = ExtResource("1_harvd")
 
-[node name="DropBehavior" type="Node" parent="." node_paths=PackedStringArray("MagnetZone")]
+[node name="DropPhysics" type="Node" parent="." node_paths=PackedStringArray("MagnetZone")]
 script = ExtResource("6_dropb")
 MagnetZone = NodePath("../MagnetDetectionZone")
 
 [node name="InventoryPickup" type="Node" parent="." node_paths=PackedStringArray("HitBox", "Sprite")]
 script = ExtResource("2_invpu")
-ItemName = "Crystal"
 HitBox = NodePath("../PickupDetectionZone")
 Sprite = NodePath("../CrystalSprite")
 

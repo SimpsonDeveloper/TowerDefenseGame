@@ -2,8 +2,8 @@ using Godot;
 
 /// <summary>
 /// Picks up the parent drop Node2D when the player enters the HitBox.
-/// Also despawns the drop after DespawnTime seconds if never collected.
-/// Movement and magnetize behaviour live in DropBehavior.
+/// Also, despawns the drop after DespawnTime seconds if never collected.
+/// Movement and magnetize behavior live in DropPhysics.
 /// </summary>
 public partial class InventoryPickup : Node
 {
