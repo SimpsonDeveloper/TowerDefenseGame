@@ -41,7 +41,7 @@ MagnetZone = NodePath("../MagnetDetectionZone")
 [node name="InventoryPickup" type="Node" parent="." node_paths=PackedStringArray("HitBox", "Sprite")]
 script = ExtResource("2_invpu")
 HitBox = NodePath("../PickupDetectionZone")
-Sprite = NodePath("../CrystalSprite")
+Sprite = NodePath("../CrystalShardSprite")
 
 [node name="PickupDetectionZone" type="Area2D" parent="."]
 script = ExtResource("3_dzone")
@@ -55,7 +55,7 @@ script = ExtResource("3_dzone")
 [node name="CollisionShape2D" type="CollisionShape2D" parent="MagnetDetectionZone"]
 shape = SubResource("CircleShape2D_magnet")
 
-[node name="CrystalSprite" type="Sprite2D" parent="."]
+[node name="CrystalShardSprite" type="Sprite2D" parent="."]
 material = SubResource("ShaderMaterial_outline")
 texture = ExtResource("6_j57nh")
 script = ExtResource("4_sprc")
