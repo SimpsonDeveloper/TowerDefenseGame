@@ -2,8 +2,8 @@ using System.Collections.Generic;
 using Godot;
 
 /// <summary>
-/// Autoload singleton. Populate the Variants array in the editor with all
-/// ResourceVariant .tres files. Add to autoloads via Project → Project Settings → Globals.
+/// Autoload singleton. Populate the Variants array in item_registry.tcsn in the editor with all
+/// ResourceVariant .tres files. Add item_registry.tcsn to autoloads via Project → Project Settings → Globals.
 /// </summary>
 public partial class ItemRegistry : Node
 {
