@@ -1,4 +1,5 @@
 using Godot;
+using towerdefensegame.scripts.world;
 
 /// <summary>
 /// Data resource describing one harvestable resource variant.
@@ -15,4 +16,7 @@ public partial class ResourceVariant : Resource
 
     /// <summary>Name used in the inventory when this resource is picked up.</summary>
     [Export] public string ItemName { get; set; } = "Resource";
+    
+    /// <summary> </summary>
+    [Export] public ResourceEnum ResourceEnum { get; set; } = ResourceEnum.CrystalBlue;
 }

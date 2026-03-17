@@ -9,4 +9,5 @@ script = ExtResource("3_dly2r")
 HarvestableTexture = ExtResource("2_12p25")
 DropTexture = ExtResource("1_kvfa1")
 ItemName = "crystal_red"
+ResourceEnum = 4
 metadata/_custom_type_script = "uid://crt2c3ejj8hxo"
