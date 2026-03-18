@@ -83,7 +83,7 @@ public partial class HarvestableResource : Node
                 pickup.ItemName = Variant.ItemName;
         }
 
-        GetTree().CurrentScene.AddChild(dropNode);
+        GetParent<Node2D>().GetParent().AddChild(dropNode);
         dropNode.GlobalPosition = position;
     }
 }

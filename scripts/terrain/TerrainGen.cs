@@ -10,9 +10,7 @@ public partial class TerrainGen : Node, ISimplexGenConfigurable
 
     /// <summary>Remap the indices from SimplexGens to custom indices so you can specify which gen to use at a certain noise range.</summary>
     [Export] public Godot.Collections.Dictionary<GenRange, int> GenRanges;
-
-    // Mainly using this for transform parenting of other tile map layers at the moment
-    [Export] public TileMapLayer TileMapLayer;
+    
     [Export] public ChunkManager ChunkManager;
 
     public Dictionary<TerrainType, SimplexGen> SimplexGensMapped { get; private set; }
@@ -40,9 +38,11 @@ public partial class TerrainGen : Node, ISimplexGenConfigurable
         }
     }
     
+    [Export] public bool AllowRegenerate { get; set; } = true;
+
     public override void _Input(InputEvent @event)
     {
-        if (@event.IsActionPressed("ui_accept"))
+        if (AllowRegenerate && @event.IsActionPressed("ui_accept"))
         {
             _noise.Seed = (int)GD.Randi();
             GD.Print($"Seed: {_noise.Seed}");

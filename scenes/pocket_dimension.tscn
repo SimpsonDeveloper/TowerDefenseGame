@@ -1,0 +1,55 @@
+[gd_scene load_steps=9 format=3 uid="uid://d23xmn1ko1rqq"]
+
+[ext_resource type="Script" path="res://scripts/terrain/PocketDimensionInit.cs" id="1_pdinit"]
+[ext_resource type="Script" path="res://scripts/terrain/TerrainGen.cs" id="2_tgen"]
+[ext_resource type="Script" path="res://scripts/terrain/GenRange.cs" id="3_grange"]
+[ext_resource type="Script" path="res://scripts/terrain/SimplexGen.cs" id="4_sgen"]
+[ext_resource type="Script" path="res://scripts/terrain/ChunkManager.cs" id="5_cmgr"]
+[ext_resource type="Script" path="res://scripts/camera/PocketCameraController.cs" id="6_cam"]
+[ext_resource type="Resource" path="res://assets/terrain_configs/grass_config.tres" id="7_gcfg"]
+
+[sub_resource type="Resource" id="Resource_pdgenrange"]
+script = ExtResource("3_grange")
+FirstIndex = -1
+LastIndex = 1
+metadata/_custom_type_script = "uid://bn66bgttlo0pn"
+
+[node name="PocketDimension" type="Node2D"]
+
+[node name="PocketDimensionInit" type="Node" parent="." node_paths=PackedStringArray("TerrainGen", "GrassGen")]
+script = ExtResource("1_pdinit")
+TerrainGen = NodePath("../TerrainGen")
+GrassGen = NodePath("../TerrainGen/GensLayer/GrassGen")
+GrassConfig = ExtResource("7_gcfg")
+
+[node name="TerrainGen" type="Node" parent="." node_paths=PackedStringArray("SimplexGens", "ChunkManager")]
+script = ExtResource("2_tgen")
+AllowRegenerate = false
+SimplexGens = [NodePath("GensLayer/GrassGen")]
+GenRanges = {
+SubResource("Resource_pdgenrange"): 0
+}
+ChunkManager = NodePath("ChunkManager")
+
+[node name="GensLayer" type="Node" parent="TerrainGen"]
+
+[node name="GrassGen" type="Node" parent="TerrainGen/GensLayer" node_paths=PackedStringArray("ChunkManager")]
+script = ExtResource("4_sgen")
+ChunkManager = NodePath("../../ChunkManager")
+TerrainType = 1
+
+[node name="ChunkManager" type="Node" parent="TerrainGen" node_paths=PackedStringArray("TerrainGen", "Camera")]
+script = ExtResource("5_cmgr")
+TerrainGen = NodePath("..")
+Camera = NodePath("../../PocketCamera")
+ChunkSize = 20
+BoundsEnabled = true
+BoundsMin = Vector2i(0, 0)
+BoundsMax = Vector2i(15, 15)
+PreGenerateAll = true
+ChunksToApplyPerFrame = 50
+MaxConcurrentGenerations = 16
+
+[node name="PocketCamera" type="Camera2D" parent="."]
+position = Vector2(2560, 2560)
+script = ExtResource("6_cam")

@@ -11,6 +11,12 @@ public partial class PlayerController : CharacterBody2D
 	[Export] public ChunkManager ChunkManager { get; set; }
 
 	/// <summary>
+	/// When false, player movement input is ignored.
+	/// Set by WorldManager to prevent the mini-viewport player from moving.
+	/// </summary>
+	public bool InputEnabled { get; set; } = true;
+
+	/// <summary>
 	/// Minimum tile radius of open space required around the spawn point.
 	/// 2 means a 5x5 tile area must be fully clear, giving the player breathing room.
 	/// </summary>
@@ -23,6 +29,12 @@ public partial class PlayerController : CharacterBody2D
 		if (!_spawnReady)
 		{
 			TryFindValidSpawn();
+			return;
+		}
+
+		if (!InputEnabled)
+		{
+			Velocity = Vector2.Zero;
 			return;
 		}
 

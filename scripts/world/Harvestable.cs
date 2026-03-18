@@ -117,7 +117,7 @@ public partial class Harvestable : Node
 
         emitter.Finished += emitter.QueueFree;
 
-        GetTree().CurrentScene.AddChild(emitter);
+        _root.GetParent().AddChild(emitter);
         emitter.GlobalPosition = _root.GlobalPosition;
     }
 

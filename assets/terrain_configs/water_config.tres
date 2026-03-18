@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="SimplexGenData" load_steps=2 format=3 uid="uid://watercfg001xx"]
+
+[ext_resource type="Script" path="res://scripts/terrain/SimplexGenData.cs" id="1_water"]
+
+[resource]
+script = ExtResource("1_water")
+Frequency = 0.93
+Octaves = 2.0
+Lacunarity = 1.0
+Gain = 0.1

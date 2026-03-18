@@ -62,7 +62,7 @@ public partial class CrystalSpawner : Node
                 ApplyVariant(crystal, variant);
             }
 
-            GetTree().CurrentScene.AddChild(crystal);
+            GetParent().AddChild(crystal);
             crystal.GlobalPosition = pos;
         }
     }

@@ -27,6 +27,21 @@ public partial class ChunkManager : Node
     /// <summary>Maximum number of async chunk generation tasks to run concurrently.</summary>
     [Export] public int MaxConcurrentGenerations { get; set; } = 4;
 
+    /// <summary>If true, chunk generation is clamped to BoundsMin/BoundsMax (inclusive, in chunk coords).</summary>
+    [Export] public bool BoundsEnabled { get; set; } = false;
+
+    /// <summary>Minimum chunk coordinate (inclusive) when BoundsEnabled is true.</summary>
+    [Export] public Vector2I BoundsMin { get; set; } = Vector2I.Zero;
+
+    /// <summary>Maximum chunk coordinate (inclusive) when BoundsEnabled is true.</summary>
+    [Export] public Vector2I BoundsMax { get; set; } = new Vector2I(31, 31);
+
+    /// <summary>
+    /// If true, all chunks within bounds are queued immediately on _Ready and
+    /// camera-based generation is disabled. Requires BoundsEnabled = true.
+    /// </summary>
+    [Export] public bool PreGenerateAll { get; set; } = false;
+
     // Tracks which chunks have been fully generated and applied
     private HashSet<Vector2I> _generatedChunks = new HashSet<Vector2I>();
 
@@ -75,6 +90,9 @@ public partial class ChunkManager : Node
 
         // Create collision TileMapLayer
         SetupCollisionTileMap();
+
+        if (PreGenerateAll && BoundsEnabled)
+            QueueAllBoundedChunks();
     }
 
     /// <summary>
@@ -115,13 +133,13 @@ public partial class ChunkManager : Node
         // Godot 4 tile local space has its origin at the tile CENTER, so the
         // polygon must be centered on (0,0) rather than starting at the corner.
         float half = ChunkRenderer.TilePixelSize / 2f;
-        var polygon = new Vector2[]
-        {
-            new Vector2(-half, -half),
-            new Vector2( half, -half),
-            new Vector2( half,  half),
-            new Vector2(-half,  half)
-        };
+        Vector2[] polygon =
+        [
+            new (-half, -half),
+            new ( half, -half),
+            new ( half,  half),
+            new (-half,  half)
+        ];
         tileData.AddCollisionPolygon(physicsLayerIdx);
         tileData.SetCollisionPolygonPoints(physicsLayerIdx, 0, polygon);
 
@@ -145,7 +163,9 @@ public partial class ChunkManager : Node
         // Re-queue any failed chunks for retry
         RequeueFailedChunks();
 
-        QueueVisibleChunks();
+        if (!PreGenerateAll)
+            QueueVisibleChunks();
+
         StartPendingGenerations();
         ApplyCompletedChunks();
     }
@@ -170,6 +190,28 @@ public partial class ChunkManager : Node
     }
 
     /// <summary>
+    /// Queues every chunk within the declared bounds. Called once on _Ready
+    /// when PreGenerateAll is true.
+    /// </summary>
+    private void QueueAllBoundedChunks()
+    {
+        for (int cx = BoundsMin.X; cx <= BoundsMax.X; cx++)
+        {
+            for (int cy = BoundsMin.Y; cy <= BoundsMax.Y; cy++)
+            {
+                var chunkCoord = new Vector2I(cx, cy);
+                if (!_generatedChunks.Contains(chunkCoord) &&
+                    !_generatingChunks.Contains(chunkCoord) &&
+                    !_queuedChunks.Contains(chunkCoord))
+                {
+                    _pendingChunks.Enqueue(chunkCoord);
+                    _queuedChunks.Add(chunkCoord);
+                }
+            }
+        }
+    }
+
+    /// <summary>
     /// Queues chunks that should be visible but haven't been generated yet.
     /// </summary>
     private void QueueVisibleChunks()
@@ -184,6 +226,13 @@ public partial class ChunkManager : Node
         // Add buffer chunks around the visible area
         minChunk -= new Vector2I(ChunkBuffer, ChunkBuffer);
         maxChunk += new Vector2I(ChunkBuffer, ChunkBuffer);
+
+        // Clamp to bounds if enabled
+        if (BoundsEnabled)
+        {
+            minChunk = new Vector2I(Math.Max(minChunk.X, BoundsMin.X), Math.Max(minChunk.Y, BoundsMin.Y));
+            maxChunk = new Vector2I(Math.Min(maxChunk.X, BoundsMax.X), Math.Min(maxChunk.Y, BoundsMax.Y));
+        }
 
         // Get camera chunk position for distance-based prioritization
         Vector2I cameraChunk = WorldToChunkCoords(Camera.GlobalPosition);
