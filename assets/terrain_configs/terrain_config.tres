@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="SimplexGenData" load_steps=2 format=3 uid="uid://bg72e5v3k10nh"]
+
+[ext_resource type="Script" path="res://scripts/terrain/SimplexGenData.cs" id="1_terrain"]
+
+[resource]
+script = ExtResource("1_terrain")
+Name = "Terrain"
+Frequency = 0.006
+Octaves = 3.0
+Lacunarity = 3.1
+Gain = 0.32

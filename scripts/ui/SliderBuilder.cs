@@ -78,13 +78,6 @@ public static class SliderBuilder
         return label;
     }
 
-    /// <summary>Convenience overload that reads dimensions from a <see cref="SliderConfig"/>.</summary>
-    public static Label AddSlider(
-        Container parent, SliderConfig config,
-        int row, int col,
-        Range.ValueChangedEventHandler callback)
-        => AddSlider(parent, config.Name, config.Min, config.Max, config.Step, config.InitialValue, row, col, callback);
-
     /// <summary>Formats a name/value pair for display in a slider label.</summary>
     public static string FormatLabel(string name, float value) => $"{name}: {value:0.####}";
 }

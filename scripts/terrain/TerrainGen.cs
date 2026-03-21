@@ -6,6 +6,7 @@ namespace towerdefensegame;
 
 public partial class TerrainGen : Node, ISimplexGenConfigurable
 {
+    [Export] public SimplexGenData Config { get; set; }
     [Export] public SimplexGen[] SimplexGens;
 
     /// <summary>Remap the indices from SimplexGens to custom indices so you can specify which gen to use at a certain noise range.</summary>
@@ -21,12 +22,10 @@ public partial class TerrainGen : Node, ISimplexGenConfigurable
 
     private int _maxGenIndex;
 
-    private bool _initialized;
-
     /// <summary>
     /// Whether the TerrainGen has been initialized and is ready for chunk generation.
     /// </summary>
-    public bool IsInitialized => _initialized;
+    public bool IsInitialized { get; private set; }
     
     public override void _ExitTree()
     {
@@ -52,10 +51,9 @@ public partial class TerrainGen : Node, ISimplexGenConfigurable
     
     public override void _Ready()
     {
-        if (!_initialized)
-        {
-            throw new Exception("TerrainGen not initialized yet!");
-        }
+        if (Config == null)
+            throw new Exception("TerrainGen requires a Config resource.");
+        InitNoiseConfig(Config.Frequency, Config.Lacunarity, Config.Octaves, Config.Gain);
     }
 
     private void ValidateConfig()
@@ -209,9 +207,9 @@ public partial class TerrainGen : Node, ISimplexGenConfigurable
         }
 
         SimplexGensMapped = BuildSimplexGenLookup();
-        
+
         // Don't generate terrain here - ChunkManager handles generation
-        _initialized = true;
+        IsInitialized = true;
     }
     
     public void OnFrequencyChanged(double value)

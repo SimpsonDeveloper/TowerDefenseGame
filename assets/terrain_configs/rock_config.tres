@@ -4,6 +4,7 @@
 
 [resource]
 script = ExtResource("1_rock")
+Name = "Rock"
 Frequency = 0.93
 Octaves = 2.0
 Lacunarity = 1.0

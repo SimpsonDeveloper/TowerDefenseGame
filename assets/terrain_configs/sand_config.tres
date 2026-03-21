@@ -1,10 +1,9 @@
-[gd_resource type="Resource" script_class="SimplexGenData" load_steps=2 format=3 uid="uid://sandcfg0001xx"]
+[gd_resource type="Resource" script_class="SimplexGenData" load_steps=2 format=3 uid="uid://cs0ux6r0q7jwv"]
 
-[ext_resource type="Script" path="res://scripts/terrain/SimplexGenData.cs" id="1_sand"]
+[ext_resource type="Script" uid="uid://d0c2yiakaurj" path="res://scripts/terrain/SimplexGenData.cs" id="1_sand"]
 
 [resource]
 script = ExtResource("1_sand")
+Name = "Sand"
 Frequency = 0.93
-Octaves = 2.0
-Lacunarity = 1.0
 Gain = 0.1

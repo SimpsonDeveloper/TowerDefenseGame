@@ -1,8 +1,9 @@
 using Godot;
 
-public partial class CameraConfig : Container
+public partial class PlayerCameraConfig : Container
 {
-	[Export] public CameraController Camera { get; set; }
+	[Export] public bool ShowUI { get; set; } = true;
+	[Export] public PlayerCameraController Camera { get; set; }
 
 	private Label _smoothSpeedLabel;
 	private Label _minZoomLabel;
@@ -10,7 +11,7 @@ public partial class CameraConfig : Container
 
 	public override void _Ready()
 	{
-		if (Camera == null)
+		if (!ShowUI || Camera == null)
 		{
 			QueueFree();
 			return;

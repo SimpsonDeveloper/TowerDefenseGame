@@ -6,13 +6,12 @@ namespace towerdefensegame;
 [GlobalClass]
 public partial class SimplexGen : Node, ISimplexGenConfigurable
 {
+    [Export] public SimplexGenData Config { get; set; }
     [Export] public ChunkManager ChunkManager;
     [Export] public TerrainType TerrainType { get; set; }
-    
+
     private FastNoiseLite _noise;
 
-    private bool _initialized;
-    
     public override void _ExitTree()
     {
         // Proper cleanup when node is removed from the scene tree
@@ -25,10 +24,9 @@ public partial class SimplexGen : Node, ISimplexGenConfigurable
 
     public override void _Ready()
     {
-        if (!_initialized)
-        {
-            throw new Exception("SimplexGen not initialized yet!");
-        }
+        if (Config == null)
+            throw new Exception("SimplexGen requires a Config resource.");
+        InitNoiseConfig(Config.Frequency, Config.Lacunarity, Config.Octaves, Config.Gain);
     }
     
     public void InitNoiseConfig(double frequency, double lacunarity, double octaves, double gain)
@@ -36,16 +34,14 @@ public partial class SimplexGen : Node, ISimplexGenConfigurable
         _noise = new FastNoiseLite();
         _noise.Seed = (int)GD.Randi();
         _noise.NoiseType = FastNoiseLite.NoiseTypeEnum.Simplex;
-        
+
         // Enable fractal noise (required for octaves, lacunarity, gain)
         _noise.FractalType = FastNoiseLite.FractalTypeEnum.Fbm;
-        
+
         _noise.Frequency = (float)frequency;
         _noise.FractalLacunarity = (float)lacunarity;
         _noise.FractalOctaves = (int)octaves;
         _noise.FractalGain = (float)gain;
-        
-        _initialized = true;
     }
     
     public void OnFrequencyChanged(double value)

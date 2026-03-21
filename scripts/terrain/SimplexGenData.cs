@@ -9,6 +9,7 @@ namespace towerdefensegame;
 [GlobalClass]
 public partial class SimplexGenData : Resource
 {
+    [Export] public string Name { get; set; }
     [Export] public float Frequency { get; set; } = 0.93f;
     [Export] public float Octaves { get; set; } = 2f;
     [Export] public float Lacunarity { get; set; } = 1.0f;

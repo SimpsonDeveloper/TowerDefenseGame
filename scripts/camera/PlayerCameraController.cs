@@ -1,6 +1,6 @@
 using Godot;
 
-public partial class CameraController : Camera2D
+public partial class PlayerCameraController : Camera2D
 {
 	[Export] public float ZoomSpeed { get; set; } = 0.1f;
 	[Export] public float MinZoom { get; set; } = 0.5f;

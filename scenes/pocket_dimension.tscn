@@ -1,12 +1,12 @@
-[gd_scene load_steps=9 format=3 uid="uid://d23xmn1ko1rqq"]
+[gd_scene load_steps=8 format=3 uid="uid://d23xmn1ko1rqq"]
 
-[ext_resource type="Script" path="res://scripts/terrain/PocketDimensionInit.cs" id="1_pdinit"]
 [ext_resource type="Script" path="res://scripts/terrain/TerrainGen.cs" id="2_tgen"]
 [ext_resource type="Script" path="res://scripts/terrain/GenRange.cs" id="3_grange"]
 [ext_resource type="Script" path="res://scripts/terrain/SimplexGen.cs" id="4_sgen"]
 [ext_resource type="Script" path="res://scripts/terrain/ChunkManager.cs" id="5_cmgr"]
 [ext_resource type="Script" path="res://scripts/camera/PocketCameraController.cs" id="6_cam"]
 [ext_resource type="Resource" path="res://assets/terrain_configs/grass_config.tres" id="7_gcfg"]
+[ext_resource type="Resource" uid="uid://bg72e5v3k10nh" path="res://assets/terrain_configs/terrain_config.tres" id="8_terraincfg"]
 
 [sub_resource type="Resource" id="Resource_pdgenrange"]
 script = ExtResource("3_grange")
@@ -16,14 +16,9 @@ metadata/_custom_type_script = "uid://bn66bgttlo0pn"
 
 [node name="PocketDimension" type="Node2D"]
 
-[node name="PocketDimensionInit" type="Node" parent="." node_paths=PackedStringArray("TerrainGen", "GrassGen")]
-script = ExtResource("1_pdinit")
-TerrainGen = NodePath("../TerrainGen")
-GrassGen = NodePath("../TerrainGen/GensLayer/GrassGen")
-GrassConfig = ExtResource("7_gcfg")
-
 [node name="TerrainGen" type="Node" parent="." node_paths=PackedStringArray("SimplexGens", "ChunkManager")]
 script = ExtResource("2_tgen")
+Config = ExtResource("8_terraincfg")
 AllowRegenerate = false
 SimplexGens = [NodePath("GensLayer/GrassGen")]
 GenRanges = {
@@ -35,6 +30,7 @@ ChunkManager = NodePath("ChunkManager")
 
 [node name="GrassGen" type="Node" parent="TerrainGen/GensLayer" node_paths=PackedStringArray("ChunkManager")]
 script = ExtResource("4_sgen")
+Config = ExtResource("7_gcfg")
 ChunkManager = NodePath("../../ChunkManager")
 TerrainType = 1
 

@@ -18,6 +18,7 @@ public partial class WorldManager : Node
     [Export] public SubViewport PocketDimensionViewport { get; set; }
     [Export] public PlayerController OverworldPlayer { get; set; }
     [Export] public PocketCameraController PocketDimensionCamera { get; set; }
+    [Export] public PlayerCameraController OverworldCamera { get; set; }
 
     /// <summary>Fraction of window size used for the mini viewport (each axis).</summary>
     [Export] public float MiniViewportScale { get; set; } = 0.25f;
@@ -80,10 +81,7 @@ public partial class WorldManager : Node
             PocketDimensionCamera?.ApplyPan(-delta);
             GetViewport().SetInputAsHandled();
         }
-    }
-
-    public override void _UnhandledInput(InputEvent @event)
-    {
+        
         if (@event.IsActionPressed("swap_dimensions"))
         {
             _overworldIsMain = !_overworldIsMain;
@@ -115,12 +113,12 @@ public partial class WorldManager : Node
         miniContainer.Size     = miniSize;
         miniContainer.ZIndex   = 1; // draw on top of main
 
-        // Route input only to the active world
-        mainViewport.HandleInputLocally = true;
-        miniViewport.HandleInputLocally = false;
-
-        // Enable player movement only in active world
-        if (OverworldPlayer != null)
-            OverworldPlayer.InputEnabled = _overworldIsMain;
+        // Route input only to the active world (probably not needed, but keeping it as commented)
+        // mainViewport.HandleInputLocally = true;
+        // miniViewport.HandleInputLocally = false;
+        
+        // Enable player movement only in active world (probably not needed, but keeping it as commented)
+        // if (OverworldPlayer != null)
+        //     OverworldPlayer.InputEnabled = _overworldIsMain;
     }
 }

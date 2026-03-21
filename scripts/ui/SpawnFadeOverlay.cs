@@ -6,13 +6,21 @@ using Godot;
 /// </summary>
 public partial class SpawnFadeOverlay : CanvasLayer
 {
+	[Export] public bool ShowUI { get; set; } = true;
 	[Export] public float FadeDuration { get; set; } = 0.6f;
+	[Export] public float FadeDelay { get; set; } = 0.5f;
 	[Export] public PlayerController Player { get; set; }
 
 	private ColorRect _fadeRect;
 
 	public override void _Ready()
 	{
+		if (!ShowUI)
+		{
+			QueueFree();
+			return;
+		}
+
 		Layer = 100;
 
 		_fadeRect = new ColorRect();
@@ -24,8 +32,9 @@ public partial class SpawnFadeOverlay : CanvasLayer
 			Player.Spawned += OnPlayerSpawned;
 	}
 
-	private void OnPlayerSpawned()
+	private async void OnPlayerSpawned()
 	{
+		await ToSignal(GetTree().CreateTimer(FadeDelay), SceneTreeTimer.SignalName.Timeout);
 		var tween = CreateTween();
 		tween.TweenProperty(_fadeRect, "color:a", 0.0f, FadeDuration)
 			 .SetTrans(Tween.TransitionType.Sine);
