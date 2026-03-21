@@ -6,7 +6,7 @@ namespace towerdefensegame;
 
 public partial class SimplexGenUI : Container
 {
-    [Export] public bool ShowUI;
+    [Export] public bool ShowUi;
     [Export] public Node SimplexGenNode { get; set; }
 
     private readonly Dictionary<string, Label> _noiseLabels = new();
@@ -22,7 +22,7 @@ public partial class SimplexGenUI : Container
         if (_simplexGen.Config == null)
             throw new Exception("SimplexGenUI.SimplexGenNode.Config must not be null.");
 
-        if (!ShowUI) return;
+        if (!ShowUi) return;
 
         SimplexGenData cfg = _simplexGen.Config;
         AddSlider(cfg.Name + " Frequency",  cfg.Frequency,  0, 0, OnFrequencyChanged);

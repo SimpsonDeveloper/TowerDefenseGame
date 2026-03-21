@@ -6,7 +6,7 @@ using Godot;
 /// </summary>
 public partial class SpawnFadeOverlay : CanvasLayer
 {
-	[Export] public bool ShowUI { get; set; } = true;
+	[Export] public bool ShowUi { get; set; } = true;
 	[Export] public float FadeDuration { get; set; } = 0.6f;
 	[Export] public float FadeDelay { get; set; } = 0.5f;
 	[Export] public PlayerController Player { get; set; }
@@ -15,7 +15,7 @@ public partial class SpawnFadeOverlay : CanvasLayer
 
 	public override void _Ready()
 	{
-		if (!ShowUI)
+		if (!ShowUi)
 		{
 			QueueFree();
 			return;

@@ -160,10 +160,11 @@ Inventory = NodePath("../PlayerController/Inventory")
 layer = 10
 
 [node name="TerrainUI" type="Container" parent="OverworldContainer/OverworldViewport/GensUI" node_paths=PackedStringArray("SimplexGenNode")]
-offset_right = 40.0
-offset_bottom = 40.000336
+offset_left = 600.0
+offset_top = 100.0
+offset_right = 640.0
+offset_bottom = 140.00034
 script = ExtResource("3_6p3nn")
-ShowUI = true
 SimplexGenNode = NodePath("../../TerrainGen")
 
 [node name="GrassUI" type="Container" parent="OverworldContainer/OverworldViewport/GensUI" node_paths=PackedStringArray("SimplexGenNode")]
@@ -171,7 +172,6 @@ offset_top = 100.0
 offset_right = 40.0
 offset_bottom = 140.00034
 script = ExtResource("3_6p3nn")
-ShowUI = true
 SimplexGenNode = NodePath("../../TerrainGen/GensLayer/GrassGen")
 
 [node name="RockUI" type="Container" parent="OverworldContainer/OverworldViewport/GensUI" node_paths=PackedStringArray("SimplexGenNode")]
@@ -179,7 +179,6 @@ offset_top = 200.0
 offset_right = 40.0
 offset_bottom = 240.0
 script = ExtResource("3_6p3nn")
-ShowUI = true
 SimplexGenNode = NodePath("../../TerrainGen/GensLayer/RockGen")
 
 [node name="SandUI" type="Container" parent="OverworldContainer/OverworldViewport/GensUI" node_paths=PackedStringArray("SimplexGenNode")]
@@ -187,7 +186,6 @@ offset_top = 300.0
 offset_right = 40.0
 offset_bottom = 340.00034
 script = ExtResource("3_6p3nn")
-ShowUI = true
 SimplexGenNode = NodePath("../../TerrainGen/GensLayer/SandGen")
 
 [node name="WaterUI" type="Container" parent="OverworldContainer/OverworldViewport/GensUI" node_paths=PackedStringArray("SimplexGenNode")]
@@ -195,13 +193,11 @@ offset_left = 600.0
 offset_right = 640.0
 offset_bottom = 40.0
 script = ExtResource("3_6p3nn")
-ShowUI = true
 SimplexGenNode = NodePath("../../TerrainGen/GensLayer/WaterGen")
 
 [node name="CameraUI" type="Container" parent="OverworldContainer/OverworldViewport/GensUI" node_paths=PackedStringArray("Camera")]
-offset_top = 400.0
 offset_right = 40.0
-offset_bottom = 440.0
+offset_bottom = 40.0
 script = ExtResource("5_k3g67")
 Camera = NodePath("../../PlayerCamera")
 

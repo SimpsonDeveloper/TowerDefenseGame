@@ -2,7 +2,7 @@ using Godot;
 
 public partial class PlayerCameraConfig : Container
 {
-	[Export] public bool ShowUI { get; set; } = true;
+	[Export] public bool ShowUi { get; set; } = true;
 	[Export] public PlayerCameraController Camera { get; set; }
 
 	private Label _smoothSpeedLabel;
@@ -11,7 +11,7 @@ public partial class PlayerCameraConfig : Container
 
 	public override void _Ready()
 	{
-		if (!ShowUI || Camera == null)
+		if (!ShowUi || Camera == null)
 		{
 			QueueFree();
 			return;
