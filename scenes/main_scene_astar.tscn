@@ -1,4 +1,4 @@
-[gd_scene load_steps=46 format=3 uid="uid://byg548mddsuhp"]
+[gd_scene load_steps=51 format=3 uid="uid://clxurrjj6x8a7"]
 
 [ext_resource type="PackedScene" uid="uid://d23xmn1ko1rqq" path="res://scenes/pocket_dimension.tscn" id="0_pd"]
 [ext_resource type="Script" uid="uid://dlf3scmu37ybh" path="res://scripts/world/WorldManager.cs" id="0_wm"]
@@ -30,6 +30,10 @@
 [ext_resource type="Resource" uid="uid://cs0ux6r0q7jwv" path="res://assets/terrain_configs/sand_config.tres" id="27_sand"]
 [ext_resource type="Resource" uid="uid://cxr1s1s660n54" path="res://assets/terrain_configs/water_config.tres" id="28_water"]
 [ext_resource type="Resource" path="res://assets/terrain_configs/terrain_config.tres" id="29_terrain"]
+[ext_resource type="Script" uid="uid://c1d81kfvav8ox" path="res://scripts/world/enemies/AStarGridManager.cs" id="30_astarmgr"]
+[ext_resource type="Script" uid="uid://c0ggg2gg4dffh" path="res://scripts/world/enemies/EnemyAStarController.cs" id="31_enemy"]
+[ext_resource type="Texture2D" uid="uid://56tehltoshbg" path="res://icon.svg" id="32_cdodr"]
+[ext_resource type="Script" uid="uid://ccu4vr8pgyovi" path="res://scripts/components/SpriteComponent.cs" id="32_sprite"]
 
 [sub_resource type="Resource" id="Resource_ak604"]
 script = ExtResource("7_02d50")
@@ -124,6 +128,8 @@ color = Color(0.8862745, 0, 0, 1)
 
 [sub_resource type="ViewportTexture" id="ViewportTexture_671wp"]
 viewport_path = NodePath("OverworldContainer/OverworldViewport/PlayerController/SubViewport")
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_enemy"]
 
 [node name="Node2D" type="Node2D"]
 
@@ -309,6 +315,21 @@ process_material = SubResource("ParticleProcessMaterial_7ycvg")
 
 [node name="SubViewportSprite" type="Sprite2D" parent="OverworldContainer/OverworldViewport/PlayerController"]
 texture = SubResource("ViewportTexture_671wp")
+
+[node name="AStarGridManager" type="Node" parent="OverworldContainer/OverworldViewport" node_paths=PackedStringArray("ChunkManager") groups=["astar_manager"]]
+script = ExtResource("30_astarmgr")
+ChunkManager = NodePath("../TerrainGen/ChunkManager")
+
+[node name="TestEnemy" type="CharacterBody2D" parent="OverworldContainer/OverworldViewport"]
+position = Vector2(400, 324)
+script = ExtResource("31_enemy")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="OverworldContainer/OverworldViewport/TestEnemy"]
+shape = SubResource("CircleShape2D_enemy")
+
+[node name="EnemySprite" type="Sprite2D" parent="OverworldContainer/OverworldViewport/TestEnemy"]
+texture = ExtResource("32_cdodr")
+script = ExtResource("32_sprite")
 
 [node name="PocketDimensionContainer" type="SubViewportContainer" parent="."]
 texture_filter = 1

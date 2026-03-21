@@ -1,4 +1,4 @@
-[gd_scene load_steps=46 format=3 uid="uid://byg548mddsuhp"]
+[gd_scene load_steps=52 format=3 uid="uid://clxuq40l6m686"]
 
 [ext_resource type="PackedScene" uid="uid://d23xmn1ko1rqq" path="res://scenes/pocket_dimension.tscn" id="0_pd"]
 [ext_resource type="Script" uid="uid://dlf3scmu37ybh" path="res://scripts/world/WorldManager.cs" id="0_wm"]
@@ -30,6 +30,10 @@
 [ext_resource type="Resource" uid="uid://cs0ux6r0q7jwv" path="res://assets/terrain_configs/sand_config.tres" id="27_sand"]
 [ext_resource type="Resource" uid="uid://cxr1s1s660n54" path="res://assets/terrain_configs/water_config.tres" id="28_water"]
 [ext_resource type="Resource" path="res://assets/terrain_configs/terrain_config.tres" id="29_terrain"]
+[ext_resource type="Script" uid="uid://dxaxgggwt2dpn" path="res://scripts/world/enemies/EnemyNavAgentController.cs" id="30_enemy"]
+[ext_resource type="Script" uid="uid://ccu4vr8pgyovi" path="res://scripts/components/SpriteComponent.cs" id="31_sprite"]
+[ext_resource type="Texture2D" uid="uid://56tehltoshbg" path="res://icon.svg" id="31_y7ma3"]
+[ext_resource type="Script" uid="uid://bnphhwegnok8r" path="res://scripts/world/PolygonTerrainManager.cs" id="34_polytm"]
 
 [sub_resource type="Resource" id="Resource_ak604"]
 script = ExtResource("7_02d50")
@@ -124,6 +128,12 @@ color = Color(0.8862745, 0, 0, 1)
 
 [sub_resource type="ViewportTexture" id="ViewportTexture_671wp"]
 viewport_path = NodePath("OverworldContainer/OverworldViewport/PlayerController/SubViewport")
+
+[sub_resource type="NavigationPolygon" id="NavPoly_001"]
+parsed_geometry_type = 0
+cell_size = 4.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_enemy"]
 
 [node name="Node2D" type="Node2D"]
 
@@ -309,6 +319,29 @@ process_material = SubResource("ParticleProcessMaterial_7ycvg")
 
 [node name="SubViewportSprite" type="Sprite2D" parent="OverworldContainer/OverworldViewport/PlayerController"]
 texture = SubResource("ViewportTexture_671wp")
+
+[node name="NavigationRegion2D" type="NavigationRegion2D" parent="OverworldContainer/OverworldViewport"]
+navigation_polygon = SubResource("NavPoly_001")
+
+[node name="PolygonTerrainManager" type="Node" parent="OverworldContainer/OverworldViewport" node_paths=PackedStringArray("ChunkManager", "NavigationRegion", "Center")]
+script = ExtResource("34_polytm")
+ChunkManager = NodePath("../TerrainGen/ChunkManager")
+NavigationRegion = NodePath("../NavigationRegion2D")
+Center = NodePath("../PlayerCamera")
+
+[node name="TestEnemy" type="CharacterBody2D" parent="OverworldContainer/OverworldViewport"]
+position = Vector2(400, 324)
+script = ExtResource("30_enemy")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="OverworldContainer/OverworldViewport/TestEnemy"]
+shape = SubResource("CircleShape2D_enemy")
+
+[node name="NavigationAgent2D" type="NavigationAgent2D" parent="OverworldContainer/OverworldViewport/TestEnemy"]
+debug_enabled = true
+
+[node name="EnemySprite" type="Sprite2D" parent="OverworldContainer/OverworldViewport/TestEnemy"]
+texture = ExtResource("31_y7ma3")
+script = ExtResource("31_sprite")
 
 [node name="PocketDimensionContainer" type="SubViewportContainer" parent="."]
 texture_filter = 1

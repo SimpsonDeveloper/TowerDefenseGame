@@ -6,17 +6,35 @@ using Godot;
 
 namespace towerdefensegame;
 
+public enum TerrainCollisionMode { Polygon, TileMap }
+
 /// <summary>
 /// Manages terrain chunk generation and tracking.
 /// Chunks are generated on-demand as the camera reveals new areas.
 /// </summary>
 public partial class ChunkManager : Node
 {
+    /// <summary>
+    /// Emitted on the main thread each frame that at least one chunk finishes
+    /// being applied to the scene. Subscribers (e.g. NavRegionManager) use this
+    /// to know when collision geometry has changed without any nav logic living
+    /// inside ChunkManager itself.
+    /// </summary>
+    [Signal]
+    public delegate void ChunksBatchAppliedEventHandler(int count);
+
     [Export] public TerrainGen TerrainGen { get; set; }
     [Export] public Camera2D Camera { get; set; }
 
     /// <summary>Size of each chunk in tiles (NxN).</summary>
-    [Export] public int ChunkSize { get; set; } = 600;
+    [Export] public int ChunkSize { get; set; } = 32;
+
+    /// <summary>
+    /// Selects which collision system is active.
+    /// Polygon = PolygonTerrainManager builds StaticBody2D blobs (new system).
+    /// TileMap = the built-in TileMapLayer per-tile collision (legacy).
+    /// </summary>
+    [Export] public TerrainCollisionMode CollisionMode { get; set; } = TerrainCollisionMode.Polygon;
 
     /// <summary>How many chunks to generate beyond the visible area (buffer).</summary>
     [Export] public int ChunkBuffer { get; set; } = 1;
@@ -88,8 +106,9 @@ public partial class ChunkManager : Node
         _chunkContainer.Name = "ChunkContainer";
         AddChild(_chunkContainer);
 
-        // Create collision TileMapLayer
-        SetupCollisionTileMap();
+        // Create collision TileMapLayer (only in legacy TileMap mode).
+        if (CollisionMode == TerrainCollisionMode.TileMap)
+            SetupCollisionTileMap();
 
         if (PreGenerateAll && BoundsEnabled)
             QueueAllBoundedChunks();
@@ -331,7 +350,8 @@ public partial class ChunkManager : Node
         {
             // Create and initialize chunk renderer
             var renderer = new ChunkRenderer();
-            renderer.CollisionTileMap = _collisionTileMap;
+            if (CollisionMode == TerrainCollisionMode.TileMap)
+                renderer.CollisionTileMap = _collisionTileMap;
             renderer.SimplexGens = TerrainGen.SimplexGensMapped;
             _chunkContainer.AddChild(renderer);
             renderer.Initialize(chunkData);
@@ -345,6 +365,9 @@ public partial class ChunkManager : Node
 
             chunksApplied++;
         }
+
+        if (chunksApplied > 0)
+            EmitSignal(SignalName.ChunksBatchApplied, chunksApplied);
     }
 
     /// <summary>
@@ -512,4 +535,10 @@ public partial class ChunkManager : Node
         _chunkRenderers.TryGetValue(chunkCoord, out ChunkRenderer renderer);
         return renderer;
     }
+
+    /// <summary>
+    /// Returns the set of chunk coordinates that have been fully generated and
+    /// applied. Read-only view — do not modify.
+    /// </summary>
+    public IReadOnlyCollection<Vector2I> GetGeneratedChunks() => _generatedChunks;
 }
