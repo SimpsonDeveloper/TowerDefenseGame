@@ -30,7 +30,7 @@ public partial class PlayerCameraController : Camera2D
 			HandleZoom(mouseButton);
 	}
 
-	private void HandleZoom(InputEventMouseButton mouseButton)
+	public void HandleZoom(InputEventMouseButton mouseButton)
 	{
 		if (mouseButton.ButtonIndex == MouseButton.WheelUp)
 			_targetZoom += ZoomSpeed;

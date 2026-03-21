@@ -58,6 +58,10 @@ public partial class WorldManager : Node
                     float dir = mb.ButtonIndex == MouseButton.WheelUp ? 1f : -1f;
                     PocketDimensionCamera.ApplyZoomStep(dir);
                 }
+                else if (!_overworldIsMain && OverworldCamera != null)
+                {
+                    OverworldCamera.HandleZoom(mb);
+                }
                 GetViewport().SetInputAsHandled();
             }
             else if (mb.ButtonIndex == MouseButton.Left)
