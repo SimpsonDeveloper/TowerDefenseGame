@@ -1,1 +1,0 @@
-// Removed — use SimplexGenData instead.

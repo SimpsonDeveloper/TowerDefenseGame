@@ -4,7 +4,7 @@
 [ext_resource type="Script" uid="uid://dlf3scmu37ybh" path="res://scripts/world/WorldManager.cs" id="0_wm"]
 [ext_resource type="Script" uid="uid://dc1qoqdmljdl1" path="res://scripts/ui/SpawnFadeOverlay.cs" id="1_to7gp"]
 [ext_resource type="Script" uid="uid://elwkft26lg3n" path="res://scripts/inventory/InventoryUI.cs" id="2_u0fll"]
-[ext_resource type="Script" uid="uid://7o0j1gneru7r" path="res://scripts/terrain/SimplexGenUI.cs" id="3_6p3nn"]
+[ext_resource type="Script" uid="uid://7o0j1gneru7r" path="res://scripts/ui/SimplexGenUI.cs" id="3_6p3nn"]
 [ext_resource type="Script" uid="uid://g5eae7qke6uf" path="res://scripts/camera/PlayerCameraConfig.cs" id="5_k3g67"]
 [ext_resource type="Script" uid="uid://dnb5iegcl3s5r" path="res://scripts/terrain/TerrainGen.cs" id="6_4bgka"]
 [ext_resource type="Script" uid="uid://bn66bgttlo0pn" path="res://scripts/terrain/GenRange.cs" id="7_02d50"]
@@ -29,7 +29,7 @@
 [ext_resource type="Resource" uid="uid://b7o2x6r0q7jwv" path="res://assets/terrain_configs/rock_config.tres" id="26_rock"]
 [ext_resource type="Resource" uid="uid://cs0ux6r0q7jwv" path="res://assets/terrain_configs/sand_config.tres" id="27_sand"]
 [ext_resource type="Resource" uid="uid://cxr1s1s660n54" path="res://assets/terrain_configs/water_config.tres" id="28_water"]
-[ext_resource type="Resource" uid="uid://bg72e5v3k10nh" path="res://assets/terrain_configs/terrain_config.tres" id="29_terrain"]
+[ext_resource type="Resource" path="res://assets/terrain_configs/terrain_config.tres" id="29_terrain"]
 
 [sub_resource type="Resource" id="Resource_ak604"]
 script = ExtResource("7_02d50")
