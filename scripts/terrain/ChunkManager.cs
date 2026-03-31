@@ -23,6 +23,10 @@ public partial class ChunkManager : Node
     [Signal]
     public delegate void ChunksBatchAppliedEventHandler(int count);
 
+    /// <summary>Emitted when all chunks are cleared (e.g. for sequential debug regeneration).</summary>
+    [Signal]
+    public delegate void ChunksClearedEventHandler();
+
     [Export] public TerrainGen TerrainGen { get; set; }
     [Export] public Camera2D Camera { get; set; }
 
@@ -60,6 +64,19 @@ public partial class ChunkManager : Node
     /// </summary>
     [Export] public bool PreGenerateAll { get; set; } = false;
 
+    /// <summary>If true, draws a blue outline around each chunk boundary as it is generated.</summary>
+    [Export] public bool DrawDebugEnabled { get; set; } = false;
+
+    /// <summary>
+    /// When true, pauses auto generation on startup and sequentially generates the
+    /// fixed debug scenario chunks (X∈[-2,0], Y∈[-2,2]) in raster order.
+    /// Also moves DebugScenarioPlayer to (-120,-264) world space.
+    /// </summary>
+    [Export] public bool SetupDebugScenario { get; set; } = false;
+
+    /// <summary>Node whose position is set to (-120,-264) when SetupDebugScenario is true.</summary>
+    [Export] public Node2D DebugScenarioPlayer { get; set; }
+
     // Tracks which chunks have been fully generated and applied
     private HashSet<Vector2I> _generatedChunks = new HashSet<Vector2I>();
 
@@ -83,6 +100,22 @@ public partial class ChunkManager : Node
 
     // Parent node for all chunk renderers
     private Node2D _chunkContainer;
+    private ChunkDebugDraw _debugDraw;
+    private ChunkSequenceDialog _sequenceDialog;
+
+    // Sequential debug generation state.
+    private readonly List<Vector2I> _chunkGenerationOrder = new(); // persistent index → coord mapping
+    private Queue<Vector2I> _sequentialQueue = new();
+    private bool _sequentialActive = false;
+
+    /// <summary>When true, QueueVisibleChunks is skipped (used during sequential debug mode).</summary>
+    public bool PauseAutoGeneration { get; set; } = false;
+
+    /// <summary>Ordered list of chunks in the sequence they were generated. Index matches debug label.</summary>
+    public IReadOnlyList<Vector2I> ChunkGenerationOrder => _chunkGenerationOrder;
+
+    /// <summary>True while sequential debug generation is running.</summary>
+    public bool IsSequentialDebugMode => _sequentialActive;
 
     // Collision TileMapLayer (shared across all chunks)
     private TileMapLayer _collisionTileMap;
@@ -106,12 +139,48 @@ public partial class ChunkManager : Node
         _chunkContainer.Name = "ChunkContainer";
         AddChild(_chunkContainer);
 
+        _debugDraw = new ChunkDebugDraw();
+        AddChild(_debugDraw);
+
+        _sequenceDialog = new ChunkSequenceDialog();
+        _sequenceDialog.Confirmed  += OnSequenceDialogConfirmed;
+        _sequenceDialog.Cancelled  += () => PauseAutoGeneration = false;
+        AddChild(_sequenceDialog);
+
         // Create collision TileMapLayer (only in legacy TileMap mode).
         if (CollisionMode == TerrainCollisionMode.TileMap)
             SetupCollisionTileMap();
 
         if (PreGenerateAll && BoundsEnabled)
             QueueAllBoundedChunks();
+
+        if (SetupDebugScenario)
+        {
+            PauseAutoGeneration = true;
+            // Deferred so PTM has time to connect its signals before generation starts,
+            // and so GlobalPosition assignments take effect after the scene is fully ready.
+            CallDeferred(nameof(RunDebugScenario));
+        }
+    }
+
+    private void RunDebugScenario()
+    {
+        var debugPos = new Vector2(-120, -264);
+        if (DebugScenarioPlayer != null)
+        {
+            if (DebugScenarioPlayer is PlayerController pc)
+                pc.SkipSpawnHelper = true;
+            DebugScenarioPlayer.GlobalPosition = debugPos;
+        }
+        if (Camera != null)
+            Camera.GlobalPosition = debugPos;
+
+        var chunks = new List<Vector2I>();
+        for (int y = -2; y <= 0; y++)
+            for (int x = -2; x <= 0; x++)
+                chunks.Add(new Vector2I(x, y));
+        GD.Print($"[ChunkDebug] SetupDebugScenario: generating {chunks.Count} chunks in raster order.");
+        StartSequentialDebug(chunks);
     }
 
     /// <summary>
@@ -230,11 +299,22 @@ public partial class ChunkManager : Node
         }
     }
 
+    public override void _UnhandledInput(InputEvent @event)
+    {
+        if (!DrawDebugEnabled) return;
+        if (@event is InputEventKey key && key.Pressed && !key.Echo && key.Keycode == Key.P)
+        {
+            PauseAutoGeneration = true;
+            _sequenceDialog.Open(_chunkGenerationOrder.Count);
+        }
+    }
+
     /// <summary>
     /// Queues chunks that should be visible but haven't been generated yet.
     /// </summary>
     private void QueueVisibleChunks()
     {
+        if (PauseAutoGeneration) return;
         // Get visible area in world coordinates
         Rect2 visibleRect = GetVisibleWorldRect();
 
@@ -361,13 +441,18 @@ public partial class ChunkManager : Node
 
             // Update tracking
             _generatingChunks.Remove(chunkData.ChunkCoord);
+            _chunkGenerationOrder.Add(chunkData.ChunkCoord);
             _generatedChunks.Add(chunkData.ChunkCoord);
 
             chunksApplied++;
         }
 
         if (chunksApplied > 0)
+        {
             EmitSignal(SignalName.ChunksBatchApplied, chunksApplied);
+            if (DrawDebugEnabled)
+                _debugDraw.Update(_chunkGenerationOrder, ChunkSize * ChunkRenderer.TilePixelSize);
+        }
     }
 
     /// <summary>
@@ -418,21 +503,74 @@ public partial class ChunkManager : Node
     {
         // Remove all chunk renderers
         foreach (var renderer in _chunkRenderers.Values)
-        {
             renderer.QueueFree();
-        }
         _chunkRenderers.Clear();
 
         _generatedChunks.Clear();
         _generatingChunks.Clear();
         _pendingChunks.Clear();
         _queuedChunks.Clear();
-        
-        // Clear the completed chunks queue
+        _chunkGenerationOrder.Clear();
+
         while (_completedChunks.TryDequeue(out _)) { }
-        
-        // Clear the failed chunks queue
         while (_failedChunks.TryDequeue(out _)) { }
+
+        if (DrawDebugEnabled)
+            _debugDraw.Update(_chunkGenerationOrder, ChunkSize * ChunkRenderer.TilePixelSize);
+
+        EmitSignal(SignalName.ChunksCleared);
+    }
+
+    /// <summary>Queues a specific chunk for generation regardless of camera visibility.</summary>
+    public void ForceGenerateChunk(Vector2I coord)
+    {
+        if (_generatedChunks.Contains(coord) || _generatingChunks.Contains(coord) || _queuedChunks.Contains(coord))
+            return;
+        _pendingChunks.Enqueue(coord);
+        _queuedChunks.Add(coord);
+    }
+
+    /// <summary>
+    /// Clears all chunks then generates the given coords one at a time, waiting for
+    /// PolygonTerrainManager to finish processing each before starting the next.
+    /// Call DebugAdvanceSequential() from PTM after each ProcessNewChunks completes.
+    /// </summary>
+    public void StartSequentialDebug(List<Vector2I> coords)
+    {
+        GD.Print($"[ChunkDebug] Sequential start: [{string.Join(", ", coords)}]");
+        ClearAllChunks();
+        PauseAutoGeneration = true;
+        _sequentialActive   = true;
+        _sequentialQueue    = new Queue<Vector2I>(coords);
+        DebugAdvanceSequential();
+    }
+
+    /// <summary>Called by PolygonTerrainManager after it finishes ProcessNewChunks in sequential mode.</summary>
+    public void DebugAdvanceSequential()
+    {
+        if (_sequentialQueue.Count == 0)
+        {
+            GD.Print("[ChunkDebug] Sequential generation complete. Auto-generation remains paused.");
+            _sequentialActive = false;
+            return;
+        }
+        var next = _sequentialQueue.Dequeue();
+        GD.Print($"[ChunkDebug] Queuing sequential chunk {next} (will be index {_chunkGenerationOrder.Count})");
+        ForceGenerateChunk(next);
+    }
+
+    private void OnSequenceDialogConfirmed(List<int> indices)
+    {
+        var coords = new List<Vector2I>();
+        foreach (var i in indices)
+        {
+            if (i >= 0 && i < _chunkGenerationOrder.Count)
+                coords.Add(_chunkGenerationOrder[i]);
+            else
+                GD.PrintErr($"[ChunkDebug] Index {i} out of range (0–{_chunkGenerationOrder.Count - 1})");
+        }
+        if (coords.Count > 0)
+            StartSequentialDebug(coords);
     }
 
     /// <summary>
@@ -541,4 +679,130 @@ public partial class ChunkManager : Node
     /// applied. Read-only view — do not modify.
     /// </summary>
     public IReadOnlyCollection<Vector2I> GetGeneratedChunks() => _generatedChunks;
+
+    // ── Debug draw ─────────────────────────────────────────────────────────────
+
+    private partial class ChunkDebugDraw : Node2D
+    {
+        private List<Vector2I> _chunks = new();
+        private int _chunkPixelSize;
+
+        public void Update(List<Vector2I> generationOrder, int chunkPixelSize)
+        {
+            _chunks = new List<Vector2I>(generationOrder);
+            _chunkPixelSize = chunkPixelSize;
+            QueueRedraw();
+        }
+
+        public override void _Draw()
+        {
+            var borderCol = new Color(0.2f, 0.5f, 1f, 0.8f);
+            var labelCol  = Colors.Cyan;
+            float s = _chunkPixelSize;
+            for (int i = 0; i < _chunks.Count; i++)
+            {
+                var cc = _chunks[i];
+                float x = cc.X * s, y = cc.Y * s;
+                DrawPolyline(new[]
+                {
+                    new Vector2(x,     y),
+                    new Vector2(x + s, y),
+                    new Vector2(x + s, y + s),
+                    new Vector2(x,     y + s),
+                    new Vector2(x,     y),
+                }, borderCol, 2f);
+                DrawString(ThemeDB.FallbackFont,
+                    new Vector2(x + s * 0.5f, y + s * 0.5f),
+                    i.ToString(), fontSize: 80, modulate: labelCol);
+                DrawString(ThemeDB.FallbackFont,
+                    new Vector2(x + s * 0.5f, y + s * 0.5f + 80),
+                    $"({cc.X},{cc.Y})", fontSize: 80, modulate: labelCol);
+            }
+        }
+    }
+
+    private partial class ChunkSequenceDialog : CanvasLayer
+    {
+        public event System.Action<List<int>> Confirmed;
+        public event System.Action Cancelled;
+        private LineEdit _lineEdit;
+
+        public override void _Ready()
+        {
+            var panel = new Panel();
+            panel.AnchorLeft   = 0.5f; panel.AnchorRight  = 0.5f;
+            panel.AnchorTop    = 0.5f; panel.AnchorBottom = 0.5f;
+            panel.OffsetLeft   = -200f; panel.OffsetRight  =  200f;
+            panel.OffsetTop    =  -65f; panel.OffsetBottom =   65f;
+
+            var margin = new MarginContainer();
+            margin.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+            margin.AddThemeConstantOverride("margin_left",   14);
+            margin.AddThemeConstantOverride("margin_right",  14);
+            margin.AddThemeConstantOverride("margin_top",    12);
+            margin.AddThemeConstantOverride("margin_bottom", 12);
+
+            var vbox   = new VBoxContainer();
+            var label  = new Label { Text = "Generate chunks in order (comma-separated indices):" };
+            label.AutowrapMode = TextServer.AutowrapMode.Word;
+            _lineEdit  = new LineEdit();
+
+            var hbox      = new HBoxContainer();
+            var accept    = new Button { Text = "Accept" };
+            var keepPaused = new Button { Text = "Keep Paused" };
+            var resume    = new Button { Text = "Resume" };
+            accept.Pressed     += OnAccept;
+            keepPaused.Pressed += () => Visible = false;
+            resume.Pressed     += OnCancel;
+            hbox.AddChild(accept);
+            hbox.AddChild(keepPaused);
+            hbox.AddChild(resume);
+
+            vbox.AddChild(label);
+            vbox.AddChild(_lineEdit);
+            vbox.AddChild(hbox);
+            margin.AddChild(vbox);
+            panel.AddChild(margin);
+            AddChild(panel);
+
+            Visible = false;
+        }
+
+        public void Open(int chunkCount)
+        {
+            _lineEdit.Text = "";
+            _lineEdit.PlaceholderText = chunkCount > 0 ? $"e.g. 0,3,1  (max index {chunkCount - 1})" : "no chunks yet";
+            Visible = true;
+            _lineEdit.GrabFocus();
+        }
+
+        private void OnAccept()
+        {
+            var indices = new List<int>();
+            foreach (var part in _lineEdit.Text.Split(','))
+                if (int.TryParse(part.Trim(), out int idx))
+                    indices.Add(idx);
+            if (indices.Count > 0)
+            {
+                Visible = false;
+                Confirmed?.Invoke(indices);
+            }
+        }
+
+        private void OnCancel()
+        {
+            Visible = false;
+            Cancelled?.Invoke();
+        }
+
+        public override void _UnhandledInput(InputEvent @event)
+        {
+            if (!Visible) return;
+            if (@event is InputEventKey key && key.Pressed && !key.Echo)
+            {
+                if (key.Keycode is Key.Enter or Key.KpEnter) OnAccept();
+                else if (key.Keycode == Key.Escape) OnCancel();
+            }
+        }
+    }
 }

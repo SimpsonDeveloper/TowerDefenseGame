@@ -1,0 +1,21 @@
+[gd_scene load_steps=4 format=3 uid="uid://cqlet870yvc2s"]
+
+[ext_resource type="Script" uid="uid://kl2k8qeksimn" path="res://scripts/debug/NavBakeTest.cs" id="1"]
+[ext_resource type="Script" uid="uid://7stlw8k52acf" path="res://scripts/debug/NavBakeTestPlayer.cs" id="2"]
+
+[sub_resource type="CircleShape2D" id="1"]
+radius = 8.0
+
+[node name="NavBakeTest" type="Node2D"]
+script = ExtResource("1")
+Scenario = 3
+
+[node name="NavigationRegion2D" type="NavigationRegion2D" parent="."]
+
+[node name="Player" type="CharacterBody2D" parent="."]
+script = ExtResource("2")
+
+[node name="Camera2D" type="Camera2D" parent="Player"]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Player"]
+shape = SubResource("1")

@@ -248,6 +248,7 @@ ChunkManager = NodePath("../../ChunkManager")
 script = ExtResource("9_kkokr")
 TerrainGen = NodePath("..")
 Camera = NodePath("../../PlayerCamera")
+CollisionMode = 1
 
 [node name="PlayerCamera" type="Camera2D" parent="OverworldContainer/OverworldViewport" node_paths=PackedStringArray("Player")]
 position = Vector2(576, 324)

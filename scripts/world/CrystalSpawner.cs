@@ -28,6 +28,10 @@ public partial class CrystalSpawner : Node
 
     public override void _Ready()
     {
+        if (ProcessMode == ProcessModeEnum.Disabled)
+        {
+            return;
+        }
         if (Player == null)
         {
             GD.PushWarning("CrystalSpawner: Player export is not set.");

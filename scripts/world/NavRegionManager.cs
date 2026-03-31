@@ -109,7 +109,7 @@ public partial class NavRegionManager : Node
         if (chunks.Count == 0) return;
 
         var navPoly = new NavigationPolygon();
-        navPoly.AgentRadius = 8f;
+        navPoly.AgentRadius = 9f;
 
         var sourceData = new NavigationMeshSourceGeometryData2D();
 

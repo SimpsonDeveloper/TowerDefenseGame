@@ -22,6 +22,12 @@ public partial class PlayerController : CharacterBody2D
 	/// </summary>
 	[Export] public int SpawnClearance { get; set; } = 2;
 
+	/// <summary>
+	/// When true, skips the spawn helper relocation and treats the current position as valid.
+	/// Set this before the first _PhysicsProcess when a fixed spawn position is required.
+	/// </summary>
+	[Export] public bool SkipSpawnHelper { get; set; } = false;
+
 	private bool _spawnReady;
 
 	public override void _PhysicsProcess(double delta)
@@ -58,6 +64,13 @@ public partial class PlayerController : CharacterBody2D
 
 	private void TryFindValidSpawn()
 	{
+		if (SkipSpawnHelper)
+		{
+			_spawnReady = true;
+			EmitSignal(SignalName.Spawned);
+			return;
+		}
+
 		if (ChunkManager == null)
 		{
 			_spawnReady = true;
