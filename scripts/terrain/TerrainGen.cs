@@ -179,7 +179,7 @@ public partial class TerrainGen : Node, ISimplexGenConfigurable
         
         ValidateConfig();
         _noise = new FastNoiseLite();
-        _noise.Seed = 2101817747;
+        _noise.Seed = (int)GD.Randi();
         GD.Print("Init called");
         GD.Print($"Seed: {_noise.Seed}");
         _noise.NoiseType = FastNoiseLite.NoiseTypeEnum.Simplex;
