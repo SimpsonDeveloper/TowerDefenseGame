@@ -6,8 +6,6 @@ using Godot;
 
 namespace towerdefensegame;
 
-public enum TerrainCollisionMode { Polygon, TileMap }
-
 /// <summary>
 /// Manages terrain chunk generation and tracking.
 /// Chunks are generated on-demand as the camera reveals new areas.
@@ -16,9 +14,8 @@ public partial class ChunkManager : Node
 {
     /// <summary>
     /// Emitted on the main thread each frame that at least one chunk finishes
-    /// being applied to the scene. Subscribers (e.g. NavRegionManager) use this
-    /// to know when collision geometry has changed without any nav logic living
-    /// inside ChunkManager itself.
+    /// being applied to the scene. Subscribers use this to know when collision
+    /// geometry has changed without any nav logic living inside ChunkManager itself.
     /// </summary>
     [Signal]
     public delegate void ChunksBatchAppliedEventHandler(int count);
@@ -32,13 +29,6 @@ public partial class ChunkManager : Node
 
     /// <summary>Size of each chunk in tiles (NxN).</summary>
     [Export] public int ChunkSize { get; set; } = 32;
-
-    /// <summary>
-    /// Selects which collision system is active.
-    /// Polygon = PolygonTerrainManager builds StaticBody2D blobs (new system).
-    /// TileMap = the built-in TileMapLayer per-tile collision (legacy).
-    /// </summary>
-    [Export] public TerrainCollisionMode CollisionMode { get; set; } = TerrainCollisionMode.Polygon;
 
     /// <summary>How many chunks to generate beyond the visible area (buffer).</summary>
     [Export] public int ChunkBuffer { get; set; } = 1;
@@ -95,9 +85,6 @@ public partial class ChunkManager : Node
     // Generation order tracked for debug index labels.
     private readonly List<Vector2I> _chunkGenerationOrder = new();
 
-    // Collision TileMapLayer (shared across all chunks)
-    private TileMapLayer _collisionTileMap;
-
     public override void _Ready()
     {
         if (TerrainGen == null)
@@ -120,68 +107,8 @@ public partial class ChunkManager : Node
         _debugDraw = new ChunkDebugDraw();
         AddChild(_debugDraw);
 
-        // Create collision TileMapLayer (only in legacy TileMap mode).
-        if (CollisionMode == TerrainCollisionMode.TileMap)
-            SetupCollisionTileMap();
-
         if (PreGenerateAll && BoundsEnabled)
             QueueAllBoundedChunks();
-    }
-
-    /// <summary>
-    /// Sets up the collision-only TileMapLayer.
-    /// </summary>
-    private void SetupCollisionTileMap()
-    {
-        _collisionTileMap = new TileMapLayer();
-        _collisionTileMap.Name = "CollisionTileMap";
-
-        // Create a minimal TileSet for collision
-        var tileSet = new TileSet();
-        tileSet.TileSize = new Vector2I(ChunkRenderer.TilePixelSize, ChunkRenderer.TilePixelSize);
-
-        // Create a TileSetAtlasSource with a small transparent texture
-        var atlasSource = new TileSetAtlasSource();
-        
-        // Create a 4x4 transparent image for the collision tile
-        var image = Image.CreateEmpty(ChunkRenderer.TilePixelSize, ChunkRenderer.TilePixelSize, false, Image.Format.Rgba8);
-        image.Fill(new Color(0, 0, 0, 0));  // Fully transparent
-        var texture = ImageTexture.CreateFromImage(image);
-        
-        atlasSource.Texture = texture;
-        atlasSource.TextureRegionSize = new Vector2I(ChunkRenderer.TilePixelSize, ChunkRenderer.TilePixelSize);
-        atlasSource.CreateTile(Vector2I.Zero);
-
-        // Add physics layer to tileset
-        tileSet.AddPhysicsLayer();
-        
-        // Add the atlas source to the tileset
-        tileSet.AddSource(atlasSource);
-
-        // Set up collision for the tile (full tile collision)
-        var physicsLayerIdx = 0;
-        var tileData = atlasSource.GetTileData(Vector2I.Zero, 0);
-        
-        // Create a square collision polygon covering the full tile.
-        // Godot 4 tile local space has its origin at the tile CENTER, so the
-        // polygon must be centered on (0,0) rather than starting at the corner.
-        float half = ChunkRenderer.TilePixelSize / 2f;
-        Vector2[] polygon =
-        [
-            new (-half, -half),
-            new ( half, -half),
-            new ( half,  half),
-            new (-half,  half)
-        ];
-        tileData.AddCollisionPolygon(physicsLayerIdx);
-        tileData.SetCollisionPolygonPoints(physicsLayerIdx, 0, polygon);
-
-        _collisionTileMap.TileSet = tileSet;
-        
-        // Make collision layer invisible (it's only for physics)
-        _collisionTileMap.Modulate = new Color(1, 1, 1, 0);
-
-        AddChild(_collisionTileMap);
     }
 
     public override void _Process(double delta)
@@ -364,8 +291,6 @@ public partial class ChunkManager : Node
         {
             // Create and initialize chunk renderer
             var renderer = new ChunkRenderer();
-            if (CollisionMode == TerrainCollisionMode.TileMap)
-                renderer.CollisionTileMap = _collisionTileMap;
             renderer.SimplexGens = TerrainGen.SimplexGensMapped;
             _chunkContainer.AddChild(renderer);
             renderer.Initialize(chunkData);

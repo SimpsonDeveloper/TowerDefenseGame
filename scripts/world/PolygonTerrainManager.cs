@@ -16,8 +16,6 @@ namespace towerdefensegame;
 ///   4. Union touching blobs with Geometry2D.MergePolygons.
 ///   5. Create (or replace) one StaticBody2D + CollisionPolygon2D per blob.
 ///   6. Emit BlobsUpdated so NavBaker can schedule a nav mesh rebake.
-///
-/// Requires ChunkManager.CollisionMode = Polygon (TileMapLayer collision disabled).
 /// </summary>
 [GlobalClass]
 public partial class PolygonTerrainManager : Node

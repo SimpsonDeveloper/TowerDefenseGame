@@ -6,7 +6,6 @@ namespace towerdefensegame;
 
 /// <summary>
 /// Renders a chunk using a Sprite2D with a generated texture.
-/// Manages both visual rendering and collision tile placement.
 /// </summary>
 public partial class ChunkRenderer : Node2D
 {
@@ -31,11 +30,6 @@ public partial class ChunkRenderer : Node2D
     private ImageTexture _texture;
     private ChunkData _chunkData;
     private Dictionary<TerrainType, SimplexGen> _simplexGens;
-
-    /// <summary>
-    /// Reference to the collision TileMapLayer for placing collision tiles.
-    /// </summary>
-    public TileMapLayer CollisionTileMap { get; set; }
 
     /// <summary>
     /// Lookup from terrain type to its SimplexGen for sub-tile noise sampling.
@@ -84,12 +78,6 @@ public partial class ChunkRenderer : Node2D
 
         // Generate the full texture
         GenerateFullTexture();
-
-        // Set up collision tiles
-        if (CollisionTileMap != null)
-        {
-            GenerateCollisionTiles();
-        }
     }
 
     /// <summary>
@@ -163,29 +151,6 @@ public partial class ChunkRenderer : Node2D
     }
 
     /// <summary>
-    /// Generates collision tiles for all collidable terrain in the chunk.
-    /// </summary>
-    private void GenerateCollisionTiles()
-    {
-        for (int tileX = 0; tileX < _chunkData.Width; tileX++)
-        {
-            for (int tileY = 0; tileY < _chunkData.Height; tileY++)
-            {
-                TileInfo tileInfo = _chunkData.Tiles[tileX, tileY];
-
-                if (tileInfo.TerrainType.HasCollision())
-                {
-                    int worldTileX = _chunkData.StartX + tileX;
-                    int worldTileY = _chunkData.StartY + tileY;
-                    
-                    // Place collision tile (using source 0, atlas coord 0,0)
-                    CollisionTileMap.SetCell(new Vector2I(worldTileX, worldTileY), 0, Vector2I.Zero);
-                }
-            }
-        }
-    }
-
-    /// <summary>
     /// Modifies a tile at the given local tile coordinates.
     /// Updates both the texture and collision.
     /// </summary>
@@ -201,49 +166,10 @@ public partial class ChunkRenderer : Node2D
         // Update texture for this tile
         DrawTileToImage(localTileX, localTileY);
         _texture.Update(_image);
-
-        // Update collision
-        if (CollisionTileMap != null)
-        {
-            int worldTileX = _chunkData.StartX + localTileX;
-            int worldTileY = _chunkData.StartY + localTileY;
-
-            if (newTerrainType.HasCollision())
-            {
-                CollisionTileMap.SetCell(new Vector2I(worldTileX, worldTileY), 0, Vector2I.Zero);
-            }
-            else
-            {
-                // Remove collision tile
-                CollisionTileMap.EraseCell(new Vector2I(worldTileX, worldTileY));
-            }
-        }
-    }
-
-    /// <summary>
-    /// Clears all collision tiles for this chunk.
-    /// </summary>
-    public void ClearCollisionTiles()
-    {
-        if (CollisionTileMap == null || _chunkData == null)
-            return;
-
-        for (int tileX = 0; tileX < _chunkData.Width; tileX++)
-        {
-            for (int tileY = 0; tileY < _chunkData.Height; tileY++)
-            {
-                int worldTileX = _chunkData.StartX + tileX;
-                int worldTileY = _chunkData.StartY + tileY;
-                CollisionTileMap.EraseCell(new Vector2I(worldTileX, worldTileY));
-            }
-        }
     }
 
     public override void _ExitTree()
     {
-        // Clean up collision tiles when chunk is removed
-        ClearCollisionTiles();
-
         _image?.Dispose();
         _texture?.Dispose();
     }

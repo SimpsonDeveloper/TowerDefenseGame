@@ -34,7 +34,7 @@
 [ext_resource type="Script" uid="uid://ccu4vr8pgyovi" path="res://scripts/components/SpriteComponent.cs" id="31_sprite"]
 [ext_resource type="Texture2D" uid="uid://56tehltoshbg" path="res://icon.svg" id="31_y7ma3"]
 [ext_resource type="Script" uid="uid://bnphhwegnok8r" path="res://scripts/world/PolygonTerrainManager.cs" id="34_polytm"]
-[ext_resource type="Script" path="res://scripts/world/NavBaker.cs" id="35_navbaker"]
+[ext_resource type="Script" uid="uid://ccl6qtw5tkqkj" path="res://scripts/world/NavBaker.cs" id="35_navbaker"]
 
 [sub_resource type="Resource" id="Resource_ak604"]
 script = ExtResource("7_02d50")
@@ -339,7 +339,6 @@ Center = NodePath("../PlayerCamera")
 WalkableExtent = 600.0
 
 [node name="TestEnemy" type="CharacterBody2D" parent="OverworldContainer/OverworldViewport"]
-process_mode = 4
 position = Vector2(400, 324)
 script = ExtResource("30_enemy")
 
