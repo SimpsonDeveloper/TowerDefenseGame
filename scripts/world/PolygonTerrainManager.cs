@@ -1,12 +1,10 @@
 using System.Collections.Generic;
 using Godot;
-using Godot.Collections;
 
 namespace towerdefensegame;
 
 /// <summary>
-/// Incrementally builds terrain collision polygons as chunks generate, then
-/// drives navigation mesh baking from those polygons.
+/// Incrementally builds terrain collision polygons as chunks generate.
 ///
 /// Algorithm:
 ///   1. On each chunk batch, identify newly generated chunks.
@@ -17,8 +15,7 @@ namespace towerdefensegame;
 ///      StaticBody2D blobs that are solid-adjacent to the new chunks.
 ///   4. Union touching blobs with Geometry2D.MergePolygons.
 ///   5. Create (or replace) one StaticBody2D + CollisionPolygon2D per blob.
-///   6. Bake the navigation mesh from all blob polygons plus any nodes in the
-///      "nav_obstacle" group (crystals, towers, etc.).
+///   6. Emit BlobsUpdated so NavBaker can schedule a nav mesh rebake.
 ///
 /// Requires ChunkManager.CollisionMode = Polygon (TileMapLayer collision disabled).
 /// </summary>
@@ -34,17 +31,11 @@ public partial class PolygonTerrainManager : Node
     /// </summary>
     public const string NavObstacleGroup = "nav_obstacle";
 
+    /// <summary>Emitted after blobs are updated (new terrain processed or all chunks cleared).</summary>
+    [Signal]
+    public delegate void BlobsUpdatedEventHandler();
+
     [Export] public ChunkManager ChunkManager { get; set; }
-    [Export] public NavigationRegion2D NavigationRegion { get; set; }
-
-    /// <summary>Node to centre the walkable nav boundary on (typically the camera).</summary>
-    [Export] public Node2D Center { get; set; }
-
-    /// <summary>
-    /// Half-extent of the outer walkable nav boundary in pixels.
-    /// Must be a multiple of TilePixelSize (16) — enforced at bake time.
-    /// </summary>
-    [Export] public float WalkableExtent { get; set; } = 3008f; // 188 × 16
 
     /// <summary>Seconds to wait after the last chunk batch before processing.</summary>
     [Export] public double DebounceDelay { get; set; } = 0.5;
@@ -56,12 +47,10 @@ public partial class PolygonTerrainManager : Node
     /// </summary>
     [Export] public uint TerrainLayer { get; set; } = 1;
 
-    /// <summary>When true, nav obstruction polygons and their vertex data are drawn in-world.</summary>
+    /// <summary>When true, terrain blob polygons and their vertex data are drawn in-world.</summary>
     [Export] public bool DebugDrawEnabled { get; set; } = false;
 
-    private double _timer    = -1;
-    private double _navTimer = -1;
-    private Vector2 _lastBakeCenter;
+    private double _timer = -1;
     private Node2D _blobContainer;
     private DebugObstructionDraw _debugDraw;
 
@@ -78,8 +67,7 @@ public partial class PolygonTerrainManager : Node
 
     public override void _Ready()
     {
-        if (ChunkManager == null)   { GD.PushWarning($"{Name}: ChunkManager not assigned.");   return; }
-        if (NavigationRegion == null) { GD.PushWarning($"{Name}: NavigationRegion not assigned."); return; }
+        if (ChunkManager == null) { GD.PushWarning($"{Name}: ChunkManager not assigned."); return; }
 
         _blobContainer = new Node2D { Name = "BlobContainer" };
         AddChild(_blobContainer);
@@ -108,51 +96,25 @@ public partial class PolygonTerrainManager : Node
         _chunkToBlobs.Clear();
         foreach (var child in _blobContainer.GetChildren())
             child.QueueFree();
-        _timer    = -1;
-        _navTimer = -1;
+        _timer = -1;
+        RefreshDebugDraw();
+        EmitSignal(SignalName.BlobsUpdated);
     }
 
     public override void _Process(double delta)
     {
-        if (Center != null)
-        {
-            float threshold = ChunkManager.ChunkSize * ChunkRenderer.TilePixelSize;
-            if (Center.GlobalPosition.DistanceTo(_lastBakeCenter) >= threshold)
-                MarkNavDirty();
-        }
-
         if (_timer >= 0)
         {
             _timer -= delta;
             if (_timer <= 0)
             {
                 _timer = -1;
-                ProcessNewChunks(); // also calls RebakeNav, so clear nav timer
-                _navTimer = -1;
-            }
-        }
-
-        if (_navTimer >= 0)
-        {
-            _navTimer -= delta;
-            if (_navTimer <= 0)
-            {
-                _navTimer = -1;
-                RebakeNav();
+                ProcessNewChunks();
             }
         }
     }
 
     public void MarkDirty() => _timer = DebounceDelay;
-
-    /// <summary>
-    /// Schedules a nav rebake without reprocessing chunks. Use this when the
-    /// nav boundary needs updating (e.g. camera moved) but terrain hasn't changed.
-    /// </summary>
-    public void MarkNavDirty()
-    {
-        _navTimer = DebounceDelay;
-    }
 
     private void OnChunksBatchApplied(int count) => MarkDirty();
 
@@ -211,7 +173,8 @@ public partial class PolygonTerrainManager : Node
 
         foreach (var c in newChunks) _processedChunks.Add(c);
 
-        RebakeNav();
+        RefreshDebugDraw();
+        EmitSignal(SignalName.BlobsUpdated);
     }
 
     // ── Edge graph ─────────────────────────────────────────────────────────────
@@ -483,102 +446,25 @@ public partial class PolygonTerrainManager : Node
         return result;
     }
 
-    // ── Navigation bake ────────────────────────────────────────────────────────
+    // ── Blob data access ───────────────────────────────────────────────────────
 
-    private void RebakeNav()
+    /// <summary>Returns all terrain blob polygons. Called by NavBaker at bake time.</summary>
+    public IEnumerable<Vector2[]> GetBlobPolygons()
     {
-        NavigationPolygon navPoly    = new NavigationPolygon { AgentRadius = 9f};
-        // navPoly.SamplePartitionType = NavigationPolygon.SamplePartitionTypeEnum.Triangulate;
-        var sourceData = new NavigationMeshSourceGeometryData2D();
-
-        // Outer walkable boundary. WalkableExtent is rounded to the nearest tile size
-        // at bake time. Center is snapped to a half-tile offset so boundary edges always
-        // run through the middle of tiles — never on a terrain polygon vertex or edge.
-        Vector2 c  = Center?.GlobalPosition ?? Vector2.Zero;
-        float tileSize = ChunkRenderer.TilePixelSize;
-        float e    = Mathf.Round(WalkableExtent / tileSize) * tileSize;
-        float half = tileSize * 0.5f;
-        c = new Vector2(
-            Mathf.Round((c.X - half) / tileSize) * tileSize + half,
-            Mathf.Round((c.Y - half) / tileSize) * tileSize + half);
-        var traversable = new Vector2[]
-        {
-            new(c.X - e, c.Y - e),
-            new(c.X + e, c.Y - e),
-            new(c.X + e, c.Y + e),
-            new(c.X - e, c.Y + e),
-        };
-        sourceData.AddTraversableOutline(traversable);
-
-        // Terrain blob obstructions — read directly from existing StaticBody2D nodes.
         foreach (var child in _blobContainer.GetChildren())
         {
             if (child is not StaticBody2D body) continue;
             foreach (var bodyChild in body.GetChildren())
                 if (bodyChild is CollisionPolygon2D cp)
-                    AddClippedObstruction(sourceData, cp.Polygon, traversable);
+                    yield return cp.Polygon;
         }
-
-        // Extra nav obstacles registered by other systems (crystals, towers, etc.).
-        foreach (var node in GetTree().GetNodesInGroup(NavObstacleGroup))
-        {
-            if (node is not StaticBody2D body) continue;
-
-            foreach (var child in body.GetChildren())
-            {
-                if (child is not CollisionPolygon2D cp) continue;
-                var xform = cp.GlobalTransform;
-                var local = cp.Polygon;
-                var world = new Vector2[local.Length];
-                for (int i = 0; i < local.Length; i++)
-                    world[i] = xform * local[i];
-
-                AddClippedObstruction(sourceData, world, traversable);
-            }
-        }
-
-        _lastBakeCenter = Center?.GlobalPosition ?? Vector2.Zero;
-
-        if (DebugDrawEnabled)
-        {
-            // Bounding box of processed chunks that overlap the traversable boundary.
-            int chunkPixelSize = ChunkManager.ChunkSize * ChunkRenderer.TilePixelSize;
-            float bMinX = float.MaxValue, bMinY = float.MaxValue,
-                  bMaxX = float.MinValue, bMaxY = float.MinValue;
-            foreach (var cc in _processedChunks) // cc = chunk coordinate (Vector2I grid position)
-            {
-                float cx0 = cc.X * chunkPixelSize, cy0 = cc.Y * chunkPixelSize;
-                float cx1 = cx0 + chunkPixelSize,   cy1 = cy0 + chunkPixelSize;
-                if (cx1 <= traversable[0].X || cx0 >= traversable[2].X ||
-                    cy1 <= traversable[0].Y || cy0 >= traversable[2].Y) continue;
-                bMinX = Mathf.Min(bMinX, cx0); bMinY = Mathf.Min(bMinY, cy0);
-                bMaxX = Mathf.Max(bMaxX, cx1); bMaxY = Mathf.Max(bMaxY, cy1);
-            }
-            Rect2? chunkBounds = bMinX < float.MaxValue
-                ? new Rect2(bMinX, bMinY, bMaxX - bMinX, bMaxY - bMinY)
-                : null;
-            _debugDraw?.UpdateObstructions(sourceData.GetObstructionOutlines(), traversable, chunkBounds);
-        }
-
-        NavigationServer2D.BakeFromSourceGeometryData(navPoly, sourceData);
-        NavigationRegion.NavigationPolygon = navPoly;
-        NavigationServer2D.RegionSetNavigationPolygon(NavigationRegion.GetRid(), navPoly);
     }
 
-    /// <summary>
-    /// Clips an obstruction polygon to the traversable boundary before adding it
-    /// to source data. Polygons entirely outside the boundary are dropped.
-    /// Polygons partially outside are trimmed so Godot never sees geometry that
-    /// straddles or touches the boundary edge, which causes convex partition failures.
-    /// </summary>
-    private static void AddClippedObstruction(
-        NavigationMeshSourceGeometryData2D sourceData,
-        Vector2[] poly,
-        Vector2[] boundary)
+    private void RefreshDebugDraw()
     {
-        var clipped = Geometry2D.IntersectPolygons(poly, boundary);
-        foreach (var piece in clipped)
-            sourceData.AddObstructionOutline(piece);
+        if (!DebugDrawEnabled) return;
+        var blobs = new List<Vector2[]>(GetBlobPolygons());
+        _debugDraw.UpdateBlobs(blobs);
     }
 
     // ── Tile query ─────────────────────────────────────────────────────────────
@@ -607,46 +493,19 @@ public partial class PolygonTerrainManager : Node
             new(1.00f, 0.25f, 0.80f), // pink
         };
 
-        private Godot.Collections.Array<Vector2[]> _obstructions = new();
-        private Vector2[] _boundary = System.Array.Empty<Vector2>();
-        private Rect2? _chunkBounds;
+        private List<Vector2[]> _blobs = new();
 
-        public void UpdateObstructions(Godot.Collections.Array<Vector2[]> obstructions, Vector2[] boundary, Rect2? chunkBounds)
+        public void UpdateBlobs(List<Vector2[]> blobs)
         {
-            _obstructions = obstructions;
-            _boundary     = boundary;
-            _chunkBounds  = chunkBounds;
+            _blobs = blobs;
             QueueRedraw();
         }
 
         public override void _Draw()
         {
-            // Nav boundary — always drawn, white opaque, unfilled.
-            if (_boundary.Length >= 4)
+            for (int i = 0; i < _blobs.Count; i++)
             {
-                var ring = new Vector2[_boundary.Length + 1];
-                _boundary.CopyTo(ring, 0);
-                ring[_boundary.Length] = _boundary[0];
-                DrawPolyline(ring, Colors.White, 9f);
-            }
-
-            // Chunk extent within the nav boundary — yellow, unfilled.
-            if (_chunkBounds.HasValue)
-            {
-                var r = _chunkBounds.Value;
-                DrawPolyline(new[]
-                {
-                    r.Position,
-                    new Vector2(r.End.X,   r.Position.Y),
-                    r.End,
-                    new Vector2(r.Position.X, r.End.Y),
-                    r.Position,
-                }, new Color(1f, 0.9f, 0f), 6f);
-            }
-
-            for (int i = 0; i < _obstructions.Count; i++)
-            {
-                var poly = _obstructions[i];
+                var poly = _blobs[i];
                 if (poly.Length < 3) continue;
 
                 var col = Palette[i % Palette.Length];
