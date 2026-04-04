@@ -249,13 +249,11 @@ script = ExtResource("8_pgk25")
 Config = ExtResource("28_water")
 ChunkManager = NodePath("../../ChunkManager")
 
-[node name="ChunkManager" type="Node" parent="OverworldContainer/OverworldViewport/TerrainGen" node_paths=PackedStringArray("TerrainGen", "Camera", "DebugScenarioPlayer")]
+[node name="ChunkManager" type="Node" parent="OverworldContainer/OverworldViewport/TerrainGen" node_paths=PackedStringArray("TerrainGen", "Camera")]
 script = ExtResource("9_kkokr")
 TerrainGen = NodePath("..")
 Camera = NodePath("../../PlayerCamera")
 DrawDebugEnabled = true
-SetupDebugScenario = true
-DebugScenarioPlayer = NodePath("../../PlayerController")
 
 [node name="PlayerCamera" type="Camera2D" parent="OverworldContainer/OverworldViewport" node_paths=PackedStringArray("Player")]
 position = Vector2(576, 324)
@@ -263,7 +261,6 @@ script = ExtResource("10_lhwp2")
 Player = NodePath("../PlayerController")
 
 [node name="CrystalSpawner" type="Node" parent="OverworldContainer/OverworldViewport" node_paths=PackedStringArray("Player")]
-process_mode = 4
 script = ExtResource("11_l40q6")
 CrystalScene = ExtResource("12_iav3h")
 Player = NodePath("../PlayerController")
@@ -334,7 +331,7 @@ ChunkManager = NodePath("../TerrainGen/ChunkManager")
 NavigationRegion = NodePath("../NavigationRegion2D")
 Center = NodePath("../PlayerCamera")
 WalkableExtent = 600.0
-DebugManualRebakeOnly = true
+DebugDrawEnabled = true
 
 [node name="TestEnemy" type="CharacterBody2D" parent="OverworldContainer/OverworldViewport"]
 process_mode = 4
