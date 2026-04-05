@@ -19,6 +19,8 @@ public partial class EnemyNavAgentController : CharacterBody2D
     [Export] public float Acceleration { get; set; } = 10f;
 
     [ExportGroup("Navigation")]
+    [Export] public NavigationAgent2D NavAgent;
+    
     /// <summary>
     /// How close the agent must get to each path waypoint before it advances.
     /// Keep this at roughly half a tile width (8px for 16px tiles).
@@ -51,26 +53,24 @@ public partial class EnemyNavAgentController : CharacterBody2D
     protected virtual void OnPhysicsTick(double delta, float distanceToTarget) { }
 
     // ── Internal state ────────────────────────────────────────────────────
-
-    private NavigationAgent2D _navAgent;
     private Node2D _target;
     private float _targetUpdateTimer;
 
     // ── Lifecycle ─────────────────────────────────────────────────────────
 
-    public override sealed void _Ready()
+    public sealed override void _Ready()
     {
-        _navAgent = GetNode<NavigationAgent2D>("NavigationAgent2D");
-        _navAgent.PathDesiredDistance = PathDesiredDistance;
-        _navAgent.TargetDesiredDistance = TargetDesiredDistance;
-        _navAgent.MaxSpeed = MoveSpeed;
+        NavAgent = GetNode<NavigationAgent2D>("NavigationAgent2D");
+        NavAgent.PathDesiredDistance = PathDesiredDistance;
+        NavAgent.TargetDesiredDistance = TargetDesiredDistance;
+        NavAgent.MaxSpeed = MoveSpeed;
 
         AddToGroup("enemies");
         ResolveTarget();
         OnReady();
     }
 
-    public override sealed void _PhysicsProcess(double delta)
+    public sealed override void _PhysicsProcess(double delta)
     {
         float distToTarget = _target != null
             ? GlobalPosition.DistanceTo(_target.GlobalPosition)
@@ -82,10 +82,10 @@ public partial class EnemyNavAgentController : CharacterBody2D
         {
             _targetUpdateTimer = TargetUpdateInterval;
             if (_target != null)
-                _navAgent.TargetPosition = _target.GlobalPosition;
+                NavAgent.TargetPosition = _target.GlobalPosition;
         }
 
-        if (_target == null || _navAgent.IsNavigationFinished())
+        if (_target == null || NavAgent.IsNavigationFinished())
         {
             Velocity = Velocity.Lerp(Vector2.Zero, Acceleration * (float)delta);
             MoveAndSlide();
@@ -93,7 +93,7 @@ public partial class EnemyNavAgentController : CharacterBody2D
             return;
         }
 
-        Vector2 nextPos = _navAgent.GetNextPathPosition();
+        Vector2 nextPos = NavAgent.GetNextPathPosition();
         Vector2 desiredVelocity = (nextPos - GlobalPosition).Normalized() * MoveSpeed;
         Velocity = Velocity.Lerp(desiredVelocity, Acceleration * (float)delta);
         MoveAndSlide();
@@ -107,7 +107,7 @@ public partial class EnemyNavAgentController : CharacterBody2D
     {
         _target = target;
         if (_target != null)
-            _navAgent.TargetPosition = _target.GlobalPosition;
+            NavAgent.TargetPosition = _target.GlobalPosition;
     }
 
     public void ClearTarget()
@@ -134,6 +134,6 @@ public partial class EnemyNavAgentController : CharacterBody2D
                 _target = nodes[0] as Node2D;
         }
         if (_target != null)
-            _navAgent.TargetPosition = _target.GlobalPosition;
+            NavAgent.TargetPosition = _target.GlobalPosition;
     }
 }

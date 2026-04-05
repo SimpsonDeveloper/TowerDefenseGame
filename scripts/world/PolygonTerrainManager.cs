@@ -43,6 +43,7 @@ public partial class PolygonTerrainManager : Node
         System.Array.Empty<Vector2I>();
 
     [Export] public ChunkManager ChunkManager { get; set; }
+    [Export] public CoordConfig CoordConfig { get; set; }
 
     /// <summary>Seconds to wait after the last chunk batch before processing.</summary>
     [Export] public double DebounceDelay { get; set; } = 0.5;
@@ -74,7 +75,8 @@ public partial class PolygonTerrainManager : Node
 
     public override void _Ready()
     {
-        if (ChunkManager == null) { GD.PushWarning($"{Name}: ChunkManager not assigned."); return; }
+        if (ChunkManager == null)  { GD.PushWarning($"{Name}: ChunkManager not assigned.");  return; }
+        if (CoordConfig  == null)  { GD.PushWarning($"{Name}: CoordConfig not assigned.");   return; }
 
         _blobContainer = new Node2D { Name = "BlobContainer" };
         AddChild(_blobContainer);
@@ -153,7 +155,7 @@ public partial class PolygonTerrainManager : Node
         if (edgeGraph.Count > 0)
         {
             var newBlobPolygons = TraceContours(edgeGraph);
-            int chunkPixelSize = ChunkManager.ChunkSize * ChunkRenderer.TilePixelSize;
+            int chunkPixelSize = CoordHelper.ChunkSizePixels(CoordConfig);
 
             foreach (var blobPixels in newBlobPolygons)
             {
@@ -207,7 +209,7 @@ public partial class PolygonTerrainManager : Node
     private System.Collections.Generic.Dictionary<Vector2I, List<Vector2I>> BuildEdgeGraph(List<Vector2I> newChunks)
     {
         var graph      = new System.Collections.Generic.Dictionary<Vector2I, List<Vector2I>>();
-        int cs         = ChunkManager.ChunkSize;
+        int cs         = CoordConfig.ChunkSizeTiles;
         var newChunkSet = new HashSet<Vector2I>(newChunks);
 
         // Returns true only when the tile is inside a new chunk AND solid.
@@ -346,8 +348,8 @@ public partial class PolygonTerrainManager : Node
     private HashSet<StaticBody2D> FindAdjacentBlobs(List<Vector2I> newChunks)
     {
         var found      = new HashSet<StaticBody2D>();
-        int cs         = ChunkManager.ChunkSize;
-        const int ts   = ChunkRenderer.TilePixelSize;
+        int cs         = CoordConfig.ChunkSizeTiles;
+        int ts         = CoordConfig.TilePixelSize;
         var spaceState = GetViewport().World2D.DirectSpaceState;
         var query      = new PhysicsPointQueryParameters2D { CollisionMask = TerrainLayer };
 
@@ -490,7 +492,7 @@ public partial class PolygonTerrainManager : Node
 
     private bool IsSolid(int tileX, int tileY)
     {
-        const int ts = ChunkRenderer.TilePixelSize;
+        int ts = CoordConfig.TilePixelSize;
         var worldPos = new Vector2(tileX * ts + ts * 0.5f, tileY * ts + ts * 0.5f);
         TerrainType? terrain = ChunkManager.GetTerrainTypeAtWorldPos(worldPos);
         return terrain.HasValue && terrain.Value.HasCollision();

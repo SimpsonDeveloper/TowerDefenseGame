@@ -17,21 +17,19 @@ public partial class NavGridManager : Node
 {
     [Export] public PolygonTerrainManager TerrainManager { get; set; }
     [Export] public ChunkManager ChunkManager { get; set; }
+    [Export] public CoordConfig CoordConfig { get; set; }
 
     /// <summary>Node whose position drives cell loading (typically the player).</summary>
     [Export] public Node2D Center { get; set; }
-
-    /// <summary>
-    /// Cell size in chunks (must be >= 1).
-    /// Pixel size = CellSizeChunks × ChunkManager.ChunkSize × TilePixelSize.
-    /// </summary>
-    [Export] public int CellSizeChunks { get; set; } = 1;
 
     /// <summary>
     /// Chebyshev radius in cells around the centre cell to keep loaded and baked.
     /// Radius 2 keeps a 5×5 grid (25 cells) active.
     /// </summary>
     [Export] public int ActiveRadius { get; set; } = 2;
+
+    /// <summary>When true, draws cell boundaries and coords in-world. Press F6 to scan for isolated cells.</summary>
+    [Export] public bool DebugDrawEnabled { get; set; } = false;
 
     // ── Internal types ──────────────────────────────────────────────────────────
 
@@ -45,10 +43,11 @@ public partial class NavGridManager : Node
 
     // ── State ───────────────────────────────────────────────────────────────────
 
-    private readonly Dictionary<Vector2I, NavCell> _cells      = new();
+    private readonly Dictionary<Vector2I, NavCell> _cells       = new();
     private readonly HashSet<Vector2I>             _bakePending = new();
-    private bool    _baking;
+    private bool     _baking;
     private Vector2I _lastCentreCell = new(int.MinValue, int.MinValue);
+    private DebugCellDraw _debugDraw;
 
     // ── Lifecycle ───────────────────────────────────────────────────────────────
 
@@ -56,15 +55,19 @@ public partial class NavGridManager : Node
     {
         if (TerrainManager == null) { GD.PushWarning($"{Name}: TerrainManager not assigned."); return; }
         if (ChunkManager   == null) { GD.PushWarning($"{Name}: ChunkManager not assigned.");   return; }
+        if (CoordConfig    == null) { GD.PushWarning($"{Name}: CoordConfig not assigned.");    return; }
         if (Center         == null) { GD.PushWarning($"{Name}: Center not assigned.");          return; }
 
-        if (CellSizeChunks < 1)
+        if (CoordConfig.NavCellSizeChunks < 1)
         {
-            GD.PushWarning($"{Name}: CellSizeChunks must be >= 1; clamping to 1.");
-            CellSizeChunks = 1;
+            GD.PushWarning($"{Name}: CoordConfig.NavCellSizeChunks must be >= 1; clamping to 1.");
+            CoordConfig.NavCellSizeChunks = 1;
         }
 
         TerrainManager.BlobsUpdated += OnBlobsUpdated;
+
+        _debugDraw = new DebugCellDraw(this);
+        AddChild(_debugDraw);
     }
 
     public override void _ExitTree()
@@ -107,6 +110,26 @@ public partial class NavGridManager : Node
     {
         UpdateCellGrid();
         ProcessBakePending();
+        if (DebugDrawEnabled) _debugDraw.QueueRedraw();
+    }
+
+    public override void _UnhandledInput(InputEvent e)
+    {
+        if (!DebugDrawEnabled) return;
+        if (e is not InputEventKey { Pressed: true, Keycode: Key.F6 }) return;
+
+        GD.Print("[NavGridManager] Scanning for isolated cells...");
+        bool anyFound = false;
+        foreach (var (coord, cell) in _cells)
+        {
+            if (cell.State != CellState.Active) continue;
+            if (IsCellIsolated(coord))
+            {
+                GD.Print($"  Isolated: {coord}");
+                anyFound = true;
+            }
+        }
+        if (!anyFound) GD.Print("  None found.");
     }
 
     private void UpdateCellGrid()
@@ -171,24 +194,31 @@ public partial class NavGridManager : Node
         _baking     = true;
         cell.State  = CellState.Baking;
 
+        const float agentRadius = 9f;
         float cellPx = CellSizePixels();
         var origin   = new Vector2(coord.X * cellPx, coord.Y * cellPx);
-        var cellRect = new Vector2[]
+
+        // Expand the traversable boundary outward by agentRadius on all sides.
+        // BakeFromSourceGeometryData erodes inward by agentRadius, so the eroded
+        // navigable area lands exactly on the true cell boundary — no gap between
+        // adjacent cells after stitching.
+        var e = new Vector2(agentRadius, agentRadius);
+        var expandedRect = new Vector2[]
         {
-            origin,
-            origin + new Vector2(cellPx, 0),
-            origin + new Vector2(cellPx, cellPx),
-            origin + new Vector2(0,      cellPx),
+            origin - e,
+            origin + new Vector2(cellPx + agentRadius, -agentRadius),
+            origin + new Vector2(cellPx + agentRadius,  cellPx + agentRadius),
+            origin + new Vector2(-agentRadius,           cellPx + agentRadius),
         };
 
-        var navPoly    = new NavigationPolygon { AgentRadius = 9f };
+        var navPoly    = new NavigationPolygon { AgentRadius = agentRadius };
         var sourceData = new NavigationMeshSourceGeometryData2D();
 
-        sourceData.AddTraversableOutline(cellRect);
+        sourceData.AddTraversableOutline(expandedRect);
 
-        // Terrain blob obstructions clipped to this cell's rect.
+        // Clip obstacles to the expanded rect so nothing is missed in the expansion strip.
         foreach (var blob in TerrainManager.GetBlobPolygons())
-            AddClippedObstruction(sourceData, blob, cellRect);
+            AddClippedObstruction(sourceData, blob, expandedRect);
 
         // Extra nav obstacles (crystals, towers, etc.) clipped to this cell's rect.
         foreach (var node in GetTree().GetNodesInGroup(PolygonTerrainManager.NavObstacleGroup))
@@ -202,7 +232,7 @@ public partial class NavGridManager : Node
                 var world = new Vector2[local.Length];
                 for (int i = 0; i < local.Length; i++)
                     world[i] = xform * local[i];
-                AddClippedObstruction(sourceData, world, cellRect);
+                AddClippedObstruction(sourceData, world, expandedRect);
             }
         }
 
@@ -223,7 +253,11 @@ public partial class NavGridManager : Node
 
         region.NavigationPolygon = navPoly;
         NavigationServer2D.RegionSetNavigationPolygon(region.GetRid(), navPoly);
-        cell.State = CellState.Active;
+
+        // If a terrain update landed while this cell was baking, OnBlobsUpdated will have
+        // re-added the coord to _bakePending (but couldn't change state away from Baking).
+        // Keep it Queued so ProcessBakePending schedules a fresh rebake with correct data.
+        cell.State = _bakePending.Contains(coord) ? CellState.Queued : CellState.Active;
     }
 
     // ── Helpers ─────────────────────────────────────────────────────────────────
@@ -237,18 +271,64 @@ public partial class NavGridManager : Node
             sourceData.AddObstructionOutline(piece);
     }
 
-    private float CellSizePixels() =>
-        CellSizeChunks * ChunkManager.ChunkSize * (float)ChunkRenderer.TilePixelSize;
-
-    private Vector2I WorldToCell(Vector2 worldPos)
+    private float     CellSizePixels()                  => CoordHelper.NavCellSizePixels(CoordConfig);
+    private Vector2I  WorldToCell(Vector2 worldPos)     => CoordHelper.WorldToNavCell(worldPos, CoordConfig);
+    private Vector2I  ChunkToCell(Vector2I chunkCoord)  => CoordHelper.ChunkToNavCell(chunkCoord, CoordConfig);
+    
+    private bool IsCellIsolated(Vector2I coord)
     {
         float cellPx = CellSizePixels();
-        return new Vector2I(
-            Mathf.FloorToInt(worldPos.X / cellPx),
-            Mathf.FloorToInt(worldPos.Y / cellPx));
+        var centre = new Vector2((coord.X + 0.5f) * cellPx, (coord.Y + 0.5f) * cellPx);
+
+        foreach (var dir in new[] { Vector2I.Right, Vector2I.Left, Vector2I.Up, Vector2I.Down })
+        {
+            var neighbour = coord + dir;
+            if (!_cells.TryGetValue(neighbour, out var n) || n.State != CellState.Active) continue;
+
+            var nCentre = new Vector2((neighbour.X + 0.5f) * cellPx, (neighbour.Y + 0.5f) * cellPx);
+            var map = _cells[coord].Region.GetNavigationMap();
+            var path = NavigationServer2D.MapGetPath(map, centre, nCentre, false);
+            if (path.Length == 0) return true;
+            path = NavigationServer2D.MapGetPath(map, nCentre, centre, false);
+            if (path[^1] != centre) return true;
+        }
+        return false;
     }
 
-    private Vector2I ChunkToCell(Vector2I chunkCoord) =>
-        new(Mathf.FloorToInt((float)chunkCoord.X / CellSizeChunks),
-            Mathf.FloorToInt((float)chunkCoord.Y / CellSizeChunks));
+    // ── Debug draw ──────────────────────────────────────────────────────────────
+
+    private partial class DebugCellDraw(NavGridManager manager) : Node2D
+    {
+        private static readonly Color ColActive  = new(0.20f, 1.00f, 0.30f, 0.12f);
+        private static readonly Color ColBaking  = new(1.00f, 0.90f, 0.10f, 0.18f);
+        private static readonly Color ColQueued  = new(1.00f, 0.50f, 0.10f, 0.18f);
+
+        public override void _Draw()
+        {
+            if (!manager.DebugDrawEnabled) return;
+
+            float cellPx = manager.CellSizePixels();
+
+            foreach (var (coord, cell) in manager._cells)
+            {
+                var origin = new Vector2(coord.X * cellPx, coord.Y * cellPx);
+                var size   = Vector2.One * cellPx;
+
+                var fill = cell.State switch
+                {
+                    CellState.Active => ColActive,
+                    CellState.Baking => ColBaking,
+                    _                => ColQueued,
+                };
+
+                DrawRect(new Rect2(origin, size), fill);
+                DrawRect(new Rect2(origin, size), new Color(fill, 0.7f), false, 3f);
+
+                // Coord label at cell centre.
+                var centre = origin + size * 0.5f;
+                DrawString(ThemeDB.FallbackFont, centre, coord.ToString(),
+                    HorizontalAlignment.Center, -1, (int)(cellPx * 0.12f), Colors.White);
+            }
+        }
+    }
 }

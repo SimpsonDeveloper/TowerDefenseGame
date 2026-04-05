@@ -1,4 +1,4 @@
-[gd_scene load_steps=52 format=3 uid="uid://clxuq40l6m686"]
+[gd_scene load_steps=53 format=3 uid="uid://clxuq40l6m686"]
 
 [ext_resource type="PackedScene" uid="uid://d23xmn1ko1rqq" path="res://scenes/pocket_dimension.tscn" id="0_pd"]
 [ext_resource type="Script" uid="uid://dlf3scmu37ybh" path="res://scripts/world/WorldManager.cs" id="0_wm"]
@@ -33,8 +33,9 @@
 [ext_resource type="Script" uid="uid://dxaxgggwt2dpn" path="res://scripts/world/enemies/EnemyNavAgentController.cs" id="30_enemy"]
 [ext_resource type="Script" uid="uid://ccu4vr8pgyovi" path="res://scripts/components/SpriteComponent.cs" id="31_sprite"]
 [ext_resource type="Texture2D" uid="uid://56tehltoshbg" path="res://icon.svg" id="31_y7ma3"]
+[ext_resource type="Resource" path="res://assets/coord_config.tres" id="33_coordcfg"]
 [ext_resource type="Script" uid="uid://bnphhwegnok8r" path="res://scripts/world/PolygonTerrainManager.cs" id="34_polytm"]
-[ext_resource type="Script" uid="uid://ccl6qtw5tkqkj" path="res://scripts/world/NavGridManager.cs" id="35_navgrid"]
+[ext_resource type="Script" uid="uid://7waqucv4jhw5" path="res://scripts/world/NavGridManager.cs" id="35_navgrid"]
 
 [sub_resource type="Resource" id="Resource_ak604"]
 script = ExtResource("7_02d50")
@@ -249,7 +250,7 @@ ChunkManager = NodePath("../../ChunkManager")
 script = ExtResource("9_kkokr")
 TerrainGen = NodePath("..")
 Camera = NodePath("../../PlayerCamera")
-DrawDebugEnabled = true
+CoordConfig = ExtResource("33_coordcfg")
 
 [node name="PlayerCamera" type="Camera2D" parent="OverworldContainer/OverworldViewport" node_paths=PackedStringArray("Player")]
 position = Vector2(576, 324)
@@ -321,19 +322,21 @@ texture = SubResource("ViewportTexture_671wp")
 [node name="PolygonTerrainManager" type="Node" parent="OverworldContainer/OverworldViewport" node_paths=PackedStringArray("ChunkManager")]
 script = ExtResource("34_polytm")
 ChunkManager = NodePath("../TerrainGen/ChunkManager")
+CoordConfig = ExtResource("33_coordcfg")
 DebugDrawEnabled = true
 
 [node name="NavGridManager" type="Node" parent="OverworldContainer/OverworldViewport" node_paths=PackedStringArray("TerrainManager", "ChunkManager", "Center")]
 script = ExtResource("35_navgrid")
 TerrainManager = NodePath("../PolygonTerrainManager")
 ChunkManager = NodePath("../TerrainGen/ChunkManager")
+CoordConfig = ExtResource("33_coordcfg")
 Center = NodePath("../PlayerController")
-CellSizeChunks = 1
-ActiveRadius = 2
+DebugDrawEnabled = true
 
-[node name="TestEnemy" type="CharacterBody2D" parent="OverworldContainer/OverworldViewport"]
+[node name="TestEnemy" type="CharacterBody2D" parent="OverworldContainer/OverworldViewport" node_paths=PackedStringArray("NavAgent")]
 position = Vector2(400, 324)
 script = ExtResource("30_enemy")
+NavAgent = NodePath("NavigationAgent2D")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="OverworldContainer/OverworldViewport/TestEnemy"]
 shape = SubResource("CircleShape2D_enemy")

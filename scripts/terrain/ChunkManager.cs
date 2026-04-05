@@ -26,9 +26,7 @@ public partial class ChunkManager : Node
 
     [Export] public TerrainGen TerrainGen { get; set; }
     [Export] public Camera2D Camera { get; set; }
-
-    /// <summary>Size of each chunk in tiles (NxN).</summary>
-    [Export] public int ChunkSize { get; set; } = 32;
+    [Export] public CoordConfig CoordConfig { get; set; }
 
     /// <summary>How many chunks to generate beyond the visible area (buffer).</summary>
     [Export] public int ChunkBuffer { get; set; } = 1;
@@ -96,6 +94,12 @@ public partial class ChunkManager : Node
         if (Camera == null)
         {
             GD.PrintErr("ChunkManager: Camera not assigned!");
+            return;
+        }
+
+        if (CoordConfig == null)
+        {
+            GD.PrintErr("ChunkManager: CoordConfig not assigned!");
             return;
         }
 
@@ -252,11 +256,11 @@ public partial class ChunkManager : Node
     /// </summary>
     private void StartAsyncChunkGeneration(Vector2I chunkCoord)
     {
-        int startTileX = chunkCoord.X * ChunkSize;
-        int startTileY = chunkCoord.Y * ChunkSize;
+        int startTileX = chunkCoord.X * CoordConfig.ChunkSizeTiles;
+        int startTileY = chunkCoord.Y * CoordConfig.ChunkSizeTiles;
 
         // Capture values for the closure
-        int chunkSize = ChunkSize;
+        int chunkSize = CoordConfig.ChunkSizeTiles;
         TerrainGen terrainGen = TerrainGen;
 
         Task.Run(() =>
@@ -310,7 +314,7 @@ public partial class ChunkManager : Node
         {
             EmitSignal(SignalName.ChunksBatchApplied, chunksApplied);
             if (DrawDebugEnabled)
-                _debugDraw.Update(_chunkGenerationOrder, ChunkSize * ChunkRenderer.TilePixelSize);
+                _debugDraw.Update(_chunkGenerationOrder, CoordHelper.ChunkSizePixels(CoordConfig));
         }
     }
 
@@ -335,25 +339,9 @@ public partial class ChunkManager : Node
     /// <summary>
     /// Converts world position to chunk coordinates.
     /// </summary>
-    private Vector2I WorldToChunkCoords(Vector2 worldPos)
-    {
-        int chunkWorldSize = ChunkSize * ChunkRenderer.TilePixelSize;
+    private Vector2I WorldToChunkCoords(Vector2 worldPos) => CoordHelper.WorldToChunk(worldPos, CoordConfig);
 
-        int chunkX = Mathf.FloorToInt(worldPos.X / chunkWorldSize);
-        int chunkY = Mathf.FloorToInt(worldPos.Y / chunkWorldSize);
-
-        return new Vector2I(chunkX, chunkY);
-    }
-
-    /// <summary>
-    /// Converts world position to tile coordinates.
-    /// </summary>
-    private Vector2I WorldToTileCoords(Vector2 worldPos)
-    {
-        int tileX = Mathf.FloorToInt(worldPos.X / ChunkRenderer.TilePixelSize);
-        int tileY = Mathf.FloorToInt(worldPos.Y / ChunkRenderer.TilePixelSize);
-        return new Vector2I(tileX, tileY);
-    }
+    private Vector2I WorldToTileCoords(Vector2 worldPos) => CoordHelper.WorldToTile(worldPos, CoordConfig);
 
     /// <summary>
     /// Clears all generated chunks and resets the manager.
@@ -375,7 +363,7 @@ public partial class ChunkManager : Node
         while (_failedChunks.TryDequeue(out _)) { }
 
         if (DrawDebugEnabled)
-            _debugDraw.Update(_chunkGenerationOrder, ChunkSize * ChunkRenderer.TilePixelSize);
+            _debugDraw.Update(_chunkGenerationOrder, CoordHelper.ChunkSizePixels(CoordConfig));
 
         EmitSignal(SignalName.ChunksCleared);
     }
@@ -449,11 +437,7 @@ public partial class ChunkManager : Node
     /// <returns>True if the tile was modified, false if chunk not loaded</returns>
     public bool ModifyTile(int tileX, int tileY, TerrainType newTerrainType)
     {
-        Vector2 worldPos = new Vector2(
-            tileX * ChunkRenderer.TilePixelSize,
-            tileY * ChunkRenderer.TilePixelSize
-        );
-        return ModifyTileAtWorldPos(worldPos, newTerrainType);
+        return ModifyTileAtWorldPos(CoordHelper.TileToWorld(new Vector2I(tileX, tileY), CoordConfig), newTerrainType);
     }
 
     /// <summary>

@@ -1,12 +1,13 @@
-[gd_scene load_steps=8 format=3 uid="uid://d23xmn1ko1rqq"]
+[gd_scene load_steps=10 format=3 uid="uid://d23xmn1ko1rqq"]
 
-[ext_resource type="Script" path="res://scripts/terrain/TerrainGen.cs" id="2_tgen"]
-[ext_resource type="Script" path="res://scripts/terrain/GenRange.cs" id="3_grange"]
-[ext_resource type="Script" path="res://scripts/terrain/SimplexGen.cs" id="4_sgen"]
-[ext_resource type="Script" path="res://scripts/terrain/ChunkManager.cs" id="5_cmgr"]
-[ext_resource type="Script" path="res://scripts/camera/PocketCameraController.cs" id="6_cam"]
-[ext_resource type="Resource" path="res://assets/terrain_configs/grass_config.tres" id="7_gcfg"]
-[ext_resource type="Resource" uid="uid://bg72e5v3k10nh" path="res://assets/terrain_configs/terrain_config.tres" id="8_terraincfg"]
+[ext_resource type="Script" uid="uid://dnb5iegcl3s5r" path="res://scripts/terrain/TerrainGen.cs" id="2_tgen"]
+[ext_resource type="Script" uid="uid://bn66bgttlo0pn" path="res://scripts/terrain/GenRange.cs" id="3_grange"]
+[ext_resource type="Script" uid="uid://d33brm7vp1jgy" path="res://scripts/terrain/SimplexGen.cs" id="4_sgen"]
+[ext_resource type="Script" uid="uid://1njs0cvgv6a0" path="res://scripts/terrain/ChunkManager.cs" id="5_cmgr"]
+[ext_resource type="Script" uid="uid://dl4mma1ufub27" path="res://scripts/camera/PocketCameraController.cs" id="6_cam"]
+[ext_resource type="Resource" path="res://assets/coord_config.tres" id="7_ck6mf"]
+[ext_resource type="Resource" uid="uid://cvuw7ah7gs566" path="res://assets/terrain_configs/grass_config.tres" id="7_gcfg"]
+[ext_resource type="Resource" path="res://assets/terrain_configs/terrain_config.tres" id="8_terraincfg"]
 
 [sub_resource type="Resource" id="Resource_pdgenrange"]
 script = ExtResource("3_grange")
@@ -19,12 +20,12 @@ metadata/_custom_type_script = "uid://bn66bgttlo0pn"
 [node name="TerrainGen" type="Node" parent="." node_paths=PackedStringArray("SimplexGens", "ChunkManager")]
 script = ExtResource("2_tgen")
 Config = ExtResource("8_terraincfg")
-AllowRegenerate = false
 SimplexGens = [NodePath("GensLayer/GrassGen")]
 GenRanges = {
 SubResource("Resource_pdgenrange"): 0
 }
 ChunkManager = NodePath("ChunkManager")
+AllowRegenerate = false
 
 [node name="GensLayer" type="Node" parent="TerrainGen"]
 
@@ -38,13 +39,12 @@ TerrainType = 1
 script = ExtResource("5_cmgr")
 TerrainGen = NodePath("..")
 Camera = NodePath("../../PocketCamera")
-ChunkSize = 20
-BoundsEnabled = true
-BoundsMin = Vector2i(0, 0)
-BoundsMax = Vector2i(15, 15)
-PreGenerateAll = true
+CoordConfig = ExtResource("7_ck6mf")
 ChunksToApplyPerFrame = 50
 MaxConcurrentGenerations = 16
+BoundsEnabled = true
+BoundsMax = Vector2i(15, 15)
+PreGenerateAll = true
 
 [node name="PocketCamera" type="Camera2D" parent="."]
 position = Vector2(2560, 2560)
