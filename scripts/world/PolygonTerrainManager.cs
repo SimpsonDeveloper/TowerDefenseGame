@@ -33,6 +33,15 @@ public partial class PolygonTerrainManager : Node
     [Signal]
     public delegate void BlobsUpdatedEventHandler();
 
+    /// <summary>
+    /// Chunk coordinates that were part of the most recent blob update.
+    /// Empty when emitted after a full chunk clear — treat as "all cells invalidated".
+    /// Includes both newly processed chunks and any old chunks whose blobs were
+    /// consumed by a merge, so nav cells can selectively rebake only the affected area.
+    /// </summary>
+    public IReadOnlyList<Vector2I> LastAffectedChunks { get; private set; } =
+        System.Array.Empty<Vector2I>();
+
     [Export] public ChunkManager ChunkManager { get; set; }
 
     /// <summary>Seconds to wait after the last chunk batch before processing.</summary>
@@ -96,6 +105,7 @@ public partial class PolygonTerrainManager : Node
             child.QueueFree();
         _timer = -1;
         RefreshDebugDraw();
+        LastAffectedChunks = System.Array.Empty<Vector2I>(); // empty = full invalidation
         EmitSignal(SignalName.BlobsUpdated);
     }
 
@@ -128,6 +138,10 @@ public partial class PolygonTerrainManager : Node
 
         if (newChunks.Count == 0) return;
 
+        // Track all chunk coords that are invalidated by this update.
+        // Starts with the new chunks; merges also invalidate the old blob's chunks.
+        var allAffectedChunks = new HashSet<Vector2I>(newChunks);
+
         // Find existing terrain blobs adjacent to the new chunks BEFORE tracing,
         // while the physics state still reflects only previously processed blobs.
         var adjacentBlobs = FindAdjacentBlobs(newChunks);
@@ -157,7 +171,13 @@ public partial class PolygonTerrainManager : Node
                     mergedPoly = results[0];
 
                     if (_blobToChunks.TryGetValue(candidate, out var oldChunks))
-                        foreach (var c in oldChunks) mergedChunks.Add(c);
+                    {
+                        foreach (var c in oldChunks)
+                        {
+                            mergedChunks.Add(c);
+                            allAffectedChunks.Add(c); // merged blob's old cells also need rebake
+                        }
+                    }
 
                     DestroyBlob(candidate);
                     adjacentBlobs.Remove(candidate);
@@ -172,6 +192,7 @@ public partial class PolygonTerrainManager : Node
         foreach (var c in newChunks) _processedChunks.Add(c);
 
         RefreshDebugDraw();
+        LastAffectedChunks = new List<Vector2I>(allAffectedChunks);
         EmitSignal(SignalName.BlobsUpdated);
     }
 

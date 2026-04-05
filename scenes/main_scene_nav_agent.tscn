@@ -1,4 +1,4 @@
-[gd_scene load_steps=53 format=3 uid="uid://clxuq40l6m686"]
+[gd_scene load_steps=52 format=3 uid="uid://clxuq40l6m686"]
 
 [ext_resource type="PackedScene" uid="uid://d23xmn1ko1rqq" path="res://scenes/pocket_dimension.tscn" id="0_pd"]
 [ext_resource type="Script" uid="uid://dlf3scmu37ybh" path="res://scripts/world/WorldManager.cs" id="0_wm"]
@@ -34,7 +34,7 @@
 [ext_resource type="Script" uid="uid://ccu4vr8pgyovi" path="res://scripts/components/SpriteComponent.cs" id="31_sprite"]
 [ext_resource type="Texture2D" uid="uid://56tehltoshbg" path="res://icon.svg" id="31_y7ma3"]
 [ext_resource type="Script" uid="uid://bnphhwegnok8r" path="res://scripts/world/PolygonTerrainManager.cs" id="34_polytm"]
-[ext_resource type="Script" uid="uid://ccl6qtw5tkqkj" path="res://scripts/world/NavBaker.cs" id="35_navbaker"]
+[ext_resource type="Script" uid="uid://ccl6qtw5tkqkj" path="res://scripts/world/NavGridManager.cs" id="35_navgrid"]
 
 [sub_resource type="Resource" id="Resource_ak604"]
 script = ExtResource("7_02d50")
@@ -129,11 +129,6 @@ color = Color(0.8862745, 0, 0, 1)
 
 [sub_resource type="ViewportTexture" id="ViewportTexture_671wp"]
 viewport_path = NodePath("OverworldContainer/OverworldViewport/PlayerController/SubViewport")
-
-[sub_resource type="NavigationPolygon" id="NavPoly_001"]
-parsed_geometry_type = 0
-border_size = 4.0
-agent_radius = 20.0
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_enemy"]
 
@@ -323,20 +318,18 @@ process_material = SubResource("ParticleProcessMaterial_7ycvg")
 [node name="SubViewportSprite" type="Sprite2D" parent="OverworldContainer/OverworldViewport/PlayerController"]
 texture = SubResource("ViewportTexture_671wp")
 
-[node name="NavigationRegion2D" type="NavigationRegion2D" parent="OverworldContainer/OverworldViewport"]
-navigation_polygon = SubResource("NavPoly_001")
-
 [node name="PolygonTerrainManager" type="Node" parent="OverworldContainer/OverworldViewport" node_paths=PackedStringArray("ChunkManager")]
 script = ExtResource("34_polytm")
 ChunkManager = NodePath("../TerrainGen/ChunkManager")
 DebugDrawEnabled = true
 
-[node name="NavBaker" type="Node" parent="OverworldContainer/OverworldViewport" node_paths=PackedStringArray("TerrainManager", "NavigationRegion", "Center")]
-script = ExtResource("35_navbaker")
+[node name="NavGridManager" type="Node" parent="OverworldContainer/OverworldViewport" node_paths=PackedStringArray("TerrainManager", "ChunkManager", "Center")]
+script = ExtResource("35_navgrid")
 TerrainManager = NodePath("../PolygonTerrainManager")
-NavigationRegion = NodePath("../NavigationRegion2D")
-Center = NodePath("../PlayerCamera")
-WalkableExtent = 600.0
+ChunkManager = NodePath("../TerrainGen/ChunkManager")
+Center = NodePath("../PlayerController")
+CellSizeChunks = 1
+ActiveRadius = 2
 
 [node name="TestEnemy" type="CharacterBody2D" parent="OverworldContainer/OverworldViewport"]
 position = Vector2(400, 324)
