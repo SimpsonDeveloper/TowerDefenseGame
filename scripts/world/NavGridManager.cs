@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Godot;
 
@@ -35,9 +36,14 @@ public partial class NavGridManager : Node
 
     private enum CellState { Queued, Baking, Active }
 
-    private sealed class NavCell(NavigationRegion2D region)
+    private sealed class NavCell
     {
-        public readonly NavigationRegion2D Region = region;
+        /// <summary>
+        /// Null until the first bake completes and the region is added to the scene.
+        /// Keeping it null avoids registering an empty region with the navigation server,
+        /// which prevents stale/incomplete edge-connection evaluations on first bake.
+        /// </summary>
+        public NavigationRegion2D? Region;
         public CellState State;
     }
 
@@ -48,6 +54,8 @@ public partial class NavGridManager : Node
     private bool     _baking;
     private Vector2I _lastCentreCell = new(int.MinValue, int.MinValue);
     private DebugCellDraw _debugDraw;
+    private DebugIsolationDraw _debugIsolationDraw;
+    private List<Vector2[]> _debugBadPaths = [];
 
     // ── Lifecycle ───────────────────────────────────────────────────────────────
 
@@ -68,6 +76,8 @@ public partial class NavGridManager : Node
 
         _debugDraw = new DebugCellDraw(this);
         AddChild(_debugDraw);
+        _debugIsolationDraw = new DebugIsolationDraw(this);
+        AddChild(_debugIsolationDraw);
     }
 
     public override void _ExitTree()
@@ -86,7 +96,7 @@ public partial class NavGridManager : Node
         {
             // Full clear (chunks reset) — tear down everything.
             foreach (var cell in _cells.Values)
-                cell.Region.QueueFree();
+                cell.Region?.QueueFree();
             _cells.Clear();
             _bakePending.Clear();
             _baking = false;
@@ -119,6 +129,7 @@ public partial class NavGridManager : Node
         if (e is not InputEventKey { Pressed: true, Keycode: Key.F6 }) return;
 
         GD.Print("[NavGridManager] Scanning for isolated cells...");
+        _debugBadPaths = [];
         bool anyFound = false;
         foreach (var (coord, cell) in _cells)
         {
@@ -130,6 +141,7 @@ public partial class NavGridManager : Node
             }
         }
         if (!anyFound) GD.Print("  None found.");
+        _debugIsolationDraw.QueueRedraw();
     }
 
     private void UpdateCellGrid()
@@ -145,9 +157,7 @@ public partial class NavGridManager : Node
             var coord = new Vector2I(centreCell.X + dx, centreCell.Y + dy);
             if (_cells.ContainsKey(coord)) continue;
 
-            var region = new NavigationRegion2D();
-            AddChild(region);
-            _cells[coord] = new NavCell(region) { State = CellState.Queued };
+            _cells[coord] = new NavCell { State = CellState.Queued };
             _bakePending.Add(coord);
         }
 
@@ -161,7 +171,7 @@ public partial class NavGridManager : Node
         }
         foreach (var coord in toRemove)
         {
-            _cells[coord].Region.QueueFree();
+            _cells[coord].Region?.QueueFree();
             _cells.Remove(coord);
             _bakePending.Remove(coord);
         }
@@ -237,22 +247,35 @@ public partial class NavGridManager : Node
         }
 
         // Bake on a background thread; apply result on the main thread.
-        var region = cell.Region;
+        // capturedRegion is null for first bakes (region not yet added to scene).
+        var capturedRegion = cell.Region;
         NavigationServer2D.BakeFromSourceGeometryData(navPoly, sourceData, Callable.From(() =>
-            Callable.From(() => ApplyCellBake(coord, navPoly, region)).CallDeferred()
+            Callable.From(() => ApplyCellBake(coord, navPoly, capturedRegion)).CallDeferred()
         ));
     }
 
-    private void ApplyCellBake(Vector2I coord, NavigationPolygon navPoly, NavigationRegion2D region)
+    private void ApplyCellBake(Vector2I coord, NavigationPolygon navPoly, NavigationRegion2D? capturedRegion)
     {
         _baking = false;
 
-        // The cell may have been unloaded while the bake was in flight.
-        if (!_cells.TryGetValue(coord, out var cell) || cell.Region != region)
-            return;
+        if (!_cells.TryGetValue(coord, out var cell)) return;
 
-        region.NavigationPolygon = navPoly;
-        NavigationServer2D.RegionSetNavigationPolygon(region.GetRid(), navPoly);
+        if (capturedRegion == null)
+        {
+            // First bake: create the region with the polygon already set, then add it to
+            // the scene. The navigation server sees it for the first time with a valid
+            // polygon, so edge-connection evaluation is never done against an empty region.
+            if (cell.Region != null) return; // shouldn't happen — bake was not a first bake
+            var region = new NavigationRegion2D { NavigationPolygon = navPoly };
+            AddChild(region);
+            cell.Region = region;
+        }
+        else
+        {
+            // Rebake: the cell may have been unloaded/reloaded while in flight.
+            if (cell.Region != capturedRegion) return;
+            capturedRegion.NavigationPolygon = navPoly;
+        }
 
         // If a terrain update landed while this cell was baking, OnBlobsUpdated will have
         // re-added the coord to _bakePending (but couldn't change state away from Baking).
@@ -277,22 +300,43 @@ public partial class NavGridManager : Node
     
     private bool IsCellIsolated(Vector2I coord)
     {
+        if (CenterOfCellHasCollision(coord)) return false;
         float cellPx = CellSizePixels();
         var centre = new Vector2((coord.X + 0.5f) * cellPx, (coord.Y + 0.5f) * cellPx);
 
+        // for all cell neighbors
+        // try to enter cell center from neighboring cell center if both cell centers are reachable (not in solid terrain)
         foreach (var dir in new[] { Vector2I.Right, Vector2I.Left, Vector2I.Up, Vector2I.Down })
         {
+            if (CenterOfCellHasCollision(coord + dir)) continue;
             var neighbour = coord + dir;
             if (!_cells.TryGetValue(neighbour, out var n) || n.State != CellState.Active) continue;
 
             var nCentre = new Vector2((neighbour.X + 0.5f) * cellPx, (neighbour.Y + 0.5f) * cellPx);
             var map = _cells[coord].Region.GetNavigationMap();
-            var path = NavigationServer2D.MapGetPath(map, centre, nCentre, false);
-            if (path.Length == 0) return true;
-            path = NavigationServer2D.MapGetPath(map, nCentre, centre, false);
-            if (path[^1] != centre) return true;
+            var path = NavigationServer2D.MapGetPath(map, nCentre, centre, false);
+            if (path.Length == 0 || !AlmostEqual(path[^1].X, centre.X) || !AlmostEqual(path[^1].Y, centre.Y))
+            {
+                GD.PrintErr($"Cell {neighbour} could not enter cell {coord}. Neighbor path end: {path[^1]}. Current centre: {centre}");
+                _debugBadPaths.Add(path);
+                return true;
+            }
         }
         return false;
+    }
+    
+    private bool CenterOfCellHasCollision(Vector2I cellCoord)
+    {
+        Vector2 topLeftWorldOfCell = CoordHelper.NavCellToWorld(cellCoord, CoordConfig);
+        float halfCellPx = CellSizePixels() * 0.5f;
+        Vector2 centerWorldOfCell = new(topLeftWorldOfCell.X + halfCellPx, topLeftWorldOfCell.Y + halfCellPx);
+        TerrainType? terrainTypeAtWorldPos = ChunkManager.GetTerrainTypeAtWorldPos(centerWorldOfCell);
+        return terrainTypeAtWorldPos.HasValue && terrainTypeAtWorldPos.Value.HasCollision();
+    }
+    
+    public static bool AlmostEqual(float a, float b, float tolerance = 10f)
+    {
+        return Math.Abs(a - b) < tolerance;
     }
 
     // ── Debug draw ──────────────────────────────────────────────────────────────
@@ -328,6 +372,36 @@ public partial class NavGridManager : Node
                 var centre = origin + size * 0.5f;
                 DrawString(ThemeDB.FallbackFont, centre, coord.ToString(),
                     HorizontalAlignment.Center, -1, (int)(cellPx * 0.12f), Colors.White);
+            }
+        }
+    }
+    
+    private partial class DebugIsolationDraw(NavGridManager manager) : Node2D
+    {
+        public override void _Draw()
+        {
+            if (!manager.DebugDrawEnabled || (manager?._debugBadPaths?.Count ?? 0) == 0) return;
+            List<Vector2[]> badPaths = manager._debugBadPaths ?? [];
+            Vector2 previous = Vector2.Zero;
+            foreach (Vector2[] badPath in badPaths)
+            {
+                if (badPath.Length == 0) continue;
+                foreach (Vector2 pathPoint in badPath)
+                {
+                    if (previous != Vector2.Zero)
+                    {
+                        // line segment
+                        DrawLine(previous, pathPoint, Colors.BlueViolet);
+                    }
+                    else
+                    {
+                        // starting point
+                        DrawCircle(pathPoint, 10f, Colors.Black);
+                    }
+
+                    previous = pathPoint;
+                }
+                DrawCircle(badPath[^1], 10f, Colors.White);
             }
         }
     }

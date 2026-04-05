@@ -19,7 +19,7 @@ public static class CoordHelper
     // ── Derived pixel sizes ─────────────────────────────────────────────────────
 
     public static int   ChunkSizePixels  (CoordConfig cfg) => cfg.ChunkSizeTiles   * cfg.TilePixelSize;
-    public static float NavCellSizePixels(CoordConfig cfg) => cfg.NavCellSizeChunks * cfg.ChunkSizeTiles * cfg.TilePixelSize;
+    public static float NavCellSizePixels(CoordConfig cfg) => cfg.NavCellSizeChunks * ChunkSizePixels(cfg);
 
     // ── World ↔ Tile ────────────────────────────────────────────────────────────
 
