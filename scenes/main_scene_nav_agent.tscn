@@ -255,6 +255,7 @@ CoordConfig = ExtResource("33_coordcfg")
 [node name="PlayerCamera" type="Camera2D" parent="OverworldContainer/OverworldViewport" node_paths=PackedStringArray("Player")]
 position = Vector2(576, 324)
 script = ExtResource("10_lhwp2")
+MinZoom = 0.2
 Player = NodePath("../PlayerController")
 
 [node name="CrystalSpawner" type="Node" parent="OverworldContainer/OverworldViewport" node_paths=PackedStringArray("Player")]
