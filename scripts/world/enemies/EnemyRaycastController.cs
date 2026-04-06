@@ -275,6 +275,8 @@ public partial class EnemyRaycastController : CharacterBody2D
         // enemy too wide, etc.). Abandon the chain and wait for direct LoS.
         if (!HasLineOfSight(GlobalPosition, _checkpoints[0]))
         {
+            if (DebugDraw)
+                GD.Print($"[{Name}] C[0] blocked at {_checkpoints[0]} — abandoning chain ({_checkpoints.Count} checkpoints)");
             AbandonChain();
             return;
         }
