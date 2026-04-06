@@ -109,6 +109,7 @@ public partial class EnemyRaycastController : CharacterBody2D
     // ── Internal state ─────────────────────────────────────────────────────
 
     private NavState _state = NavState.Waiting;
+    private NavState _prevState = NavState.Waiting;
     private Node2D _target;
 
     // Index 0 = oldest waypoint (next to walk toward); Last index = active raycaster.
@@ -146,7 +147,6 @@ public partial class EnemyRaycastController : CharacterBody2D
     private bool _dbgEnemyCanSeeTarget;
 
     private readonly List<(Vector2 HitPos, string ColliderName)> _dbgHits = new();
-    private string _dbgLastPrintedHit = "";
 
     // ── Lifecycle ──────────────────────────────────────────────────────────
 
@@ -229,6 +229,12 @@ public partial class EnemyRaycastController : CharacterBody2D
             case NavState.FollowingChain:
                 TickFollowingChain(targetPos);
                 break;
+        }
+
+        if (DebugDraw && _state != _prevState)
+        {
+            GD.Print($"[{Name}] {_prevState} → {_state}");
+            _prevState = _state;
         }
     }
 
@@ -405,13 +411,6 @@ public partial class EnemyRaycastController : CharacterBody2D
             var hitPos = result["position"].AsVector2();
             string colliderName = result["collider"].As<GodotObject>() is Node n ? n.Name : "unknown";
             _dbgHits.Add((hitPos, colliderName));
-
-            string hitInfo = $"[RaycastController] blocked by '{colliderName}' at {hitPos}";
-            if (hitInfo != _dbgLastPrintedHit)
-            {
-                GD.Print(hitInfo);
-                _dbgLastPrintedHit = hitInfo;
-            }
         }
 
         return result.Count == 0;
