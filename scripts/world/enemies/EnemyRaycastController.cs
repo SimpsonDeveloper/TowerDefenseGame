@@ -1,5 +1,4 @@
 using Godot;
-using Godot.Collections;
 using System.Collections.Generic;
 
 namespace towerdefensegame;
@@ -22,10 +21,11 @@ namespace towerdefensegame;
 /// • C[n] raycasts to Target every frame. On sight loss (after debounce) it records the last
 ///   clear-sight position as C[n+1] and becomes inert.
 /// • If the enemy regains direct LoS to Target at any time, the chain is discarded.
-/// • If the enemy's path to C[0] is blocked (terrain change, etc.) the chain is abandoned
-///   and the enemy returns to Waiting.
+/// • If the enemy makes no progress toward C[0] for ChainStuckTimeout seconds, the chain
+///   is abandoned and the enemy returns to Waiting.
 ///
-/// Performance: max 3 PhysicsDirectSpaceState2D queries per enemy per frame.
+/// Performance: max 2 PhysicsDirectSpaceState2D queries per enemy per physics frame
+/// (direct LoS check + active raycaster), plus RayCount steering queries every SteeringUpdateInterval.
 /// </summary>
 [GlobalClass]
 public partial class EnemyRaycastController : CharacterBody2D
@@ -133,9 +133,6 @@ public partial class EnemyRaycastController : CharacterBody2D
     // Seconds since the active raycaster lost sight of the target.
     private float _lostSightTimer;
 
-    // Whether the active raycaster had LoS on the previous frame.
-    private bool _activeRaycasterHadSight;
-
     // Stuck detection for C[0]. Timer accumulates while no new closest-distance is achieved.
     private float _stuckTimer;
     private float _bestDistToC0 = float.MaxValue;
@@ -240,7 +237,6 @@ public partial class EnemyRaycastController : CharacterBody2D
             _chainSegmentLength = 0f;
             _chainIsCapped = false;
             _lostSightTimer = 0f;
-            _activeRaycasterHadSight = true;
             _lastClearSightPos = targetPos;
             _state = NavState.Chasing;
         }
@@ -282,14 +278,7 @@ public partial class EnemyRaycastController : CharacterBody2D
         // target is out of range, so the enemy investigates and then waits.
         if (GlobalPosition.DistanceTo(targetPos) > SightRange)
         {
-            _checkpoints.Add(_lastClearSightPos);
-            _activeRaycasterHadSight = false;
-            _lostSightTimer = 0f;
-            _stuckTimer = 0f;
-            _bestDistToC0 = float.MaxValue;
-            _chainSegmentLength = 0f;
-            _chainIsCapped = false;
-            _state = NavState.FollowingChain;
+            EnterFollowingChain();
             return;
         }
 
@@ -298,17 +287,7 @@ public partial class EnemyRaycastController : CharacterBody2D
         _steeringDestination = _lastClearSightPos;
 
         if (_lostSightTimer >= LostSightDebounce)
-        {
-            // _checkpoints is always empty when entering from Chasing, so this always fits.
-            _checkpoints.Add(_lastClearSightPos);
-            _activeRaycasterHadSight = false;
-            _lostSightTimer = 0f;
-            _stuckTimer = 0f;
-            _bestDistToC0 = float.MaxValue;
-            _chainSegmentLength = 0f;
-            _chainIsCapped = false;
-            _state = NavState.FollowingChain;
-        }
+            EnterFollowingChain();
     }
 
     private void TickFollowingChain(Vector2 targetPos)
@@ -407,12 +386,8 @@ public partial class EnemyRaycastController : CharacterBody2D
         {
             _lastClearSightPos = targetPos;
             _lostSightTimer = 0f;
-            _activeRaycasterHadSight = true;
             return;
         }
-
-        if (_activeRaycasterHadSight)
-            _activeRaycasterHadSight = false;
 
         if (beyondBudget)
         {
@@ -448,7 +423,6 @@ public partial class EnemyRaycastController : CharacterBody2D
         {
             _chainSegmentLength += activePos.DistanceTo(_lastClearSightPos);
             _checkpoints.Add(_lastClearSightPos);
-            _activeRaycasterHadSight = false;
 
             // If the new segment exhausted the budget, the checkpoint we just added
             // is the final one — cap the chain.
@@ -461,6 +435,18 @@ public partial class EnemyRaycastController : CharacterBody2D
     }
 
     // ── Helpers ────────────────────────────────────────────────────────────
+
+    private void EnterFollowingChain()
+    {
+        // _checkpoints is always empty when called from TickChasing.
+        _checkpoints.Add(_lastClearSightPos);
+        _lostSightTimer = 0f;
+        _stuckTimer = 0f;
+        _bestDistToC0 = float.MaxValue;
+        _chainSegmentLength = 0f;
+        _chainIsCapped = false;
+        _state = NavState.FollowingChain;
+    }
 
     private void AbandonChain()
     {
@@ -517,9 +503,8 @@ public partial class EnemyRaycastController : CharacterBody2D
 
     /// <summary>
     /// Returns true if there is an unobstructed line between <paramref name="from"/> and
-    /// <paramref name="to"/>. Pass a positive <paramref name="range"/> to add a distance cap
-    /// (used for sight checks). Pass a negative value (default) for uncapped geometry checks
-    /// (used for path-integrity checks to waypoints).
+    /// <paramref name="to"/>. Pass a positive <paramref name="range"/> to add a distance cap.
+    /// Omit or pass a negative value for an uncapped raycast.
     /// </summary>
     private bool HasLineOfSight(Vector2 from, Vector2 to, float range = -1f)
     {
@@ -565,7 +550,7 @@ public partial class EnemyRaycastController : CharacterBody2D
             case NavState.FollowingChain:
                 if (_checkpoints.Count == 0) break;
 
-                // Yellow — enemy → next waypoint (path integrity check).
+                // Yellow — enemy → C[0] (current steering destination).
                 DrawLine(Vector2.Zero, ToLocal(_checkpoints[0]), Colors.Yellow, 1f);
                 DrawCircle(Vector2.Zero, 4f, Colors.Yellow);
 
