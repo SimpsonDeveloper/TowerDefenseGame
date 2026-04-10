@@ -257,6 +257,7 @@ Variants = Array[Object]([ExtResource("13_womr8"), ExtResource("14_onjth"), ExtR
 [node name="PlayerController" type="CharacterBody2D" parent="OverworldContainer/OverworldViewport" node_paths=PackedStringArray("ChunkManager") groups=["Player"]]
 position = Vector2(576, 324)
 scale = Vector2(2, 2)
+collision_layer = 2
 script = ExtResource("19_0wyf6")
 ChunkManager = NodePath("../TerrainGen/ChunkManager")
 

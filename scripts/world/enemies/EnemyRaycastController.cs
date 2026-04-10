@@ -41,7 +41,10 @@ public partial class EnemyRaycastController : CharacterBody2D
     [Export] public float Acceleration { get; set; } = 10f;
 
     /// <summary>
-    /// Maximum distance at which the enemy (or a checkpoint) can see the target.
+    /// How far the enemy (and each checkpoint raycaster) can see the target, in pixels.
+    /// Also serves as the total trail budget: the sum of all checkpoint-segment lengths
+    /// plus the enemy's current distance to C[0] cannot exceed this value. One value
+    /// governs both perception range and maximum follow distance.
     /// </summary>
     [ExportGroup("Navigation")]
     [Export] public float SightRange { get; set; } = 400f;
@@ -60,6 +63,15 @@ public partial class EnemyRaycastController : CharacterBody2D
     /// Prevents checkpoint spam when the target hovers near a wall edge.
     /// </summary>
     [Export] public float LostSightDebounce { get; set; } = 0.15f;
+
+    /// <summary>
+    /// Seconds without making progress toward C[0] before the chain is abandoned.
+    /// Progress is measured purely by distance: the timer resets whenever the enemy
+    /// gets closer to C[0] than it has ever been since that checkpoint became active.
+    /// This catches both LoS-blocked cases and narrow-gap cases where the enemy can
+    /// see through a gap it cannot physically pass.
+    /// </summary>
+    [Export] public float ChainStuckTimeout { get; set; } = 2.0f;
 
     /// <summary>
     /// Collision mask for all LoS raycasts. Should include terrain/wall layers only —
@@ -124,6 +136,18 @@ public partial class EnemyRaycastController : CharacterBody2D
     // Whether the active raycaster had LoS on the previous frame.
     private bool _activeRaycasterHadSight;
 
+    // Stuck detection for C[0]. Timer accumulates while no new closest-distance is achieved.
+    private float _stuckTimer;
+    private float _bestDistToC0 = float.MaxValue;
+
+    // Summed length of all checkpoint-to-checkpoint segments in the current chain.
+    // Does NOT include the enemy-to-C[0] distance — that is factored in dynamically.
+    private float _chainSegmentLength;
+
+    // True when the last checkpoint was created with zero (or negative) remaining budget.
+    // While set, C[Last] is inert — it does not raycast and the chain will not extend.
+    private bool _chainIsCapped;
+
     // ── Context steering ───────────────────────────────────────────────────
 
     // The position the enemy is currently trying to reach (set each nav tick).
@@ -145,6 +169,8 @@ public partial class EnemyRaycastController : CharacterBody2D
 
     private Vector2 _dbgTargetPos;
     private bool _dbgEnemyCanSeeTarget;
+    private bool _dbgActiveCanSee;
+    private bool _dbgChainIsCapped;
 
     private readonly List<(Vector2 HitPos, string ColliderName)> _dbgHits = new();
 
@@ -211,6 +237,8 @@ public partial class EnemyRaycastController : CharacterBody2D
         if (enemySeesTarget && _state != NavState.Chasing)
         {
             _checkpoints.Clear();
+            _chainSegmentLength = 0f;
+            _chainIsCapped = false;
             _lostSightTimer = 0f;
             _activeRaycasterHadSight = true;
             _lastClearSightPos = targetPos;
@@ -248,7 +276,24 @@ public partial class EnemyRaycastController : CharacterBody2D
             return;
         }
 
-        // Lost direct sight — keep moving toward last known position while debouncing.
+        // Distinguish why sight was lost.
+        // If the target walked out of range, walk to the last confirmed position but don't
+        // create further checkpoints — the active raycaster won't extend the chain since the
+        // target is out of range, so the enemy investigates and then waits.
+        if (GlobalPosition.DistanceTo(targetPos) > SightRange)
+        {
+            _checkpoints.Add(_lastClearSightPos);
+            _activeRaycasterHadSight = false;
+            _lostSightTimer = 0f;
+            _stuckTimer = 0f;
+            _bestDistToC0 = float.MaxValue;
+            _chainSegmentLength = 0f;
+            _chainIsCapped = false;
+            _state = NavState.FollowingChain;
+            return;
+        }
+
+        // Obstruction — keep moving toward last known position while debouncing.
         _lostSightTimer += _delta;
         _steeringDestination = _lastClearSightPos;
 
@@ -258,6 +303,10 @@ public partial class EnemyRaycastController : CharacterBody2D
             _checkpoints.Add(_lastClearSightPos);
             _activeRaycasterHadSight = false;
             _lostSightTimer = 0f;
+            _stuckTimer = 0f;
+            _bestDistToC0 = float.MaxValue;
+            _chainSegmentLength = 0f;
+            _chainIsCapped = false;
             _state = NavState.FollowingChain;
         }
     }
@@ -270,23 +319,40 @@ public partial class EnemyRaycastController : CharacterBody2D
             return;
         }
 
-        // ── Path integrity check ──────────────────────────────────────────
-        // If the enemy can't see its next waypoint, the path is broken (terrain changed,
-        // enemy too wide, etc.). Abandon the chain and wait for direct LoS.
-        if (!HasLineOfSight(GlobalPosition, _checkpoints[0]))
+        // ── Progress tracking — abandon if stuck on C[0] ─────────────────
+        // Timer resets whenever the enemy achieves a new closest distance to C[0].
+        // This works regardless of LoS: a narrow gap the enemy can see through but
+        // cannot pass will also trigger the timeout.
+        float distToC0 = GlobalPosition.DistanceTo(_checkpoints[0]);
+        if (distToC0 < _bestDistToC0)
         {
-            if (DebugDraw)
-                GD.Print($"[{Name}] C[0] blocked at {_checkpoints[0]} — abandoning chain ({_checkpoints.Count} checkpoints)");
-            AbandonChain();
-            return;
+            _bestDistToC0 = distToC0;
+            _stuckTimer = 0f;
+        }
+        else
+        {
+            _stuckTimer += _delta;
+            if (_stuckTimer >= ChainStuckTimeout)
+            {
+                if (DebugDraw)
+                    GD.Print($"[{Name}] Stuck on C[0] at {_checkpoints[0]} for {ChainStuckTimeout:F1}s — abandoning chain ({_checkpoints.Count} checkpoints)");
+                AbandonChain();
+                return;
+            }
         }
 
         // ── Walk toward the oldest checkpoint ─────────────────────────────
         _steeringDestination = _checkpoints[0];
 
-        if (GlobalPosition.DistanceTo(_checkpoints[0]) <= CheckpointReachDistance)
+        if (distToC0 <= CheckpointReachDistance)
         {
+            if (_checkpoints.Count >= 2)
+                _chainSegmentLength -= _checkpoints[0].DistanceTo(_checkpoints[1]);
+            else
+                _chainSegmentLength = 0f;
             _checkpoints.RemoveAt(0);
+            _stuckTimer = 0f;
+            _bestDistToC0 = float.MaxValue;
 
             if (_checkpoints.Count == 0)
             {
@@ -305,8 +371,37 @@ public partial class EnemyRaycastController : CharacterBody2D
         }
 
         // ── Active raycaster: C[Last] casts toward current target position ─
+        // C[Last] is inert when _chainIsCapped — it's the final walk target, not a raycaster.
         Vector2 activePos = _checkpoints[_checkpoints.Count - 1];
-        bool activeCanSee = HasLineOfSight(activePos, targetPos, SightRange);
+
+        if (_chainIsCapped)
+        {
+            _dbgActiveCanSee = false;
+            _dbgChainIsCapped = true;
+            return;
+        }
+
+        _dbgChainIsCapped = false;
+
+        // Budget = how far C[Last] is allowed to see. Accounts for the enemy's current
+        // distance to C[0] so the budget grows as the enemy closes in.
+        float budget = SightRange
+            - GlobalPosition.DistanceTo(_checkpoints[0])
+            - _chainSegmentLength;
+
+        // If the enemy drifted far enough that budget went negative, cap immediately.
+        if (budget <= 0f)
+        {
+            _chainIsCapped = true;
+            _dbgActiveCanSee = false;
+            _dbgChainIsCapped = true;
+            return;
+        }
+
+        // Separate the two loss reasons before raycasting to avoid an unnecessary query.
+        bool beyondBudget = activePos.DistanceTo(targetPos) > budget;
+        bool activeCanSee = !beyondBudget && HasLineOfSight(activePos, targetPos);
+        _dbgActiveCanSee = activeCanSee;
 
         if (activeCanSee)
         {
@@ -316,10 +411,26 @@ public partial class EnemyRaycastController : CharacterBody2D
             return;
         }
 
-        // Active raycaster lost sight — debounce, then extend the chain.
         if (_activeRaycasterHadSight)
             _activeRaycasterHadSight = false;
 
+        if (beyondBudget)
+        {
+            // Distance loss — player walked out of the remaining budget range.
+            // Cap immediately with no debounce: the player is definitively out of reach
+            // and there is no ambiguity that a debounce would resolve.
+            _lostSightTimer = 0f;
+            if (_lastClearSightPos.DistanceTo(activePos) > CheckpointReachDistance
+                && _checkpoints.Count < MaxCheckpoints)
+            {
+                _chainSegmentLength += activePos.DistanceTo(_lastClearSightPos);
+                _checkpoints.Add(_lastClearSightPos);
+            }
+            _chainIsCapped = true;
+            return;
+        }
+
+        // Obstruction loss — debounce to prevent checkpoint spam near wall edges.
         _lostSightTimer += _delta;
 
         if (_lostSightTimer < LostSightDebounce)
@@ -328,15 +439,24 @@ public partial class EnemyRaycastController : CharacterBody2D
         _lostSightTimer = 0f;
 
         if (_checkpoints.Count >= MaxCheckpoints)
-            return; // At cap — keep walking the existing chain.
+            return; // Safety cap.
 
-        // Only add a checkpoint if _lastClearSightPos is meaningfully different from the
-        // current active checkpoint, preventing duplicate entries when the active raycaster
-        // never acquired sight of the target.
+        // Only add a checkpoint if _lastClearSightPos is meaningfully different from
+        // the current active checkpoint, preventing duplicates when the raycaster never
+        // acquired sight of the target.
         if (_lastClearSightPos.DistanceTo(activePos) > CheckpointReachDistance)
         {
+            _chainSegmentLength += activePos.DistanceTo(_lastClearSightPos);
             _checkpoints.Add(_lastClearSightPos);
             _activeRaycasterHadSight = false;
+
+            // If the new segment exhausted the budget, the checkpoint we just added
+            // is the final one — cap the chain.
+            float newBudget = SightRange
+                - GlobalPosition.DistanceTo(_checkpoints[0])
+                - _chainSegmentLength;
+            if (newBudget <= 0f)
+                _chainIsCapped = true;
         }
     }
 
@@ -345,7 +465,11 @@ public partial class EnemyRaycastController : CharacterBody2D
     private void AbandonChain()
     {
         _checkpoints.Clear();
+        _chainSegmentLength = 0f;
+        _chainIsCapped = false;
         _lostSightTimer = 0f;
+        _stuckTimer = 0f;
+        _bestDistToC0 = float.MaxValue;
         _state = NavState.Waiting;
     }
 
@@ -453,10 +577,18 @@ public partial class EnemyRaycastController : CharacterBody2D
                 for (int i = 0; i < _checkpoints.Count - 1; i++)
                     DrawCircle(ToLocal(_checkpoints[i]), 3f, Colors.White);
 
-                // Cyan — active raycaster (last checkpoint) → current target position.
+                // Last checkpoint: cyan = active raycaster (has budget), orange = final/inert (budget exhausted).
                 Vector2 activeLocal = ToLocal(_checkpoints[_checkpoints.Count - 1]);
-                DrawLine(activeLocal, ToLocal(_dbgTargetPos), Colors.Cyan, 1f);
-                DrawCircle(activeLocal, 5f, Colors.Cyan);
+                if (_dbgChainIsCapped)
+                {
+                    DrawCircle(activeLocal, 5f, Colors.Orange);
+                }
+                else
+                {
+                    if (_dbgActiveCanSee)
+                        DrawLine(activeLocal, ToLocal(_dbgTargetPos), Colors.Cyan, 1f);
+                    DrawCircle(activeLocal, 5f, Colors.Cyan);
+                }
                 break;
         }
 
@@ -480,6 +612,8 @@ public partial class EnemyRaycastController : CharacterBody2D
     {
         _target = null;
         _checkpoints.Clear();
+        _chainSegmentLength = 0f;
+        _chainIsCapped = false;
         _lostSightTimer = 0f;
         _state = NavState.Waiting;
         Velocity = Vector2.Zero;

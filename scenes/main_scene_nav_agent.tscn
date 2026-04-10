@@ -267,6 +267,7 @@ Variants = Array[Object]([ExtResource("13_womr8"), ExtResource("14_onjth"), ExtR
 [node name="PlayerController" type="CharacterBody2D" parent="OverworldContainer/OverworldViewport" node_paths=PackedStringArray("ChunkManager") groups=["Player"]]
 position = Vector2(576, 324)
 scale = Vector2(2, 2)
+collision_layer = 2
 script = ExtResource("19_0wyf6")
 ChunkManager = NodePath("../TerrainGen/ChunkManager")
 
@@ -336,6 +337,7 @@ DebugDrawEnabled = true
 
 [node name="TestEnemy" type="CharacterBody2D" parent="OverworldContainer/OverworldViewport" node_paths=PackedStringArray("NavAgent")]
 position = Vector2(400, 324)
+collision_layer = 4
 script = ExtResource("30_enemy")
 NavAgent = NodePath("NavigationAgent2D")
 

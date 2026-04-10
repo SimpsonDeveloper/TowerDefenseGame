@@ -23,6 +23,8 @@ shader_parameter/outline_color = Color(1, 1, 1, 1)
 shader_parameter/glow_intensity = 1.5
 
 [node name="Drop" type="RigidBody2D"]
+collision_layer = 8
+collision_mask = 1
 gravity_scale = 0.0
 lock_rotation = true
 linear_damp = 3.0
@@ -42,12 +44,14 @@ script = ExtResource("2_invpu")
 HitBox = NodePath("../PickupDetectionZone")
 
 [node name="PickupDetectionZone" type="Area2D" parent="."]
+collision_mask = 2
 script = ExtResource("3_dzone")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="PickupDetectionZone"]
 shape = SubResource("CircleShape2D_pickup")
 
 [node name="MagnetDetectionZone" type="Area2D" parent="."]
+collision_mask = 2
 script = ExtResource("3_dzone")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="MagnetDetectionZone"]

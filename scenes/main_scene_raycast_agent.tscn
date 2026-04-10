@@ -328,6 +328,7 @@ DebugDrawEnabled = true
 
 [node name="TestEnemy" type="CharacterBody2D" parent="OverworldContainer/OverworldViewport"]
 position = Vector2(400, 324)
+collision_layer = 4
 script = ExtResource("30_enemy")
 DebugDraw = true
 
