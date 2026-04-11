@@ -255,7 +255,7 @@ CoordConfig = ExtResource("33_coordcfg")
 [node name="PlayerCamera" type="Camera2D" parent="OverworldContainer/OverworldViewport" node_paths=PackedStringArray("Player")]
 position = Vector2(576, 324)
 script = ExtResource("10_lhwp2")
-MinZoom = 0.2
+MinZoom = 0.4
 MaxZoom = 4.0
 Player = NodePath("../PlayerController")
 
@@ -270,6 +270,7 @@ position = Vector2(576, 324)
 scale = Vector2(2, 2)
 collision_layer = 2
 script = ExtResource("19_0wyf6")
+MoveSpeed = 100.0
 ChunkManager = NodePath("../TerrainGen/ChunkManager")
 CoordConfig = ExtResource("33_coordcfg")
 
@@ -341,6 +342,7 @@ DebugDrawEnabled = true
 position = Vector2(400, 324)
 collision_layer = 4
 script = ExtResource("30_enemy")
+MoveSpeed = 40.0
 NavAgent = NodePath("NavigationAgent2D")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="OverworldContainer/OverworldViewport/TestEnemy"]
