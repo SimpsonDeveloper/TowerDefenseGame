@@ -33,7 +33,7 @@
 [ext_resource type="Script" uid="uid://dxaxgggwt2dpn" path="res://scripts/world/enemies/EnemyNavAgentController.cs" id="30_enemy"]
 [ext_resource type="Script" uid="uid://ccu4vr8pgyovi" path="res://scripts/components/SpriteComponent.cs" id="31_sprite"]
 [ext_resource type="Texture2D" uid="uid://56tehltoshbg" path="res://icon.svg" id="31_y7ma3"]
-[ext_resource type="Resource" path="res://assets/coord_config.tres" id="33_coordcfg"]
+[ext_resource type="Resource" uid="uid://c54gxd5gu86v1" path="res://assets/coord_config.tres" id="33_coordcfg"]
 [ext_resource type="Script" uid="uid://bnphhwegnok8r" path="res://scripts/world/PolygonTerrainManager.cs" id="34_polytm"]
 [ext_resource type="Script" uid="uid://7waqucv4jhw5" path="res://scripts/world/NavGridManager.cs" id="35_navgrid"]
 
@@ -256,6 +256,7 @@ CoordConfig = ExtResource("33_coordcfg")
 position = Vector2(576, 324)
 script = ExtResource("10_lhwp2")
 MinZoom = 0.2
+MaxZoom = 4.0
 Player = NodePath("../PlayerController")
 
 [node name="CrystalSpawner" type="Node" parent="OverworldContainer/OverworldViewport" node_paths=PackedStringArray("Player")]
@@ -270,6 +271,7 @@ scale = Vector2(2, 2)
 collision_layer = 2
 script = ExtResource("19_0wyf6")
 ChunkManager = NodePath("../TerrainGen/ChunkManager")
+CoordConfig = ExtResource("33_coordcfg")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="OverworldContainer/OverworldViewport/PlayerController"]
 shape = SubResource("CircleShape2D_player")

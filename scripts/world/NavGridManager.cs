@@ -30,7 +30,7 @@ public partial class NavGridManager : Node
     [Export] public int ActiveRadius { get; set; } = 2;
 
     /// <summary>When true, draws cell boundaries and coords in-world. Press F6 to scan for isolated cells.</summary>
-    [Export] public bool DebugDrawEnabled { get; set; } = false;
+    [Export] public bool DebugDrawEnabled { get; set; }
 
     // ── Internal types ──────────────────────────────────────────────────────────
 
@@ -204,7 +204,7 @@ public partial class NavGridManager : Node
         _baking     = true;
         cell.State  = CellState.Baking;
 
-        const float agentRadius = 9f;
+        const float agentRadius = 5f;
         float cellPx = CellSizePixels();
         var origin   = new Vector2(coord.X * cellPx, coord.Y * cellPx);
 
@@ -213,7 +213,7 @@ public partial class NavGridManager : Node
         // navigable area lands exactly on the true cell boundary — no gap between
         // adjacent cells after stitching.
         var e = new Vector2(agentRadius, agentRadius);
-        var expandedRect = new Vector2[]
+        var expandedRect = new []
         {
             origin - e,
             origin + new Vector2(cellPx + agentRadius, -agentRadius),

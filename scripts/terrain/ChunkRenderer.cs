@@ -10,26 +10,25 @@ namespace towerdefensegame;
 public partial class ChunkRenderer : Node2D
 {
     /// <summary>
-    /// Size of each tile in pixels (16x16 tile with 4x4 color variations).
+    /// Size of each tile in pixels (NxN tile with VxV sub-tiles).
     /// </summary>
-    public const int TilePixelSize = 16;
-
+    private int TilePixelSize => CoordConfig.TilePixelSize;
     /// <summary>
-    /// Size of each color variation sub-tile within the main tile.
-    /// A 16x16 tile contains 4x4 sub-tiles of 4x4 pixels each.
+    /// The number of color variants per tile axis.
     /// </summary>
-    public const int SubTileSize = 4;
-
+    private int VariationsPerAxis => CoordConfig.SubTileVariationsPerAxis;
     /// <summary>
-    /// Number of color variations per axis within a tile.
+    /// The calculated size of a sub-tile.
     /// </summary>
-    public const int VariationsPerAxis = 4;
+    private int SubTileSize => TilePixelSize / VariationsPerAxis;
 
     private Sprite2D _sprite;
     private Image _image;
     private ImageTexture _texture;
     private ChunkData _chunkData;
     private Dictionary<TerrainType, SimplexGen> _simplexGens;
+
+    public CoordConfig CoordConfig { get; set; }
 
     /// <summary>
     /// Lookup from terrain type to its SimplexGen for sub-tile noise sampling.
@@ -99,7 +98,7 @@ public partial class ChunkRenderer : Node2D
 
     /// <summary>
     /// Draws a single tile to the image at the given tile coordinates.
-    /// Each 16x16 tile contains 4x4 sub-tiles with color variations based on noise.
+    /// Each NxN tile contains VxV sub-tiles with color variations based on noise.
     /// </summary>
     private void DrawTileToImage(int tileX, int tileY)
     {
@@ -120,7 +119,7 @@ public partial class ChunkRenderer : Node2D
         int worldTileX = _chunkData.StartX + tileX;
         int worldTileY = _chunkData.StartY + tileY;
 
-        // Draw 4x4 sub-tiles with color variations from noise
+        // Draw sub-tiles with color variations from noise
         for (int subTileX = 0; subTileX < VariationsPerAxis; subTileX++)
         {
             for (int subTileY = 0; subTileY < VariationsPerAxis; subTileY++)
@@ -138,7 +137,7 @@ public partial class ChunkRenderer : Node2D
                 int subPixelX = basePixelX + subTileX * SubTileSize;
                 int subPixelY = basePixelY + subTileY * SubTileSize;
 
-                // Fill the 4x4 pixel sub-tile region
+                // Fill the nxn pixel sub-tile region
                 for (int px = 0; px < SubTileSize; px++)
                 {
                     for (int py = 0; py < SubTileSize; py++)
@@ -157,7 +156,6 @@ public partial class ChunkRenderer : Node2D
     /// <param name="localTileX">Local tile X coordinate within the chunk</param>
     /// <param name="localTileY">Local tile Y coordinate within the chunk</param>
     /// <param name="newTerrainType">The new terrain type</param>
-    /// <param name="variantIndex">The color variant (0-3), defaults to 0</param>
     public void ModifyTile(int localTileX, int localTileY, TerrainType newTerrainType)
     {
         // Update chunk data

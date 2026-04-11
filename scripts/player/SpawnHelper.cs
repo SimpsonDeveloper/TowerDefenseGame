@@ -18,6 +18,7 @@ public static class SpawnHelper
     ///   - No sufficiently open tile was found within <paramref name="maxRadius"/> tiles.
     /// </summary>
     /// <param name="chunkManager">Source of terrain type data.</param>
+    /// <param name="coordConfig">Source of coordinate data.</param>
     /// <param name="desiredWorldPos">Preferred spawn point in world pixels.</param>
     /// <param name="maxRadius">How many tiles outward to search before giving up.</param>
     /// <param name="minClearance">
@@ -27,11 +28,12 @@ public static class SpawnHelper
     /// </param>
     public static Vector2? FindValidSpawnPosition(
         ChunkManager chunkManager,
+        CoordConfig coordConfig,
         Vector2 desiredWorldPos,
         int maxRadius = 20,
         int minClearance = 2)
     {
-        int tileSize = ChunkRenderer.TilePixelSize;
+        int tileSize = coordConfig.TilePixelSize;
         int originTileX = Mathf.FloorToInt(desiredWorldPos.X / tileSize);
         int originTileY = Mathf.FloorToInt(desiredWorldPos.Y / tileSize);
 

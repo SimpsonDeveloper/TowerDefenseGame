@@ -6,7 +6,6 @@
 [ext_resource type="PackedScene" uid="uid://c38yeabg3j00p" path="res://scenes/drop.tscn" id="4_drop"]
 
 [node name="HarvestableCrystal" type="StaticBody2D" groups=["nav_obstacle"]]
-scale = Vector2(2, 2)
 
 [node name="HarvestableResource" type="Node" parent="." node_paths=PackedStringArray("Sprite")]
 script = ExtResource("1_harvr")

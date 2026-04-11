@@ -1,10 +1,6 @@
-[gd_resource type="Resource" script_class="CoordConfig" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="CoordConfig" load_steps=2 format=3 uid="uid://c54gxd5gu86v1"]
 
-[ext_resource type="Script" path="res://scripts/world/CoordConfig.cs" id="1"]
+[ext_resource type="Script" uid="uid://b6wf17u1p1ijr" path="res://scripts/world/CoordConfig.cs" id="1"]
 
 [resource]
 script = ExtResource("1")
-TilePixelSize = 16
-ChunkSizeTiles = 32
-NavCellSizeChunks = 1
-SubTileVariationsPerAxis = 4

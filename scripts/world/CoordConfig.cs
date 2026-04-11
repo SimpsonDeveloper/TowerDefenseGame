@@ -17,8 +17,8 @@ namespace towerdefensegame;
 [GlobalClass]
 public partial class CoordConfig : Resource
 {
-    /// <summary>Pixel side-length of one tile. Must match ChunkRenderer.TilePixelSize.</summary>
-    [Export] public int TilePixelSize { get; set; } = 16;
+    /// <summary>Pixel side-length of one tile.</summary>
+    [Export] public int TilePixelSize { get; set; } = 8;
 
     /// <summary>Side-length of one chunk in tiles (NxN). Replaces ChunkManager.ChunkSize.</summary>
     [Export] public int ChunkSizeTiles { get; set; } = 32;
@@ -28,7 +28,6 @@ public partial class CoordConfig : Resource
 
     /// <summary>
     /// Color-variation sub-tile divisions per tile axis.
-    /// Must match ChunkRenderer.VariationsPerAxis.
     /// A tile contains (SubTileVariationsPerAxis × SubTileVariationsPerAxis) noise samples.
     /// </summary>
     [Export] public int SubTileVariationsPerAxis { get; set; } = 4;

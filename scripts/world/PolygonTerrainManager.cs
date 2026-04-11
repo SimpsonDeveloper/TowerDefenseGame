@@ -56,7 +56,7 @@ public partial class PolygonTerrainManager : Node
     [Export] public uint TerrainLayer { get; set; } = 1;
 
     /// <summary>When true, terrain blob polygons and their vertex data are drawn in-world.</summary>
-    [Export] public bool DebugDrawEnabled { get; set; } = false;
+    [Export] public bool DebugDrawEnabled { get; set; }
 
     private double _timer = -1;
     private Node2D _blobContainer;
@@ -66,10 +66,10 @@ public partial class PolygonTerrainManager : Node
     private readonly HashSet<Vector2I> _processedChunks = new();
 
     // blob → set of chunk coords that contributed solid tiles to it.
-    private readonly System.Collections.Generic.Dictionary<StaticBody2D, HashSet<Vector2I>> _blobToChunks = new();
+    private readonly Dictionary<StaticBody2D, HashSet<Vector2I>> _blobToChunks = new();
 
     // chunk → blobs that contain tiles from it (reverse index for unload).
-    private readonly System.Collections.Generic.Dictionary<Vector2I, List<StaticBody2D>> _chunkToBlobs = new();
+    private readonly Dictionary<Vector2I, List<StaticBody2D>> _chunkToBlobs = new();
 
     // ── Lifecycle ──────────────────────────────────────────────────────────────
 
@@ -154,7 +154,7 @@ public partial class PolygonTerrainManager : Node
 
         if (edgeGraph.Count > 0)
         {
-            var newBlobPolygons = TraceContours(edgeGraph);
+            var newBlobPolygons = TraceContours(edgeGraph, CoordConfig.TilePixelSize);
             int chunkPixelSize = CoordHelper.ChunkSizePixels(CoordConfig);
 
             foreach (var blobPixels in newBlobPolygons)
@@ -206,9 +206,9 @@ public partial class PolygonTerrainManager : Node
     /// non-solid, ensuring every blob in the new chunks forms a complete closed loop.
     /// Merging with processed-chunk blobs is handled later via MergePolygons.
     /// </summary>
-    private System.Collections.Generic.Dictionary<Vector2I, List<Vector2I>> BuildEdgeGraph(List<Vector2I> newChunks)
+    private Dictionary<Vector2I, List<Vector2I>> BuildEdgeGraph(List<Vector2I> newChunks)
     {
-        var graph      = new System.Collections.Generic.Dictionary<Vector2I, List<Vector2I>>();
+        var graph      = new Dictionary<Vector2I, List<Vector2I>>();
         int cs         = CoordConfig.ChunkSizeTiles;
         var newChunkSet = new HashSet<Vector2I>(newChunks);
 
@@ -251,9 +251,8 @@ public partial class PolygonTerrainManager : Node
 
     // ── Contour tracing ────────────────────────────────────────────────────────
 
-    private static List<Vector2[]> TraceContours(System.Collections.Generic.Dictionary<Vector2I, List<Vector2I>> graph)
+    private static List<Vector2[]> TraceContours(Dictionary<Vector2I, List<Vector2I>> graph, int tilePixelSize)
     {
-        const int ts = ChunkRenderer.TilePixelSize;
         var result  = new List<Vector2[]>();
         var corners = new List<Vector2I>();
 
@@ -278,7 +277,7 @@ public partial class PolygonTerrainManager : Node
                 }
                 else
                 {
-                    next = PickCW(current, outgoing, prevDir);
+                    next = PickCw(current, outgoing, prevDir);
                     outgoing.Remove(next);
                     if (outgoing.Count == 0) graph.Remove(current);
                 }
@@ -292,7 +291,7 @@ public partial class PolygonTerrainManager : Node
 
             var pixels = new Vector2[corners.Count];
             for (int i = 0; i < corners.Count; i++)
-                pixels[i] = new Vector2(corners[i].X * ts, corners[i].Y * ts);
+                pixels[i] = new Vector2(corners[i].X * tilePixelSize, corners[i].Y * tilePixelSize);
 
             result.Add(pixels);
         }
@@ -300,7 +299,7 @@ public partial class PolygonTerrainManager : Node
         return result;
     }
 
-    private static Vector2I PickCW(Vector2I current, List<Vector2I> options, Vector2I prevDir)
+    private static Vector2I PickCw(Vector2I current, List<Vector2I> options, Vector2I prevDir)
     {
         if (prevDir == Vector2I.Zero) return options[0];
         var rightDir = new Vector2I(-prevDir.Y,  prevDir.X);
@@ -332,7 +331,7 @@ public partial class PolygonTerrainManager : Node
         }
     }
 
-    private static Vector2I FirstKey(System.Collections.Generic.Dictionary<Vector2I, List<Vector2I>> dict)
+    private static Vector2I FirstKey(Dictionary<Vector2I, List<Vector2I>> dict)
     {
         foreach (var key in dict.Keys) return key;
         throw new System.InvalidOperationException("Empty graph.");
@@ -364,12 +363,12 @@ public partial class PolygonTerrainManager : Node
 
                 if (dir.X != 0)
                 {
-                    int borderTX   = dir.X > 0 ? startX + cs - 1 : startX;
-                    int neighborTX = borderTX + dir.X;
+                    int borderTx   = dir.X > 0 ? startX + cs - 1 : startX;
+                    int neighborTx = borderTx + dir.X;
                     for (int ty = startY; ty < startY + cs; ty++)
                     {
-                        if (!IsSolid(borderTX, ty) || !IsSolid(neighborTX, ty)) continue;
-                        query.Position = new Vector2(neighborTX * ts + ts * 0.5f, ty * ts + ts * 0.5f);
+                        if (!IsSolid(borderTx, ty) || !IsSolid(neighborTx, ty)) continue;
+                        query.Position = new Vector2(neighborTx * ts + ts * 0.5f, ty * ts + ts * 0.5f);
                         foreach (var hit in spaceState.IntersectPoint(query))
                             if (hit["collider"].Obj is StaticBody2D body && body.IsInGroup(BlobGroup))
                                 found.Add(body);
@@ -377,12 +376,12 @@ public partial class PolygonTerrainManager : Node
                 }
                 else
                 {
-                    int borderTY   = dir.Y > 0 ? startY + cs - 1 : startY;
-                    int neighborTY = borderTY + dir.Y;
+                    int borderTy   = dir.Y > 0 ? startY + cs - 1 : startY;
+                    int neighborTy = borderTy + dir.Y;
                     for (int tx = startX; tx < startX + cs; tx++)
                     {
-                        if (!IsSolid(tx, borderTY) || !IsSolid(tx, neighborTY)) continue;
-                        query.Position = new Vector2(tx * ts + ts * 0.5f, neighborTY * ts + ts * 0.5f);
+                        if (!IsSolid(tx, borderTy) || !IsSolid(tx, neighborTy)) continue;
+                        query.Position = new Vector2(tx * ts + ts * 0.5f, neighborTy * ts + ts * 0.5f);
                         foreach (var hit in spaceState.IntersectPoint(query))
                             if (hit["collider"].Obj is StaticBody2D body && body.IsInGroup(BlobGroup))
                                 found.Add(body);

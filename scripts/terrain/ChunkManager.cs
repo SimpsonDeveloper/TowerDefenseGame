@@ -295,6 +295,7 @@ public partial class ChunkManager : Node
         {
             // Create and initialize chunk renderer
             var renderer = new ChunkRenderer();
+            renderer.CoordConfig = CoordConfig;
             renderer.SimplexGens = TerrainGen.SimplexGensMapped;
             _chunkContainer.AddChild(renderer);
             renderer.Initialize(chunkData);

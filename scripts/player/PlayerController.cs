@@ -9,6 +9,7 @@ public partial class PlayerController : CharacterBody2D
 
 	[Export] public float MoveSpeed { get; set; } = 200.0f;
 	[Export] public ChunkManager ChunkManager { get; set; }
+	[Export] public CoordConfig CoordConfig { get; set; }
 
 	/// <summary>
 	/// When false, player movement input is ignored.
@@ -79,7 +80,7 @@ public partial class PlayerController : CharacterBody2D
 		}
 
 		Vector2? validPos = SpawnHelper.FindValidSpawnPosition(
-			ChunkManager, GlobalPosition, minClearance: SpawnClearance);
+			ChunkManager, CoordConfig, GlobalPosition, minClearance: SpawnClearance);
 
 		if (validPos.HasValue)
 		{
