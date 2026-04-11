@@ -51,9 +51,9 @@ public partial class EnemyRaycastController : CharacterBody2D
 
     /// <summary>
     /// How close the enemy must get to a checkpoint position before it is considered reached.
-    /// ~half a tile width is a reasonable default.
+    /// one tile width is a reasonable default.
     /// </summary>
-    [Export] public float CheckpointReachDistance { get; set; } = 16f;
+    [Export] public float CheckpointReachDistance { get; set; } = 8f;
 
     /// <summary>Safety cap on the checkpoint chain length.</summary>
     [Export] public int MaxCheckpoints { get; set; } = 100;
@@ -79,8 +79,8 @@ public partial class EnemyRaycastController : CharacterBody2D
     /// </summary>
     [Export] public uint RaycastCollisionMask { get; set; } = 1u;
 
-    [ExportGroup("Steering")]
     /// <summary>Number of rays cast per steering update. 8 is a good default; increase to 16 for tighter corners.</summary>
+    [ExportGroup("Steering")]
     [Export] public int RayCount { get; set; } = 8;
 
     /// <summary>How far each danger ray travels to probe for obstacles (pixels).</summary>
@@ -104,13 +104,13 @@ public partial class EnemyRaycastController : CharacterBody2D
     ///   Magenta  — last-clear-sight position dot
     /// </summary>
     [ExportGroup("Debug")]
-    [Export] public bool DebugDraw { get; set; } = false;
+    [Export] public bool DebugDraw { get; set; }
 
     [ExportGroup("Target")]
     [Export] public NodePath TargetPath { get; set; }
     [Export] public string TargetGroup { get; set; } = "Player";
 
-    // ── Virtual hooks ──────────────────────────────────────────────────────
+    // ── Virtual hooks for subclasses ───────────────────────────────────────
 
     protected virtual void OnReady() { }
 
@@ -125,7 +125,7 @@ public partial class EnemyRaycastController : CharacterBody2D
     private Node2D _target;
 
     // Index 0 = oldest waypoint (next to walk toward); Last index = active raycaster.
-    private readonly List<Vector2> _checkpoints = new();
+    private readonly List<Vector2> _checkpoints = [];
 
     // Last target position where the active raycaster had clear LoS.
     private Vector2 _lastClearSightPos;
@@ -162,6 +162,9 @@ public partial class EnemyRaycastController : CharacterBody2D
     private float _delta;
     private static int _globalStaggerCounter;
 
+    /// <summary>Assumed physics frame duration (seconds) used to convert time intervals to frame counts for stagger calculations.</summary>
+    private const float PhysicsFrameDuration = 1f / 60f;
+
     // ── Debug draw state (written each physics frame, read in _Draw) ───────
 
     private Vector2 _dbgTargetPos;
@@ -169,7 +172,7 @@ public partial class EnemyRaycastController : CharacterBody2D
     private bool _dbgActiveCanSee;
     private bool _dbgChainIsCapped;
 
-    private readonly List<(Vector2 HitPos, string ColliderName)> _dbgHits = new();
+    private readonly List<(Vector2 HitPos, string ColliderName)> _dbgHits = [];
 
     // ── Lifecycle ──────────────────────────────────────────────────────────
 
@@ -182,8 +185,8 @@ public partial class EnemyRaycastController : CharacterBody2D
             _rayDirs[i] = Vector2.Right.Rotated(i * Mathf.Tau / RayCount);
 
         // Stagger first update so enemies spawning together don't all raycast the same frame.
-        int staggerSteps = Mathf.Max(1, Mathf.RoundToInt(SteeringUpdateInterval / 0.016f));
-        _steeringTimer = (_globalStaggerCounter % staggerSteps) * 0.016f;
+        int staggerSteps = Mathf.Max(1, Mathf.RoundToInt(SteeringUpdateInterval / PhysicsFrameDuration));
+        _steeringTimer = (_globalStaggerCounter % staggerSteps) * PhysicsFrameDuration;
         _globalStaggerCounter++;
 
         AddToGroup("enemies");
@@ -298,61 +301,80 @@ public partial class EnemyRaycastController : CharacterBody2D
             return;
         }
 
-        // ── Progress tracking — abandon if stuck on C[0] ─────────────────
-        // Timer resets whenever the enemy achieves a new closest distance to C[0].
-        // This works regardless of LoS: a narrow gap the enemy can see through but
-        // cannot pass will also trigger the timeout.
         float distToC0 = GlobalPosition.DistanceTo(_checkpoints[0]);
+
+        if (TickStuckDetection(distToC0))
+            return;
+
+        if (TickCheckpointProgress(targetPos, distToC0))
+            return;
+
+        TickActiveRaycaster(targetPos);
+    }
+
+    // Timer resets whenever the enemy achieves a new closest distance to C[0].
+    // This works regardless of LoS: a narrow gap the enemy can see through but
+    // cannot pass will also trigger the timeout.
+    // Returns true if the chain was abandoned.
+    private bool TickStuckDetection(float distToC0)
+    {
         if (distToC0 < _bestDistToC0)
         {
             _bestDistToC0 = distToC0;
             _stuckTimer = 0f;
-        }
-        else
-        {
-            _stuckTimer += _delta;
-            if (_stuckTimer >= ChainStuckTimeout)
-            {
-                if (DebugDraw)
-                    GD.Print($"[{Name}] Stuck on C[0] at {_checkpoints[0]} for {ChainStuckTimeout:F1}s — abandoning chain ({_checkpoints.Count} checkpoints)");
-                AbandonChain();
-                return;
-            }
+            return false;
         }
 
-        // ── Walk toward the oldest checkpoint ─────────────────────────────
+        _stuckTimer += _delta;
+        if (_stuckTimer < ChainStuckTimeout)
+            return false;
+
+        if (DebugDraw)
+            GD.Print($"[{Name}] Stuck on C[0] at {_checkpoints[0]} for {ChainStuckTimeout:F1}s — abandoning chain ({_checkpoints.Count} checkpoints)");
+        AbandonChain();
+        return true;
+    }
+
+    // Walks toward C[0] and removes it when reached. On the last checkpoint, tries
+    // to resume direct chasing or falls back to Waiting.
+    // Returns true if the caller should stop processing this tick.
+    private bool TickCheckpointProgress(Vector2 targetPos, float distToC0)
+    {
         _steeringDestination = _checkpoints[0];
 
-        if (distToC0 <= CheckpointReachDistance)
-        {
-            if (_checkpoints.Count >= 2)
-                _chainSegmentLength -= _checkpoints[0].DistanceTo(_checkpoints[1]);
-            else
-                _chainSegmentLength = 0f;
-            _checkpoints.RemoveAt(0);
-            _stuckTimer = 0f;
-            _bestDistToC0 = float.MaxValue;
+        if (distToC0 > CheckpointReachDistance)
+            return false;
 
-            if (_checkpoints.Count == 0)
+        if (_checkpoints.Count >= 2)
+            _chainSegmentLength -= _checkpoints[0].DistanceTo(_checkpoints[1]);
+        else
+            _chainSegmentLength = 0f;
+        _checkpoints.RemoveAt(0);
+        _stuckTimer = 0f;
+        _bestDistToC0 = float.MaxValue;
+
+        if (_checkpoints.Count == 0)
+        {
+            // All checkpoints consumed. Try to pick up direct sight.
+            if (HasLineOfSight(GlobalPosition, targetPos, SightRange))
             {
-                // All checkpoints consumed. Try to pick up direct sight.
-                if (HasLineOfSight(GlobalPosition, targetPos, SightRange))
-                {
-                    _lastClearSightPos = targetPos;
-                    _state = NavState.Chasing;
-                }
-                else
-                {
-                    _state = NavState.Waiting;
-                }
-                return;
+                _lastClearSightPos = targetPos;
+                _state = NavState.Chasing;
             }
+            else
+            {
+                _state = NavState.Waiting;
+            }
+            return true;
         }
 
-        // ── Active raycaster: C[Last] casts toward current target position ─
-        // C[Last] is inert when _chainIsCapped — it's the final walk target, not a raycaster.
-        Vector2 activePos = _checkpoints[_checkpoints.Count - 1];
+        return false;
+    }
 
+    // C[Last] casts toward the current target position to extend or cap the chain.
+    // C[Last] is inert when _chainIsCapped — it's the final walk target, not a raycaster.
+    private void TickActiveRaycaster(Vector2 targetPos)
+    {
         if (_chainIsCapped)
         {
             _dbgActiveCanSee = false;
@@ -361,6 +383,7 @@ public partial class EnemyRaycastController : CharacterBody2D
         }
 
         _dbgChainIsCapped = false;
+        Vector2 activePos = _checkpoints[^1];
 
         // Budget = how far C[Last] is allowed to see. Accounts for the enemy's current
         // distance to C[0] so the budget grows as the enemy closes in.
@@ -563,7 +586,7 @@ public partial class EnemyRaycastController : CharacterBody2D
                     DrawCircle(ToLocal(_checkpoints[i]), 3f, Colors.White);
 
                 // Last checkpoint: cyan = active raycaster (has budget), orange = final/inert (budget exhausted).
-                Vector2 activeLocal = ToLocal(_checkpoints[_checkpoints.Count - 1]);
+                Vector2 activeLocal = ToLocal(_checkpoints[^1]);
                 if (_dbgChainIsCapped)
                 {
                     DrawCircle(activeLocal, 5f, Colors.Orange);
