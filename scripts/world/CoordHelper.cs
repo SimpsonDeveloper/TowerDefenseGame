@@ -13,61 +13,28 @@ namespace towerdefensegame;
 ///   Nav cell — Vector2I, 1 unit = NavCellSizeChunks chunks
 ///   Sub-tile — Vector2  noise-sample coordinate,
 ///              1 tile = SubTileVariationsPerAxis units on each axis
+///
+/// Methods are grouped by destination space.
 /// </summary>
 public static class CoordHelper
 {
-    // ── Derived pixel sizes ─────────────────────────────────────────────────────
+    // ── Derived sizes ───────────────────────────────────────────────────────────
 
     public static int   ChunkSizePixels  (CoordConfig cfg) => cfg.ChunkSizeTiles   * cfg.TilePixelSize;
     public static float NavCellSizePixels(CoordConfig cfg) => cfg.NavCellSizeChunks * ChunkSizePixels(cfg);
 
-    // ── World ↔ Tile ────────────────────────────────────────────────────────────
-
-    public static Vector2I WorldToTile(Vector2 world, CoordConfig cfg) => new(
-        Mathf.FloorToInt(world.X / cfg.TilePixelSize),
-        Mathf.FloorToInt(world.Y / cfg.TilePixelSize));
+    // ── → World ─────────────────────────────────────────────────────────────────
 
     /// <summary>Returns the top-left world pixel of the tile.</summary>
     public static Vector2 TileToWorld(Vector2I tile, CoordConfig cfg) => new(
         tile.X * cfg.TilePixelSize,
         tile.Y * cfg.TilePixelSize);
 
-    // ── World ↔ Chunk ───────────────────────────────────────────────────────────
-
-    public static Vector2I WorldToChunk(Vector2 world, CoordConfig cfg)
-    {
-        int chunkPx = ChunkSizePixels(cfg);
-        return new(
-            Mathf.FloorToInt(world.X / chunkPx),
-            Mathf.FloorToInt(world.Y / chunkPx));
-    }
-
     /// <summary>Returns the top-left world pixel of the chunk.</summary>
     public static Vector2 ChunkToWorld(Vector2I chunk, CoordConfig cfg)
     {
         int chunkPx = ChunkSizePixels(cfg);
         return new(chunk.X * chunkPx, chunk.Y * chunkPx);
-    }
-
-    // ── Tile ↔ Chunk ────────────────────────────────────────────────────────────
-
-    public static Vector2I TileToChunk(Vector2I tile, CoordConfig cfg) => new(
-        Mathf.FloorToInt((float)tile.X / cfg.ChunkSizeTiles),
-        Mathf.FloorToInt((float)tile.Y / cfg.ChunkSizeTiles));
-
-    /// <summary>Returns the first (top-left) tile coordinate of the chunk.</summary>
-    public static Vector2I ChunkToFirstTile(Vector2I chunk, CoordConfig cfg) => new(
-        chunk.X * cfg.ChunkSizeTiles,
-        chunk.Y * cfg.ChunkSizeTiles);
-
-    // ── World ↔ Nav cell ────────────────────────────────────────────────────────
-
-    public static Vector2I WorldToNavCell(Vector2 world, CoordConfig cfg)
-    {
-        float cellPx = NavCellSizePixels(cfg);
-        return new(
-            Mathf.FloorToInt(world.X / cellPx),
-            Mathf.FloorToInt(world.Y / cellPx));
     }
 
     /// <summary>Returns the top-left world pixel of the nav cell.</summary>
@@ -77,18 +44,51 @@ public static class CoordHelper
         return new(cell.X * cellPx, cell.Y * cellPx);
     }
 
-    // ── Chunk ↔ Nav cell ────────────────────────────────────────────────────────
+    // ── → Tile ──────────────────────────────────────────────────────────────────
 
-    public static Vector2I ChunkToNavCell(Vector2I chunk, CoordConfig cfg) => new(
-        Mathf.FloorToInt((float)chunk.X / cfg.NavCellSizeChunks),
-        Mathf.FloorToInt((float)chunk.Y / cfg.NavCellSizeChunks));
+    public static Vector2I WorldToTile(Vector2 world, CoordConfig cfg) => new(
+        Mathf.FloorToInt(world.X / cfg.TilePixelSize),
+        Mathf.FloorToInt(world.Y / cfg.TilePixelSize));
+
+    /// <summary>Returns the first (top-left) tile coordinate of the chunk.</summary>
+    public static Vector2I ChunkToFirstTile(Vector2I chunk, CoordConfig cfg) => new(
+        chunk.X * cfg.ChunkSizeTiles,
+        chunk.Y * cfg.ChunkSizeTiles);
+
+    // ── → Chunk ─────────────────────────────────────────────────────────────────
+
+    public static Vector2I WorldToChunk(Vector2 world, CoordConfig cfg)
+    {
+        int chunkPx = ChunkSizePixels(cfg);
+        return new(
+            Mathf.FloorToInt(world.X / chunkPx),
+            Mathf.FloorToInt(world.Y / chunkPx));
+    }
+
+    public static Vector2I TileToChunk(Vector2I tile, CoordConfig cfg) => new(
+        Mathf.FloorToInt((float)tile.X / cfg.ChunkSizeTiles),
+        Mathf.FloorToInt((float)tile.Y / cfg.ChunkSizeTiles));
 
     /// <summary>Returns the first (top-left) chunk coordinate of the nav cell.</summary>
     public static Vector2I NavCellToFirstChunk(Vector2I cell, CoordConfig cfg) => new(
         cell.X * cfg.NavCellSizeChunks,
         cell.Y * cfg.NavCellSizeChunks);
 
-    // ── Tile → Sub-tile ─────────────────────────────────────────────────────────
+    // ── → Nav cell ──────────────────────────────────────────────────────────────
+
+    public static Vector2I WorldToNavCell(Vector2 world, CoordConfig cfg)
+    {
+        float cellPx = NavCellSizePixels(cfg);
+        return new(
+            Mathf.FloorToInt(world.X / cellPx),
+            Mathf.FloorToInt(world.Y / cellPx));
+    }
+
+    public static Vector2I ChunkToNavCell(Vector2I chunk, CoordConfig cfg) => new(
+        Mathf.FloorToInt((float)chunk.X / cfg.NavCellSizeChunks),
+        Mathf.FloorToInt((float)chunk.Y / cfg.NavCellSizeChunks));
+
+    // ── → Sub-tile ──────────────────────────────────────────────────────────────
 
     /// <summary>
     /// Returns the noise-sample coordinate for a sub-tile within a world tile.

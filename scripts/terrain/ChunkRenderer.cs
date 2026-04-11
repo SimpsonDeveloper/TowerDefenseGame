@@ -70,10 +70,7 @@ public partial class ChunkRenderer : Node2D
         _sprite.Texture = _texture;
 
         // Position the sprite in world space
-        Position = new Vector2(
-            chunkData.StartX * TilePixelSize,
-            chunkData.StartY * TilePixelSize
-        );
+        Position = CoordHelper.TileToWorld(new Vector2I(chunkData.StartX, chunkData.StartY), CoordConfig);
 
         // Generate the full texture
         GenerateFullTexture();
@@ -115,22 +112,18 @@ public partial class ChunkRenderer : Node2D
         int basePixelX = tileX * TilePixelSize;
         int basePixelY = tileY * TilePixelSize;
 
-        // Calculate world tile position for noise sampling
-        int worldTileX = _chunkData.StartX + tileX;
-        int worldTileY = _chunkData.StartY + tileY;
+        var worldTile = new Vector2I(_chunkData.StartX + tileX, _chunkData.StartY + tileY);
 
         // Draw sub-tiles with color variations from noise
         for (int subTileX = 0; subTileX < VariationsPerAxis; subTileX++)
         {
             for (int subTileY = 0; subTileY < VariationsPerAxis; subTileY++)
             {
-                // Calculate world position for this sub-tile (scale to sub-tile coordinates)
-                // Each sub-tile needs a unique noise sample position
-                float subWorldX = worldTileX * VariationsPerAxis + subTileX;
-                float subWorldY = worldTileY * VariationsPerAxis + subTileY;
+                // Each sub-tile gets a unique noise sample position in sub-tile space
+                Vector2 subWorld = CoordHelper.TileToSubTile(worldTile, new Vector2I(subTileX, subTileY), CoordConfig);
 
                 // Get variant index from noise at sub-tile position, range driven by color array size
-                int variantIndex = simplexGen?.GetVariantIndex(subWorldX, subWorldY, variantCount) ?? 0;
+                int variantIndex = simplexGen?.GetVariantIndex(subWorld.X, subWorld.Y, variantCount) ?? 0;
                 Color color = terrainType.GetColor(variantIndex);
 
                 // Calculate pixel position for this sub-tile
