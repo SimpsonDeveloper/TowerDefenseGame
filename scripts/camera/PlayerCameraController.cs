@@ -6,8 +6,8 @@ public partial class PlayerCameraController : Camera2D
 	[Export] public float MinZoom { get; set; } = 0.5f;
 	[Export] public float MaxZoom { get; set; } = 2.0f;
 	[Export] public float SmoothSpeed { get; set; } = 5.0f;
-	[Export] public Node2D Player { get; set; }
-
+	
+	private Node2D _player;
 	private float _targetZoom;
 
 	public override void _Ready()
@@ -18,8 +18,8 @@ public partial class PlayerCameraController : Camera2D
 
 	public override void _Process(double delta)
 	{
-		if (Player != null)
-			GlobalPosition = GlobalPosition.Lerp(Player.GlobalPosition, SmoothSpeed * (float)delta);
+		if (_player != null)
+			GlobalPosition = GlobalPosition.Lerp(_player.GlobalPosition, SmoothSpeed * (float)delta);
 
 		float currentZoom = Mathf.Lerp(Zoom.X, _targetZoom, SmoothSpeed * (float)delta);
 		Zoom = new Vector2(currentZoom, currentZoom);
@@ -42,5 +42,5 @@ public partial class PlayerCameraController : Camera2D
 	}
 
 	/// <summary>Called via the PlayerSpawner.PlayerSpawned signal.</summary>
-	public void OnPlayerSpawned(PlayerController player) => Player = player;
+	public void OnPlayerSpawned(PlayerController player) => _player = player;
 }

@@ -7,8 +7,7 @@ using Godot;
 /// </summary>
 public partial class InventoryUI : CanvasLayer
 {
-    [Export] public Inventory Inventory { get; set; }
-
+    private Inventory _inventory;
     private HBoxContainer _slotsContainer;
 
     private const int SlotSize    = 48;
@@ -52,20 +51,20 @@ public partial class InventoryUI : CanvasLayer
         };
         vbox.AddChild(bottomPad);
 
-        if (Inventory != null)
-            Inventory.InventoryChanged += Refresh;
+        if (_inventory != null)
+            _inventory.InventoryChanged += Refresh;
     }
 
     /// <summary>Called via the PlayerSpawner.PlayerSpawned signal.</summary>
     public void OnPlayerSpawned(PlayerController player)
     {
-        Inventory = player.GetNodeOrNull<Inventory>("Inventory");
-        if (Inventory == null)
+        _inventory = player.GetNodeOrNull<Inventory>("Inventory");
+        if (_inventory == null)
         {
             GD.PushWarning("InventoryUI: no Inventory node found on spawned player.");
             return;
         }
-        Inventory.InventoryChanged += Refresh;
+        _inventory.InventoryChanged += Refresh;
     }
 
     // ── Private helpers ───────────────────────────────────────────────────────
@@ -75,7 +74,7 @@ public partial class InventoryUI : CanvasLayer
         foreach (Node child in _slotsContainer.GetChildren())
             child.QueueFree();
 
-        foreach (var item in Inventory.Items)
+        foreach (var item in _inventory.Items)
             _slotsContainer.AddChild(CreateSlot(item));
     }
 

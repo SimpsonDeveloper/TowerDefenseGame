@@ -16,13 +16,13 @@ public partial class WorldManager : Node
     [Export] public SubViewportContainer PocketDimensionContainer { get; set; }
     [Export] public SubViewport OverworldViewport { get; set; }
     [Export] public SubViewport PocketDimensionViewport { get; set; }
-    [Export] public PlayerController OverworldPlayer { get; set; }
     [Export] public PocketCameraController PocketDimensionCamera { get; set; }
     [Export] public PlayerCameraController OverworldCamera { get; set; }
 
     /// <summary>Fraction of window size used for the mini viewport (each axis).</summary>
     [Export] public float MiniViewportScale { get; set; } = 0.25f;
 
+    private PlayerController _overworldPlayer;
     private bool _overworldIsMain = true;
     private bool _isDraggingMini;
     private Vector2 _lastDragPos;
@@ -95,7 +95,7 @@ public partial class WorldManager : Node
     }
 
     /// <summary>Called via the PlayerSpawner.PlayerSpawned signal.</summary>
-    public void OnPlayerSpawned(PlayerController player) => OverworldPlayer = player;
+    public void OnPlayerSpawned(PlayerController player) => _overworldPlayer = player;
 
     private void UpdateLayout()
     {
