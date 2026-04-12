@@ -14,7 +14,7 @@ namespace towerdefensegame;
 /// Replaces NavBaker.
 /// </summary>
 [GlobalClass]
-public partial class NavGridManager : Node
+public partial class NavGridManager : Node2D
 {
     [Export] public PolygonTerrainManager TerrainManager { get; set; }
     [Export] public ChunkManager ChunkManager { get; set; }

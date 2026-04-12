@@ -4,7 +4,7 @@ using Godot;
 namespace towerdefensegame;
 
 [GlobalClass]
-public partial class SimplexGen : Node, ISimplexGenConfigurable
+public partial class SimplexGen : Node2D, ISimplexGenConfigurable
 {
     [Export] public SimplexGenData Config { get; set; }
     [Export] public ChunkManager ChunkManager;

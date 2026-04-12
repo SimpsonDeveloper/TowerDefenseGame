@@ -6,7 +6,7 @@ using Godot;
 /// colour-sampled particles. Emits Broken when HP reaches zero, which frees the
 /// parent body. Connect Broken → HarvestableResource.OnHarvestableBroken in the scene.
 /// </summary>
-public partial class Harvestable : Node
+public partial class Harvestable : Node2D
 {
     [Export] public int MaxHp { get; set; } = 5;
     [Export] public int ParticlesPerTick { get; set; } = 6;

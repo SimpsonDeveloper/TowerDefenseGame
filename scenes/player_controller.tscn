@@ -85,10 +85,10 @@ MoveSpeed = 100.0
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("CircleShape2D_player")
 
-[node name="Inventory" type="Node" parent="."]
+[node name="Inventory" type="Node2D" parent="."]
 script = ExtResource("3_ga2kn")
 
-[node name="HarvesterComponent" type="Node" parent="." node_paths=PackedStringArray("HitBox")]
+[node name="HarvesterComponent" type="Node2D" parent="." node_paths=PackedStringArray("HitBox")]
 script = ExtResource("4_lwvb4")
 HitBox = NodePath("../HarvestHitBox")
 

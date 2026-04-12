@@ -8,6 +8,6 @@
 [ext_resource type="Resource" uid="uid://ckum4aocvikdm" path="res://assets/world_resources/variants/crystal_variant_red.tres" id="6_fosj3"]
 [ext_resource type="Resource" uid="uid://dfds2240tu2v7" path="res://assets/world_resources/variants/crystal_variant_yellow.tres" id="7_02di7"]
 
-[node name="ItemRegistry" type="Node"]
+[node name="ItemRegistry" type="Node2D"]
 script = ExtResource("1_15i13")
 Variants = Array[Object]([ExtResource("2_k6db5"), ExtResource("3_33es5"), ExtResource("4_ym51f"), ExtResource("5_5umy2"), ExtResource("6_fosj3"), ExtResource("7_02di7")])

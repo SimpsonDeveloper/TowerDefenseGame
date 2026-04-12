@@ -17,7 +17,7 @@ metadata/_custom_type_script = "uid://bn66bgttlo0pn"
 
 [node name="PocketDimension" type="Node2D"]
 
-[node name="TerrainGen" type="Node" parent="." node_paths=PackedStringArray("SimplexGens", "ChunkManager")]
+[node name="TerrainGen" type="Node2D" parent="." node_paths=PackedStringArray("SimplexGens", "ChunkManager")]
 script = ExtResource("2_tgen")
 Config = ExtResource("8_terraincfg")
 SimplexGens = [NodePath("GensLayer/GrassGen")]
@@ -27,15 +27,15 @@ SubResource("Resource_pdgenrange"): 0
 ChunkManager = NodePath("ChunkManager")
 AllowRegenerate = false
 
-[node name="GensLayer" type="Node" parent="TerrainGen"]
+[node name="GensLayer" type="Node2D" parent="TerrainGen"]
 
-[node name="GrassGen" type="Node" parent="TerrainGen/GensLayer" node_paths=PackedStringArray("ChunkManager")]
+[node name="GrassGen" type="Node2D" parent="TerrainGen/GensLayer" node_paths=PackedStringArray("ChunkManager")]
 script = ExtResource("4_sgen")
 Config = ExtResource("7_gcfg")
 ChunkManager = NodePath("../../ChunkManager")
 TerrainType = 1
 
-[node name="ChunkManager" type="Node" parent="TerrainGen" node_paths=PackedStringArray("TerrainGen", "Camera")]
+[node name="ChunkManager" type="Node2D" parent="TerrainGen" node_paths=PackedStringArray("TerrainGen", "Camera")]
 script = ExtResource("5_cmgr")
 TerrainGen = NodePath("..")
 Camera = NodePath("../../PocketCamera")

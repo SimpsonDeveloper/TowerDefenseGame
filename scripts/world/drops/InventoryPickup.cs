@@ -5,7 +5,7 @@ using Godot;
 /// Also, despawns the drop after DespawnTime seconds if never collected.
 /// Movement and magnetize behavior live in DropPhysics.
 /// </summary>
-public partial class InventoryPickup : Node
+public partial class InventoryPickup : Node2D
 {
 
     [Export] public DetectionZone HitBox { get; set; }

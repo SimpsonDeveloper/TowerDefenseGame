@@ -4,7 +4,7 @@ using Godot;
 
 namespace towerdefensegame;
 
-public partial class TerrainGen : Node, ISimplexGenConfigurable
+public partial class TerrainGen : Node2D, ISimplexGenConfigurable
 {
     [Export] public SimplexGenData Config { get; set; }
     [Export] public SimplexGen[] SimplexGens;

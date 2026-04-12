@@ -10,7 +10,7 @@ namespace towerdefensegame;
 /// The mini viewport ignores all input. Both worlds continue to run
 /// (physics, rendering) regardless of which is main.
 /// </summary>
-public partial class WorldManager : Node
+public partial class WorldManager : Node2D
 {
     [Export] public SubViewportContainer OverworldContainer { get; set; }
     [Export] public SubViewportContainer PocketDimensionContainer { get; set; }

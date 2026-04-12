@@ -4,7 +4,7 @@ using Godot;
 /// Detects and ticks any Harvestable within range using a HitBoxComponent.
 /// Polls the HitBox each physics frame for reliable StaticBody2D detection.
 /// </summary>
-public partial class HarvesterComponent : Node
+public partial class HarvesterComponent : Node2D
 {
     /// <summary>Seconds between harvest ticks while in contact with a harvestable.</summary>
     [Export] public float HarvestTickInterval { get; set; } = 0.5f;

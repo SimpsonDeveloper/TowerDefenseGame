@@ -5,7 +5,7 @@ using Godot;
 /// applies the variant textures in _Ready and spawns drops when the sibling
 /// Harvestable emits its Broken signal (wired up in the scene).
 /// </summary>
-public partial class HarvestableResource : Node
+public partial class HarvestableResource : Node2D
 {
     [Export] public ResourceVariant Variant { get; set; }
     [Export] public PackedScene DropScene { get; set; }

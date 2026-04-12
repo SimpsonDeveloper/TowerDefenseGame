@@ -18,7 +18,7 @@ namespace towerdefensegame;
 ///   6. Emit BlobsUpdated so NavBaker can schedule a nav mesh rebake.
 /// </summary>
 [GlobalClass]
-public partial class PolygonTerrainManager : Node
+public partial class PolygonTerrainManager : Node2D
 {
     /// <summary>Group tag added to every terrain-blob StaticBody2D.</summary>
     private const string BlobGroup = "terrain_blob";

@@ -10,7 +10,7 @@ namespace towerdefensegame;
 /// Manages terrain chunk generation and tracking.
 /// Chunks are generated on-demand as the camera reveals new areas.
 /// </summary>
-public partial class ChunkManager : Node
+public partial class ChunkManager : Node2D
 {
     /// <summary>
     /// Emitted on the main thread each frame that at least one chunk finishes

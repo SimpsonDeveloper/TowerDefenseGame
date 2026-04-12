@@ -8,7 +8,7 @@ using towerdefensegame;
 /// crystal spawner, UI — should connect to that signal rather than holding a direct
 /// export reference to the player.
 /// </summary>
-public partial class PlayerSpawner : Node
+public partial class PlayerSpawner : Node2D
 {
     [Signal]
     public delegate void PlayerSpawnedEventHandler(PlayerController player);

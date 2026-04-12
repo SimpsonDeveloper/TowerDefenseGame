@@ -8,7 +8,7 @@ using Godot;
 /// Requires its parent to be a RigidBody2D. Player collision is excluded so drops
 /// pass through the player during scatter and magnetize.
 /// </summary>
-public partial class DropPhysics : Node
+public partial class DropPhysics : Node2D
 {
     [Export] public DetectionZone MagnetZone { get; set; }
 

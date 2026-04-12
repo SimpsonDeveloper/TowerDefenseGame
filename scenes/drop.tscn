@@ -32,14 +32,14 @@ linear_damp = 3.0
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("CircleShape2D_body")
 
-[node name="HarvestDrop" type="Node" parent="."]
+[node name="HarvestDrop" type="Node2D" parent="."]
 script = ExtResource("1_harvd")
 
-[node name="DropPhysics" type="Node" parent="." node_paths=PackedStringArray("MagnetZone")]
+[node name="DropPhysics" type="Node2D" parent="." node_paths=PackedStringArray("MagnetZone")]
 script = ExtResource("5_dropb")
 MagnetZone = NodePath("../MagnetDetectionZone")
 
-[node name="InventoryPickup" type="Node" parent="." node_paths=PackedStringArray("HitBox")]
+[node name="InventoryPickup" type="Node2D" parent="." node_paths=PackedStringArray("HitBox")]
 script = ExtResource("2_invpu")
 HitBox = NodePath("../PickupDetectionZone")
 

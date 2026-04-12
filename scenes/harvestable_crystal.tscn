@@ -7,12 +7,12 @@
 
 [node name="HarvestableCrystal" type="StaticBody2D" groups=["nav_obstacle"]]
 
-[node name="HarvestableResource" type="Node" parent="." node_paths=PackedStringArray("Sprite")]
+[node name="HarvestableResource" type="Node2D" parent="." node_paths=PackedStringArray("Sprite")]
 script = ExtResource("1_harvr")
 DropScene = ExtResource("4_drop")
 Sprite = NodePath("../CrystalSprite")
 
-[node name="Harvestable" type="Node" parent="." node_paths=PackedStringArray("Sprite")]
+[node name="Harvestable" type="Node2D" parent="." node_paths=PackedStringArray("Sprite")]
 script = ExtResource("2_harv")
 Sprite = NodePath("../CrystalSprite")
 

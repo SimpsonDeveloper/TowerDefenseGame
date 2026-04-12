@@ -6,7 +6,7 @@ using Godot;
 /// the scene. Each spawned crystal is assigned a random <see cref="ResourceVariant"/>
 /// from the <see cref="Variants"/> array.
 /// </summary>
-public partial class CrystalSpawner : Node
+public partial class CrystalSpawner : Node2D
 {
     /// <summary>The harvestable crystal prefab scene to instantiate.</summary>
     [Export] public PackedScene CrystalScene { get; set; }

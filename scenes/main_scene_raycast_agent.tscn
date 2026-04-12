@@ -63,7 +63,7 @@ metadata/_custom_type_script = "uid://bn66bgttlo0pn"
 [node name="SpawnFadeOverlay" type="CanvasLayer" parent="."]
 script = ExtResource("1_to7gp")
 
-[node name="WorldManager" type="Node" parent="." node_paths=PackedStringArray("OverworldContainer", "PocketDimensionContainer", "OverworldViewport", "PocketDimensionViewport", "PocketDimensionCamera", "OverworldCamera")]
+[node name="WorldManager" type="Node2D" parent="." node_paths=PackedStringArray("OverworldContainer", "PocketDimensionContainer", "OverworldViewport", "PocketDimensionViewport", "PocketDimensionCamera", "OverworldCamera")]
 script = ExtResource("0_wm")
 OverworldContainer = NodePath("../OverworldContainer")
 PocketDimensionContainer = NodePath("../PocketDimensionContainer")
@@ -131,7 +131,7 @@ offset_bottom = 40.0
 script = ExtResource("5_k3g67")
 Camera = NodePath("../../PlayerCamera")
 
-[node name="TerrainGen" type="Node" parent="OverworldContainer/OverworldViewport" node_paths=PackedStringArray("SimplexGens", "ChunkManager")]
+[node name="TerrainGen" type="Node2D" parent="OverworldContainer/OverworldViewport" node_paths=PackedStringArray("SimplexGens", "ChunkManager")]
 script = ExtResource("6_4bgka")
 Config = ExtResource("29_terrain")
 SimplexGens = [NodePath("GensLayer/WaterGen"), NodePath("GensLayer/GrassGen"), NodePath("GensLayer/SandGen"), NodePath("GensLayer/RockGen")]
@@ -143,32 +143,32 @@ SubResource("Resource_7th4q"): 3
 }
 ChunkManager = NodePath("ChunkManager")
 
-[node name="GensLayer" type="Node" parent="OverworldContainer/OverworldViewport/TerrainGen"]
+[node name="GensLayer" type="Node2D" parent="OverworldContainer/OverworldViewport/TerrainGen"]
 
-[node name="GrassGen" type="Node" parent="OverworldContainer/OverworldViewport/TerrainGen/GensLayer" node_paths=PackedStringArray("ChunkManager")]
+[node name="GrassGen" type="Node2D" parent="OverworldContainer/OverworldViewport/TerrainGen/GensLayer" node_paths=PackedStringArray("ChunkManager")]
 script = ExtResource("8_pgk25")
 Config = ExtResource("25_grass")
 ChunkManager = NodePath("../../ChunkManager")
 TerrainType = 1
 
-[node name="RockGen" type="Node" parent="OverworldContainer/OverworldViewport/TerrainGen/GensLayer" node_paths=PackedStringArray("ChunkManager")]
+[node name="RockGen" type="Node2D" parent="OverworldContainer/OverworldViewport/TerrainGen/GensLayer" node_paths=PackedStringArray("ChunkManager")]
 script = ExtResource("8_pgk25")
 Config = ExtResource("26_rock")
 ChunkManager = NodePath("../../ChunkManager")
 TerrainType = 3
 
-[node name="SandGen" type="Node" parent="OverworldContainer/OverworldViewport/TerrainGen/GensLayer" node_paths=PackedStringArray("ChunkManager")]
+[node name="SandGen" type="Node2D" parent="OverworldContainer/OverworldViewport/TerrainGen/GensLayer" node_paths=PackedStringArray("ChunkManager")]
 script = ExtResource("8_pgk25")
 Config = ExtResource("27_sand")
 ChunkManager = NodePath("../../ChunkManager")
 TerrainType = 2
 
-[node name="WaterGen" type="Node" parent="OverworldContainer/OverworldViewport/TerrainGen/GensLayer" node_paths=PackedStringArray("ChunkManager")]
+[node name="WaterGen" type="Node2D" parent="OverworldContainer/OverworldViewport/TerrainGen/GensLayer" node_paths=PackedStringArray("ChunkManager")]
 script = ExtResource("8_pgk25")
 Config = ExtResource("28_water")
 ChunkManager = NodePath("../../ChunkManager")
 
-[node name="ChunkManager" type="Node" parent="OverworldContainer/OverworldViewport/TerrainGen" node_paths=PackedStringArray("TerrainGen", "Camera")]
+[node name="ChunkManager" type="Node2D" parent="OverworldContainer/OverworldViewport/TerrainGen" node_paths=PackedStringArray("TerrainGen", "Camera")]
 script = ExtResource("9_kkokr")
 TerrainGen = NodePath("..")
 Camera = NodePath("../../PlayerCamera")
@@ -180,19 +180,19 @@ script = ExtResource("10_lhwp2")
 MinZoom = 0.4
 MaxZoom = 4.0
 
-[node name="CrystalSpawner" type="Node" parent="OverworldContainer/OverworldViewport"]
+[node name="CrystalSpawner" type="Node2D" parent="OverworldContainer/OverworldViewport"]
 script = ExtResource("11_l40q6")
 CrystalScene = ExtResource("12_iav3h")
 Variants = Array[Object]([ExtResource("13_womr8"), ExtResource("14_onjth"), ExtResource("15_xa0eo"), ExtResource("16_3mjum"), ExtResource("17_p27gv"), ExtResource("18_cn4eu")])
 
-[node name="PlayerSpawner" type="Node" parent="OverworldContainer/OverworldViewport" node_paths=PackedStringArray("ChunkManager")]
+[node name="PlayerSpawner" type="Node2D" parent="OverworldContainer/OverworldViewport" node_paths=PackedStringArray("ChunkManager")]
 script = ExtResource("35_spawner")
 ChunkManager = NodePath("../TerrainGen/ChunkManager")
 CoordConfig = ExtResource("33_coordcfg")
 PlayerScene = ExtResource("25_pndb5")
 SpawnOrigin = Vector2(576, 324)
 
-[node name="PolygonTerrainManager" type="Node" parent="OverworldContainer/OverworldViewport" node_paths=PackedStringArray("ChunkManager")]
+[node name="PolygonTerrainManager" type="Node2D" parent="OverworldContainer/OverworldViewport" node_paths=PackedStringArray("ChunkManager")]
 script = ExtResource("34_polytm")
 ChunkManager = NodePath("../TerrainGen/ChunkManager")
 CoordConfig = ExtResource("33_coordcfg")
