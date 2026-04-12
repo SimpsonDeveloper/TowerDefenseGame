@@ -1,16 +1,15 @@
 using Godot;
 
 /// <summary>
-/// Spawns a ring of crystals around the player after they have found a valid spawn
-/// position. Each spawned crystal is assigned a random <see cref="ResourceVariant"/>
+/// Spawns a ring of crystals around the player when <see cref="OnPlayerSpawned"/>
+/// is called. Connect <see cref="PlayerSpawner.PlayerSpawned"/> to this method in
+/// the scene. Each spawned crystal is assigned a random <see cref="ResourceVariant"/>
 /// from the <see cref="Variants"/> array.
 /// </summary>
 public partial class CrystalSpawner : Node
 {
     /// <summary>The harvestable crystal prefab scene to instantiate.</summary>
     [Export] public PackedScene CrystalScene { get; set; }
-
-    [Export] public PlayerController Player { get; set; }
 
     /// <summary>Total number of crystals to place around the player.</summary>
     [Export] public int SpawnCount { get; set; } = 8;
@@ -26,24 +25,13 @@ public partial class CrystalSpawner : Node
 
     private RandomNumberGenerator _rng = new();
 
-    public override void _Ready()
+    /// <summary>
+    /// Called via the PlayerSpawner.PlayerSpawned signal. Spawns crystals around
+    /// the player's position.
+    /// </summary>
+    public void OnPlayerSpawned(PlayerController player)
     {
-        if (ProcessMode == ProcessModeEnum.Disabled)
-        {
-            return;
-        }
-        if (Player == null)
-        {
-            GD.PushWarning("CrystalSpawner: Player export is not set.");
-            return;
-        }
-
-        Player.Spawned += OnPlayerSpawned;
-    }
-
-    private void OnPlayerSpawned()
-    {
-        _rng.Randomize();
+        if (ProcessMode == ProcessModeEnum.Disabled) return;
 
         if (CrystalScene == null)
         {
@@ -51,12 +39,14 @@ public partial class CrystalSpawner : Node
             return;
         }
 
+        _rng.Randomize();
+
         for (int i = 0; i < SpawnCount; i++)
         {
             // Spread evenly around a ring with slight random jitter.
             float angle  = i * Mathf.Tau / SpawnCount + _rng.RandfRange(-0.25f, 0.25f);
             float radius = SpawnRadius + _rng.RandfRange(-40f, 40f);
-            var   pos    = Player.GlobalPosition + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * radius;
+            var   pos    = player.GlobalPosition + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * radius;
 
             var crystal = CrystalScene.Instantiate<Node2D>();
 

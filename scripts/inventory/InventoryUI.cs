@@ -56,6 +56,18 @@ public partial class InventoryUI : CanvasLayer
             Inventory.InventoryChanged += Refresh;
     }
 
+    /// <summary>Called via the PlayerSpawner.PlayerSpawned signal.</summary>
+    public void OnPlayerSpawned(PlayerController player)
+    {
+        Inventory = player.GetNodeOrNull<Inventory>("Inventory");
+        if (Inventory == null)
+        {
+            GD.PushWarning("InventoryUI: no Inventory node found on spawned player.");
+            return;
+        }
+        Inventory.InventoryChanged += Refresh;
+    }
+
     // ── Private helpers ───────────────────────────────────────────────────────
 
     private void Refresh()

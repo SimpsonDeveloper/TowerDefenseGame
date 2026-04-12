@@ -12,7 +12,7 @@ public partial class PlayerCameraController : Camera2D
 
 	public override void _Ready()
 	{
-		Zoom = new Vector2(2, 2);
+		Zoom = new Vector2(1.5f, 1.5f);
 		_targetZoom = Zoom.X;
 	}
 
@@ -40,4 +40,7 @@ public partial class PlayerCameraController : Camera2D
 
 		_targetZoom = Mathf.Clamp(_targetZoom, MinZoom, MaxZoom);
 	}
+
+	/// <summary>Called via the PlayerSpawner.PlayerSpawned signal.</summary>
+	public void OnPlayerSpawned(PlayerController player) => Player = player;
 }

@@ -198,6 +198,9 @@ public partial class EnemyRaycastController : CharacterBody2D
     {
         _delta = (float)delta;
 
+        if (_target == null)
+            ResolveTarget();
+
         float distToTarget = _target != null
             ? GlobalPosition.DistanceTo(_target.GlobalPosition)
             : float.MaxValue;

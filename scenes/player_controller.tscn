@@ -1,0 +1,133 @@
+[gd_scene load_steps=18 format=3 uid="uid://bbotgxu1swyi8"]
+
+[ext_resource type="Script" uid="uid://bmttg70ob2ksw" path="res://scripts/player/PlayerController.cs" id="1_7va2w"]
+[ext_resource type="Script" uid="uid://wwkhwblavkv8" path="res://scripts/inventory/Inventory.cs" id="3_ga2kn"]
+[ext_resource type="Script" uid="uid://b4350bcui80cy" path="res://scripts/components/HarvesterComponent.cs" id="4_lwvb4"]
+[ext_resource type="Script" uid="uid://chr0avfu2nwee" path="res://scripts/components/DetectionZone.cs" id="5_mfmwq"]
+[ext_resource type="Shader" uid="uid://b5b6c4tbr141y" path="res://cloud_circle_nofade_cw.gdshader" id="6_1kmjt"]
+[ext_resource type="Texture2D" uid="uid://cl3kiv6h4frsf" path="res://assets/32px circle.png" id="7_bqnof"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_player"]
+radius = 14.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_harvest"]
+radius = 16.0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_mo76n"]
+shader = ExtResource("6_1kmjt")
+shader_parameter/speed = 0.5390000256025
+shader_parameter/swirl_strength = 4.0
+shader_parameter/noise_scale = 5.5
+shader_parameter/cloud_coverage = 0.5
+shader_parameter/cloud_shadow = 0.8590000408025
+
+[sub_resource type="Gradient" id="Gradient_mo76n"]
+offsets = PackedFloat32Array(0, 0.003984064, 1)
+colors = PackedColorArray(0, 0, 0, 1, 0.067729086, 0.067729086, 0.067729086, 1, 1, 1, 1, 1)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_42l1d"]
+gradient = SubResource("Gradient_mo76n")
+
+[sub_resource type="Curve" id="Curve_2jcla"]
+_data = [Vector2(0, 0.25298506), 0.0, 0.0, 0, 0, Vector2(0.50180507, 0.99029857), 0.0, 0.0, 0, 0, Vector2(1, 0.25298506), 0.0, 0.0, 0, 0]
+point_count = 3
+
+[sub_resource type="CurveTexture" id="CurveTexture_m35m6"]
+curve = SubResource("Curve_2jcla")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_u0ygc"]
+particle_flag_disable_z = true
+emission_shape = 1
+emission_sphere_radius = 14.0
+angular_velocity_min = -100.000015
+angular_velocity_max = 9.999984
+orbit_velocity_min = -0.19999991
+orbit_velocity_max = -0.19999991
+gravity = Vector3(0, 0, 0)
+scale_min = 4.0
+scale_max = 4.0
+scale_curve = SubResource("CurveTexture_m35m6")
+color = Color(0.6967576, 0.70061207, 0.7436198, 1)
+color_ramp = SubResource("GradientTexture1D_42l1d")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_wr18j"]
+particle_flag_disable_z = true
+emission_shape = 1
+emission_sphere_radius = 15.0
+orbit_velocity_min = -0.99999994
+orbit_velocity_max = -0.99999994
+gravity = Vector3(0, 0, 0)
+scale_min = 2.0
+scale_max = 2.0
+color = Color(0.18601495, 0.34978524, 0.9529374, 1)
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_7ycvg"]
+particle_flag_disable_z = true
+emission_shape = 1
+emission_sphere_radius = 15.0
+direction = Vector3(0, 0, 0)
+spread = 0.0
+orbit_velocity_min = -0.99999994
+orbit_velocity_max = -0.99999994
+gravity = Vector3(0, 0, 0)
+scale_min = 2.0
+scale_max = 2.0
+color = Color(0.8862745, 0, 0, 1)
+
+[sub_resource type="ViewportTexture" id="ViewportTexture_671wp"]
+viewport_path = NodePath("SubViewport")
+
+[node name="PlayerController" type="CharacterBody2D" groups=["Player"]]
+collision_layer = 2
+script = ExtResource("1_7va2w")
+MoveSpeed = 100.0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_player")
+
+[node name="Inventory" type="Node" parent="."]
+script = ExtResource("3_ga2kn")
+
+[node name="HarvesterComponent" type="Node" parent="." node_paths=PackedStringArray("HitBox")]
+script = ExtResource("4_lwvb4")
+HitBox = NodePath("../HarvestHitBox")
+
+[node name="HarvestHitBox" type="Area2D" parent="."]
+script = ExtResource("5_mfmwq")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="HarvestHitBox"]
+shape = SubResource("CircleShape2D_harvest")
+
+[node name="SubViewport" type="SubViewport" parent="."]
+disable_3d = true
+transparent_bg = true
+size = Vector2i(32, 32)
+
+[node name="Particles" type="Node2D" parent="SubViewport"]
+position = Vector2(16, 16)
+
+[node name="GreyCircle" type="Sprite2D" parent="SubViewport/Particles"]
+material = SubResource("ShaderMaterial_mo76n")
+texture = ExtResource("7_bqnof")
+
+[node name="GPUParticles2DClouds" type="GPUParticles2D" parent="SubViewport/Particles"]
+amount = 40
+local_coords = true
+trail_lifetime = 1.0
+process_material = SubResource("ParticleProcessMaterial_u0ygc")
+
+[node name="GPUParticles2DBlue" type="GPUParticles2D" parent="SubViewport/Particles"]
+amount = 5
+local_coords = true
+trail_enabled = true
+process_material = SubResource("ParticleProcessMaterial_wr18j")
+
+[node name="GPUParticles2DRed" type="GPUParticles2D" parent="SubViewport/Particles"]
+amount = 5
+local_coords = true
+trail_enabled = true
+trail_lifetime = 0.2
+process_material = SubResource("ParticleProcessMaterial_7ycvg")
+
+[node name="SubViewportSprite" type="Sprite2D" parent="."]
+texture = SubResource("ViewportTexture_671wp")

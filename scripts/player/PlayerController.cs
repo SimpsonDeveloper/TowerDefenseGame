@@ -1,15 +1,8 @@
 using Godot;
-using towerdefensegame;
 
 public partial class PlayerController : CharacterBody2D
 {
-	/// <summary>Emitted once when a valid spawn position is found and the player is placed.</summary>
-	[Signal]
-	public delegate void SpawnedEventHandler();
-
 	[Export] public float MoveSpeed { get; set; } = 200.0f;
-	[Export] public ChunkManager ChunkManager { get; set; }
-	[Export] public CoordConfig CoordConfig { get; set; }
 
 	/// <summary>
 	/// When false, player movement input is ignored.
@@ -17,28 +10,8 @@ public partial class PlayerController : CharacterBody2D
 	/// </summary>
 	public bool InputEnabled { get; set; } = true;
 
-	/// <summary>
-	/// Minimum tile radius of open space required around the spawn point.
-	/// 2 means a 5x5 tile area must be fully clear, giving the player breathing room.
-	/// </summary>
-	[Export] public int SpawnClearance { get; set; } = 2;
-
-	/// <summary>
-	/// When true, skips the spawn helper relocation and treats the current position as valid.
-	/// Set this before the first _PhysicsProcess when a fixed spawn position is required.
-	/// </summary>
-	[Export] public bool SkipSpawnHelper { get; set; } = false;
-
-	private bool _spawnReady;
-
 	public override void _PhysicsProcess(double delta)
 	{
-		if (!_spawnReady)
-		{
-			TryFindValidSpawn();
-			return;
-		}
-
 		if (!InputEnabled)
 		{
 			Velocity = Vector2.Zero;
@@ -61,32 +34,5 @@ public partial class PlayerController : CharacterBody2D
 			: moveDirection.Normalized() * MoveSpeed;
 
 		MoveAndSlide();
-	}
-
-	private void TryFindValidSpawn()
-	{
-		if (SkipSpawnHelper)
-		{
-			_spawnReady = true;
-			EmitSignal(SignalName.Spawned);
-			return;
-		}
-
-		if (ChunkManager == null)
-		{
-			_spawnReady = true;
-			EmitSignal(SignalName.Spawned);
-			return;
-		}
-
-		Vector2? validPos = SpawnHelper.FindValidSpawnPosition(
-			ChunkManager, CoordConfig, GlobalPosition, minClearance: SpawnClearance);
-
-		if (validPos.HasValue)
-		{
-			GlobalPosition = validPos.Value;
-			_spawnReady = true;
-			EmitSignal(SignalName.Spawned);
-		}
 	}
 }

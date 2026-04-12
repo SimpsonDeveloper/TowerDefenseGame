@@ -1,4 +1,4 @@
-[gd_scene load_steps=52 format=3 uid="uid://bvr6e1vs0egs7"]
+[gd_scene load_steps=37 format=3 uid="uid://bvr6e1vs0egs7"]
 
 [ext_resource type="PackedScene" uid="uid://d23xmn1ko1rqq" path="res://scenes/pocket_dimension.tscn" id="0_pd"]
 [ext_resource type="Script" uid="uid://dlf3scmu37ybh" path="res://scripts/world/WorldManager.cs" id="0_wm"]
@@ -19,13 +19,8 @@
 [ext_resource type="Resource" uid="uid://cq0ed2xdk5qpl" path="res://assets/world_resources/variants/crystal_variant_purple.tres" id="16_3mjum"]
 [ext_resource type="Resource" uid="uid://ckum4aocvikdm" path="res://assets/world_resources/variants/crystal_variant_red.tres" id="17_p27gv"]
 [ext_resource type="Resource" uid="uid://dfds2240tu2v7" path="res://assets/world_resources/variants/crystal_variant_yellow.tres" id="18_cn4eu"]
-[ext_resource type="Script" uid="uid://bmttg70ob2ksw" path="res://scripts/player/PlayerController.cs" id="19_0wyf6"]
-[ext_resource type="Script" uid="uid://wwkhwblavkv8" path="res://scripts/inventory/Inventory.cs" id="20_xp01v"]
-[ext_resource type="Script" uid="uid://b4350bcui80cy" path="res://scripts/components/HarvesterComponent.cs" id="21_jix7a"]
-[ext_resource type="Script" uid="uid://chr0avfu2nwee" path="res://scripts/components/DetectionZone.cs" id="22_segjr"]
-[ext_resource type="Shader" uid="uid://b5b6c4tbr141y" path="res://cloud_circle_nofade_cw.gdshader" id="23_beobj"]
-[ext_resource type="Texture2D" uid="uid://cl3kiv6h4frsf" path="res://assets/32px circle.png" id="24_267kh"]
 [ext_resource type="Resource" uid="uid://cvuw7ah7gs566" path="res://assets/terrain_configs/grass_config.tres" id="25_grass"]
+[ext_resource type="PackedScene" uid="uid://bbotgxu1swyi8" path="res://scenes/player_controller.tscn" id="25_pndb5"]
 [ext_resource type="Resource" uid="uid://b7o2x6r0q7jwv" path="res://assets/terrain_configs/rock_config.tres" id="26_rock"]
 [ext_resource type="Resource" uid="uid://cs0ux6r0q7jwv" path="res://assets/terrain_configs/sand_config.tres" id="27_sand"]
 [ext_resource type="Resource" uid="uid://cxr1s1s660n54" path="res://assets/terrain_configs/water_config.tres" id="28_water"]
@@ -35,6 +30,7 @@
 [ext_resource type="Texture2D" uid="uid://56tehltoshbg" path="res://icon.svg" id="31_y7ma3"]
 [ext_resource type="Resource" uid="uid://c54gxd5gu86v1" path="res://assets/coord_config.tres" id="33_coordcfg"]
 [ext_resource type="Script" uid="uid://bnphhwegnok8r" path="res://scripts/world/PolygonTerrainManager.cs" id="34_polytm"]
+[ext_resource type="Script" path="res://scripts/player/PlayerSpawner.cs" id="35_spawner"]
 
 [sub_resource type="Resource" id="Resource_ak604"]
 script = ExtResource("7_02d50")
@@ -60,91 +56,19 @@ FirstIndex = 4
 LastIndex = 6
 metadata/_custom_type_script = "uid://bn66bgttlo0pn"
 
-[sub_resource type="CircleShape2D" id="CircleShape2D_player"]
-radius = 14.0
-
-[sub_resource type="CircleShape2D" id="CircleShape2D_harvest"]
-radius = 16.0
-
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_mo76n"]
-shader = ExtResource("23_beobj")
-shader_parameter/speed = 0.5390000256025
-shader_parameter/swirl_strength = 4.0
-shader_parameter/noise_scale = 5.5
-shader_parameter/cloud_coverage = 0.5
-shader_parameter/cloud_shadow = 0.8590000408025
-
-[sub_resource type="Gradient" id="Gradient_mo76n"]
-offsets = PackedFloat32Array(0, 0.003984064, 1)
-colors = PackedColorArray(0, 0, 0, 1, 0.067729086, 0.067729086, 0.067729086, 1, 1, 1, 1, 1)
-
-[sub_resource type="GradientTexture1D" id="GradientTexture1D_42l1d"]
-gradient = SubResource("Gradient_mo76n")
-
-[sub_resource type="Curve" id="Curve_2jcla"]
-_data = [Vector2(0, 0.25298506), 0.0, 0.0, 0, 0, Vector2(0.50180507, 0.99029857), 0.0, 0.0, 0, 0, Vector2(1, 0.25298506), 0.0, 0.0, 0, 0]
-point_count = 3
-
-[sub_resource type="CurveTexture" id="CurveTexture_m35m6"]
-curve = SubResource("Curve_2jcla")
-
-[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_u0ygc"]
-particle_flag_disable_z = true
-emission_shape = 1
-emission_sphere_radius = 14.0
-angular_velocity_min = -100.000015
-angular_velocity_max = 9.999984
-orbit_velocity_min = -0.19999991
-orbit_velocity_max = -0.19999991
-gravity = Vector3(0, 0, 0)
-scale_min = 4.0
-scale_max = 4.0
-scale_curve = SubResource("CurveTexture_m35m6")
-color = Color(0.6967576, 0.70061207, 0.7436198, 1)
-color_ramp = SubResource("GradientTexture1D_42l1d")
-
-[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_wr18j"]
-particle_flag_disable_z = true
-emission_shape = 1
-emission_sphere_radius = 15.0
-orbit_velocity_min = -0.99999994
-orbit_velocity_max = -0.99999994
-gravity = Vector3(0, 0, 0)
-scale_min = 2.0
-scale_max = 2.0
-color = Color(0.18601495, 0.34978524, 0.9529374, 1)
-
-[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_7ycvg"]
-particle_flag_disable_z = true
-emission_shape = 1
-emission_sphere_radius = 15.0
-direction = Vector3(0, 0, 0)
-spread = 0.0
-orbit_velocity_min = -0.99999994
-orbit_velocity_max = -0.99999994
-gravity = Vector3(0, 0, 0)
-scale_min = 2.0
-scale_max = 2.0
-color = Color(0.8862745, 0, 0, 1)
-
-[sub_resource type="ViewportTexture" id="ViewportTexture_671wp"]
-viewport_path = NodePath("OverworldContainer/OverworldViewport/PlayerController/SubViewport")
-
 [sub_resource type="CircleShape2D" id="CircleShape2D_enemy"]
 
 [node name="Node2D" type="Node2D"]
 
-[node name="SpawnFadeOverlay" type="CanvasLayer" parent="." node_paths=PackedStringArray("Player")]
+[node name="SpawnFadeOverlay" type="CanvasLayer" parent="."]
 script = ExtResource("1_to7gp")
-Player = NodePath("../OverworldContainer/OverworldViewport/PlayerController")
 
-[node name="WorldManager" type="Node" parent="." node_paths=PackedStringArray("OverworldContainer", "PocketDimensionContainer", "OverworldViewport", "PocketDimensionViewport", "OverworldPlayer", "PocketDimensionCamera", "OverworldCamera")]
+[node name="WorldManager" type="Node" parent="." node_paths=PackedStringArray("OverworldContainer", "PocketDimensionContainer", "OverworldViewport", "PocketDimensionViewport", "PocketDimensionCamera", "OverworldCamera")]
 script = ExtResource("0_wm")
 OverworldContainer = NodePath("../OverworldContainer")
 PocketDimensionContainer = NodePath("../PocketDimensionContainer")
 OverworldViewport = NodePath("../OverworldContainer/OverworldViewport")
 PocketDimensionViewport = NodePath("../PocketDimensionContainer/PocketDimensionViewport")
-OverworldPlayer = NodePath("../OverworldContainer/OverworldViewport/PlayerController")
 PocketDimensionCamera = NodePath("../PocketDimensionContainer/PocketDimensionViewport/PocketDimension/PocketCamera")
 OverworldCamera = NodePath("../OverworldContainer/OverworldViewport/PlayerCamera")
 
@@ -159,9 +83,8 @@ canvas_item_default_texture_filter = 0
 size = Vector2i(2, 2)
 render_target_update_mode = 4
 
-[node name="InventoryUI" type="CanvasLayer" parent="OverworldContainer/OverworldViewport" node_paths=PackedStringArray("Inventory")]
+[node name="InventoryUI" type="CanvasLayer" parent="OverworldContainer/OverworldViewport"]
 script = ExtResource("2_u0fll")
-Inventory = NodePath("../PlayerController/Inventory")
 
 [node name="GensUI" type="CanvasLayer" parent="OverworldContainer/OverworldViewport"]
 layer = 10
@@ -251,76 +174,23 @@ TerrainGen = NodePath("..")
 Camera = NodePath("../../PlayerCamera")
 CoordConfig = ExtResource("33_coordcfg")
 
-[node name="PlayerCamera" type="Camera2D" parent="OverworldContainer/OverworldViewport" node_paths=PackedStringArray("Player")]
+[node name="PlayerCamera" type="Camera2D" parent="OverworldContainer/OverworldViewport"]
 position = Vector2(576, 324)
 script = ExtResource("10_lhwp2")
 MinZoom = 0.4
 MaxZoom = 4.0
-Player = NodePath("../PlayerController")
 
-[node name="CrystalSpawner" type="Node" parent="OverworldContainer/OverworldViewport" node_paths=PackedStringArray("Player")]
+[node name="CrystalSpawner" type="Node" parent="OverworldContainer/OverworldViewport"]
 script = ExtResource("11_l40q6")
 CrystalScene = ExtResource("12_iav3h")
-Player = NodePath("../PlayerController")
 Variants = Array[Object]([ExtResource("13_womr8"), ExtResource("14_onjth"), ExtResource("15_xa0eo"), ExtResource("16_3mjum"), ExtResource("17_p27gv"), ExtResource("18_cn4eu")])
 
-[node name="PlayerController" type="CharacterBody2D" parent="OverworldContainer/OverworldViewport" node_paths=PackedStringArray("ChunkManager") groups=["Player"]]
-position = Vector2(576, 324)
-collision_layer = 2
-script = ExtResource("19_0wyf6")
-MoveSpeed = 100.0
+[node name="PlayerSpawner" type="Node" parent="OverworldContainer/OverworldViewport" node_paths=PackedStringArray("ChunkManager")]
+script = ExtResource("35_spawner")
 ChunkManager = NodePath("../TerrainGen/ChunkManager")
 CoordConfig = ExtResource("33_coordcfg")
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="OverworldContainer/OverworldViewport/PlayerController"]
-shape = SubResource("CircleShape2D_player")
-
-[node name="Inventory" type="Node" parent="OverworldContainer/OverworldViewport/PlayerController"]
-script = ExtResource("20_xp01v")
-
-[node name="HarvesterComponent" type="Node" parent="OverworldContainer/OverworldViewport/PlayerController" node_paths=PackedStringArray("HitBox")]
-script = ExtResource("21_jix7a")
-HitBox = NodePath("../HarvestHitBox")
-
-[node name="HarvestHitBox" type="Area2D" parent="OverworldContainer/OverworldViewport/PlayerController"]
-script = ExtResource("22_segjr")
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="OverworldContainer/OverworldViewport/PlayerController/HarvestHitBox"]
-shape = SubResource("CircleShape2D_harvest")
-
-[node name="SubViewport" type="SubViewport" parent="OverworldContainer/OverworldViewport/PlayerController"]
-disable_3d = true
-transparent_bg = true
-size = Vector2i(32, 32)
-
-[node name="Particles" type="Node2D" parent="OverworldContainer/OverworldViewport/PlayerController/SubViewport"]
-position = Vector2(16, 16)
-
-[node name="GreyCircle" type="Sprite2D" parent="OverworldContainer/OverworldViewport/PlayerController/SubViewport/Particles"]
-material = SubResource("ShaderMaterial_mo76n")
-texture = ExtResource("24_267kh")
-
-[node name="GPUParticles2DClouds" type="GPUParticles2D" parent="OverworldContainer/OverworldViewport/PlayerController/SubViewport/Particles"]
-amount = 40
-local_coords = true
-trail_lifetime = 1.0
-process_material = SubResource("ParticleProcessMaterial_u0ygc")
-
-[node name="GPUParticles2DBlue" type="GPUParticles2D" parent="OverworldContainer/OverworldViewport/PlayerController/SubViewport/Particles"]
-amount = 5
-local_coords = true
-trail_enabled = true
-process_material = SubResource("ParticleProcessMaterial_wr18j")
-
-[node name="GPUParticles2DRed" type="GPUParticles2D" parent="OverworldContainer/OverworldViewport/PlayerController/SubViewport/Particles"]
-amount = 5
-local_coords = true
-trail_enabled = true
-trail_lifetime = 0.2
-process_material = SubResource("ParticleProcessMaterial_7ycvg")
-
-[node name="SubViewportSprite" type="Sprite2D" parent="OverworldContainer/OverworldViewport/PlayerController"]
-texture = SubResource("ViewportTexture_671wp")
+PlayerScene = ExtResource("25_pndb5")
+SpawnOrigin = Vector2(576, 324)
 
 [node name="PolygonTerrainManager" type="Node" parent="OverworldContainer/OverworldViewport" node_paths=PackedStringArray("ChunkManager")]
 script = ExtResource("34_polytm")
@@ -355,3 +225,9 @@ size = Vector2i(2, 2)
 render_target_update_mode = 4
 
 [node name="PocketDimension" parent="PocketDimensionContainer/PocketDimensionViewport" instance=ExtResource("0_pd")]
+
+[connection signal="PlayerSpawned" from="OverworldContainer/OverworldViewport/PlayerSpawner" to="OverworldContainer/OverworldViewport/PlayerCamera" method="OnPlayerSpawned"]
+[connection signal="PlayerSpawned" from="OverworldContainer/OverworldViewport/PlayerSpawner" to="OverworldContainer/OverworldViewport/CrystalSpawner" method="OnPlayerSpawned"]
+[connection signal="PlayerSpawned" from="OverworldContainer/OverworldViewport/PlayerSpawner" to="OverworldContainer/OverworldViewport/InventoryUI" method="OnPlayerSpawned"]
+[connection signal="PlayerSpawned" from="OverworldContainer/OverworldViewport/PlayerSpawner" to="SpawnFadeOverlay" method="OnPlayerSpawned"]
+[connection signal="PlayerSpawned" from="OverworldContainer/OverworldViewport/PlayerSpawner" to="WorldManager" method="OnPlayerSpawned"]

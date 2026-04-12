@@ -2,14 +2,13 @@ using Godot;
 
 /// <summary>
 /// Full-screen black overlay that fades out when the player finishes spawning.
-/// Listens for the PlayerController.Spawned signal — no game logic lives here.
+/// Connect <see cref="PlayerSpawner.PlayerSpawned"/> to <see cref="OnPlayerSpawned"/>.
 /// </summary>
 public partial class SpawnFadeOverlay : CanvasLayer
 {
 	[Export] public bool ShowUi { get; set; } = true;
 	[Export] public float FadeDuration { get; set; } = 0.6f;
 	[Export] public float FadeDelay { get; set; } = 0.5f;
-	[Export] public PlayerController Player { get; set; }
 
 	private ColorRect _fadeRect;
 
@@ -27,12 +26,10 @@ public partial class SpawnFadeOverlay : CanvasLayer
 		_fadeRect.Color = new Color(0, 0, 0, 1);
 		_fadeRect.SetAnchorsPreset(Control.LayoutPreset.FullRect);
 		AddChild(_fadeRect);
-
-		if (Player != null)
-			Player.Spawned += OnPlayerSpawned;
 	}
 
-	private async void OnPlayerSpawned()
+	/// <summary>Called via the PlayerSpawner.PlayerSpawned signal.</summary>
+	public async void OnPlayerSpawned(PlayerController _)
 	{
 		await ToSignal(GetTree().CreateTimer(FadeDelay), SceneTreeTimer.SignalName.Timeout);
 		var tween = CreateTween();

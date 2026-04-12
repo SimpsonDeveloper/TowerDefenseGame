@@ -94,6 +94,9 @@ public partial class WorldManager : Node
         }
     }
 
+    /// <summary>Called via the PlayerSpawner.PlayerSpawned signal.</summary>
+    public void OnPlayerSpawned(PlayerController player) => OverworldPlayer = player;
+
     private void UpdateLayout()
     {
         _isDraggingMini = false;

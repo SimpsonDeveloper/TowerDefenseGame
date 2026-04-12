@@ -19,6 +19,11 @@ config/icon="res://icon.svg"
 
 ItemRegistry="*res://scenes/item_registry.tscn"
 
+[display]
+
+window/size/viewport_width=640
+window/size/viewport_height=360
+
 [dotnet]
 
 project/assembly_name="tower-defense-game"
