@@ -5,7 +5,7 @@
 [ext_resource type="Script" uid="uid://d33brm7vp1jgy" path="res://scripts/terrain/SimplexGen.cs" id="4_sgen"]
 [ext_resource type="Script" uid="uid://1njs0cvgv6a0" path="res://scripts/terrain/ChunkManager.cs" id="5_cmgr"]
 [ext_resource type="Script" uid="uid://dl4mma1ufub27" path="res://scripts/camera/PocketCameraController.cs" id="6_cam"]
-[ext_resource type="Resource" path="res://assets/coord_config.tres" id="7_ck6mf"]
+[ext_resource type="Resource" uid="uid://c54gxd5gu86v1" path="res://assets/coord_config.tres" id="7_ck6mf"]
 [ext_resource type="Resource" uid="uid://cvuw7ah7gs566" path="res://assets/terrain_configs/grass_config.tres" id="7_gcfg"]
 [ext_resource type="Resource" path="res://assets/terrain_configs/terrain_config.tres" id="8_terraincfg"]
 

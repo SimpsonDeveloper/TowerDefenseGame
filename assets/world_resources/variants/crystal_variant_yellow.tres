@@ -1,6 +1,6 @@
 [gd_resource type="Resource" script_class="ResourceVariant" load_steps=4 format=3 uid="uid://dfds2240tu2v7"]
 
-[ext_resource type="Texture2D" uid="uid://dcmwoju6micsn" path="res://assets/world_resources/sprites/crystal/crystal_yellow_shard.png" id="1_hqu6t"]
+[ext_resource type="Texture2D" uid="uid://dyawvlep14n77" path="res://assets/world_resources/sprites/crystal/crystal_yellow_shard.png" id="1_hqu6t"]
 [ext_resource type="Texture2D" uid="uid://bxspw1uoeyj5i" path="res://assets/world_resources/sprites/crystal/crystal_yellow.png" id="2_4iqxu"]
 [ext_resource type="Script" uid="uid://crt2c3ejj8hxo" path="res://scripts/world/ResourceVariant.cs" id="3_s0r88"]
 

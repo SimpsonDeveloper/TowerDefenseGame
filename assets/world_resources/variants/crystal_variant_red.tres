@@ -1,6 +1,6 @@
 [gd_resource type="Resource" script_class="ResourceVariant" load_steps=4 format=3 uid="uid://ckum4aocvikdm"]
 
-[ext_resource type="Texture2D" uid="uid://cide48wd7ifuj" path="res://assets/world_resources/sprites/crystal/crystal_red_shard.png" id="1_kvfa1"]
+[ext_resource type="Texture2D" uid="uid://dv7bs2y82b6sr" path="res://assets/world_resources/sprites/crystal/crystal_red_shard.png" id="1_kvfa1"]
 [ext_resource type="Texture2D" uid="uid://dla4h7tyd8bof" path="res://assets/world_resources/sprites/crystal/crystal_red.png" id="2_12p25"]
 [ext_resource type="Script" uid="uid://crt2c3ejj8hxo" path="res://scripts/world/ResourceVariant.cs" id="3_dly2r"]
 
