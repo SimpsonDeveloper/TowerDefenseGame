@@ -107,7 +107,6 @@ public partial class EnemyRaycastController : CharacterBody2D
     [Export] public bool DebugDraw { get; set; }
 
     [ExportGroup("Target")]
-    [Export] public NodePath TargetPath { get; set; }
     [Export] public string TargetGroup { get; set; } = "Player";
 
     // ── Virtual hooks for subclasses ───────────────────────────────────────
@@ -639,11 +638,6 @@ public partial class EnemyRaycastController : CharacterBody2D
 
     private void ResolveTarget()
     {
-        if (TargetPath != null && !TargetPath.IsEmpty)
-        {
-            _target = GetNodeOrNull<Node2D>(TargetPath);
-            return;
-        }
         if (!string.IsNullOrEmpty(TargetGroup))
         {
             var nodes = GetTree().GetNodesInGroup(TargetGroup);

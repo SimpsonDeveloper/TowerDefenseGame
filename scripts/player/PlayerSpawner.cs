@@ -41,5 +41,6 @@ public partial class PlayerSpawner : Node
 
         _spawned = true;
         EmitSignal(SignalName.PlayerSpawned, player);
+        GD.Print("Spawned");
     }
 }

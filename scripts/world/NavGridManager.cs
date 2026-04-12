@@ -5,7 +5,7 @@ using Godot;
 namespace towerdefensegame;
 
 /// <summary>
-/// Maintains a sparse grid of NavigationRegion2D cells around a moving centre node.
+/// Maintains a sparse grid of NavigationRegion2D cells around a moving center node.
 /// Each cell covers CellSizeChunks × CellSizeChunks chunks. Cells are baked
 /// asynchronously on a background thread and stitched together automatically by
 /// Godot's navigation server — adjacent cells share exact polygon edges at their
@@ -20,17 +20,20 @@ public partial class NavGridManager : Node
     [Export] public ChunkManager ChunkManager { get; set; }
     [Export] public CoordConfig CoordConfig { get; set; }
 
-    /// <summary>Node whose position drives cell loading (typically the player).</summary>
-    [Export] public Node2D Center { get; set; }
-
     /// <summary>
-    /// Chebyshev radius in cells around the centre cell to keep loaded and baked.
+    /// Chebyshev radius in cells around the center cell to keep loaded and baked.
     /// Radius 2 keeps a 5×5 grid (25 cells) active.
     /// </summary>
     [Export] public int ActiveRadius { get; set; } = 2;
 
     /// <summary>When true, draws cell boundaries and coords in-world. Press F6 to scan for isolated cells.</summary>
     [Export] public bool DebugDrawEnabled { get; set; }
+    
+    /// <summary>Node whose position drives cell loading (typically the player).</summary>
+    [ExportGroup("Center")]
+    [Export] public Node2D Center { get; set; }
+    /// <summary>Group of the Node whose position drives cell loading (typically the player). Overrides Center</summary>
+    [Export] public string CenterGroup { get; set; } = "Player";
 
     // ── Internal types ──────────────────────────────────────────────────────────
 
@@ -52,7 +55,7 @@ public partial class NavGridManager : Node
     private readonly Dictionary<Vector2I, NavCell> _cells       = new();
     private readonly HashSet<Vector2I>             _bakePending = new();
     private bool     _baking;
-    private Vector2I _lastCentreCell = new(int.MinValue, int.MinValue);
+    private Vector2I _lastCenterCell = new(int.MinValue, int.MinValue);
     private DebugCellDraw _debugDraw;
     private DebugIsolationDraw _debugIsolationDraw;
     private List<Vector2[]> _debugBadPaths = [];
@@ -64,7 +67,6 @@ public partial class NavGridManager : Node
         if (TerrainManager == null) { GD.PushWarning($"{Name}: TerrainManager not assigned."); return; }
         if (ChunkManager   == null) { GD.PushWarning($"{Name}: ChunkManager not assigned.");   return; }
         if (CoordConfig    == null) { GD.PushWarning($"{Name}: CoordConfig not assigned.");    return; }
-        if (Center         == null) { GD.PushWarning($"{Name}: Center not assigned.");          return; }
 
         if (CoordConfig.NavCellSizeChunks < 1)
         {
@@ -118,6 +120,8 @@ public partial class NavGridManager : Node
 
     public override void _Process(double delta)
     {
+        ResolveCenter();
+        if (Center == null) return;
         UpdateCellGrid();
         ProcessBakePending();
         if (DebugDrawEnabled) _debugDraw.QueueRedraw();
@@ -146,15 +150,15 @@ public partial class NavGridManager : Node
 
     private void UpdateCellGrid()
     {
-        var centreCell = WorldToCell(Center.GlobalPosition);
-        if (centreCell == _lastCentreCell) return;
-        _lastCentreCell = centreCell;
+        var centerCell = WorldToCell(Center.GlobalPosition);
+        if (centerCell == _lastCenterCell) return;
+        _lastCenterCell = centerCell;
 
         // Load any cell within radius not yet tracked.
         for (int dy = -ActiveRadius; dy <= ActiveRadius; dy++)
         for (int dx = -ActiveRadius; dx <= ActiveRadius; dx++)
         {
-            var coord = new Vector2I(centreCell.X + dx, centreCell.Y + dy);
+            var coord = new Vector2I(centerCell.X + dx, centerCell.Y + dy);
             if (_cells.ContainsKey(coord)) continue;
 
             _cells[coord] = new NavCell { State = CellState.Queued };
@@ -165,8 +169,8 @@ public partial class NavGridManager : Node
         var toRemove = new List<Vector2I>();
         foreach (var coord in _cells.Keys)
         {
-            if (Mathf.Abs(coord.X - centreCell.X) > ActiveRadius ||
-                Mathf.Abs(coord.Y - centreCell.Y) > ActiveRadius)
+            if (Mathf.Abs(coord.X - centerCell.X) > ActiveRadius ||
+                Mathf.Abs(coord.Y - centerCell.Y) > ActiveRadius)
                 toRemove.Add(coord);
         }
         foreach (var coord in toRemove)
@@ -181,14 +185,14 @@ public partial class NavGridManager : Node
     {
         if (_baking || _bakePending.Count == 0) return;
 
-        // Pick the pending cell closest to the current centre first.
-        var centreCell = WorldToCell(Center.GlobalPosition);
+        // Pick the pending cell closest to the current center first.
+        var centerCell = WorldToCell(Center.GlobalPosition);
         var best      = Vector2I.Zero;
         float bestDist = float.MaxValue;
 
         foreach (var coord in _bakePending)
         {
-            float d = ((Vector2)(coord - centreCell)).LengthSquared();
+            float d = ((Vector2)(coord - centerCell)).LengthSquared();
             if (d < bestDist) { bestDist = d; best = coord; }
         }
 
@@ -302,7 +306,7 @@ public partial class NavGridManager : Node
     {
         if (CenterOfCellHasCollision(coord)) return false;
         float cellPx = CellSizePixels();
-        var centre = new Vector2((coord.X + 0.5f) * cellPx, (coord.Y + 0.5f) * cellPx);
+        var center = new Vector2((coord.X + 0.5f) * cellPx, (coord.Y + 0.5f) * cellPx);
 
         // for all cell neighbors
         // try to enter cell center from neighboring cell center if both cell centers are reachable (not in solid terrain)
@@ -312,12 +316,12 @@ public partial class NavGridManager : Node
             var neighbour = coord + dir;
             if (!_cells.TryGetValue(neighbour, out var n) || n.State != CellState.Active) continue;
 
-            var nCentre = new Vector2((neighbour.X + 0.5f) * cellPx, (neighbour.Y + 0.5f) * cellPx);
+            var nCenter = new Vector2((neighbour.X + 0.5f) * cellPx, (neighbour.Y + 0.5f) * cellPx);
             var map = _cells[coord].Region.GetNavigationMap();
-            var path = NavigationServer2D.MapGetPath(map, nCentre, centre, false);
-            if (path.Length == 0 || !AlmostEqual(path[^1].X, centre.X) || !AlmostEqual(path[^1].Y, centre.Y))
+            var path = NavigationServer2D.MapGetPath(map, nCenter, center, false);
+            if (path.Length == 0 || !AlmostEqual(path[^1].X, center.X) || !AlmostEqual(path[^1].Y, center.Y))
             {
-                GD.PrintErr($"Cell {neighbour} could not enter cell {coord}. Neighbor path end: {path[^1]}. Current centre: {centre}");
+                GD.PrintErr($"Cell {neighbour} could not enter cell {coord}. Neighbor path end: {path[^1]}. Current center: {center}");
                 _debugBadPaths.Add(path);
                 return true;
             }
@@ -337,6 +341,18 @@ public partial class NavGridManager : Node
     public static bool AlmostEqual(float a, float b, float tolerance = 10f)
     {
         return Math.Abs(a - b) < tolerance;
+    }
+    
+    // ── Internal ──────────────────────────────────────────────────────────
+
+    private void ResolveCenter()
+    {
+        if (!string.IsNullOrEmpty(CenterGroup))
+        {
+            var nodes = GetTree().GetNodesInGroup(CenterGroup);
+            if (nodes.Count > 0)
+                Center = nodes[0] as Node2D;
+        }
     }
 
     // ── Debug draw ──────────────────────────────────────────────────────────────
@@ -368,9 +384,9 @@ public partial class NavGridManager : Node
                 DrawRect(new Rect2(origin, size), fill);
                 DrawRect(new Rect2(origin, size), new Color(fill, 0.7f), false, 3f);
 
-                // Coord label at cell centre.
-                var centre = origin + size * 0.5f;
-                DrawString(ThemeDB.FallbackFont, centre, coord.ToString(),
+                // Coord label at cell center.
+                var center = origin + size * 0.5f;
+                DrawString(ThemeDB.FallbackFont, center, coord.ToString(),
                     HorizontalAlignment.Center, -1, (int)(cellPx * 0.12f), Colors.White);
             }
         }

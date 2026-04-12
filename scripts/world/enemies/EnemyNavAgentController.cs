@@ -41,7 +41,6 @@ public partial class EnemyNavAgentController : CharacterBody2D
     [Export] public float TargetUpdateInterval { get; set; } = 0.15f;
 
     [ExportGroup("Target")]
-    [Export] public NodePath TargetPath { get; set; }
     [Export] public string TargetGroup { get; set; } = "Player";
 
     // ── Virtual hooks ─────────────────────────────────────────────────────
@@ -72,6 +71,9 @@ public partial class EnemyNavAgentController : CharacterBody2D
 
     public sealed override void _PhysicsProcess(double delta)
     {
+        if (_target == null)
+            ResolveTarget();
+        
         float distToTarget = _target != null
             ? GlobalPosition.DistanceTo(_target.GlobalPosition)
             : float.MaxValue;
@@ -122,11 +124,6 @@ public partial class EnemyNavAgentController : CharacterBody2D
 
     private void ResolveTarget()
     {
-        if (TargetPath != null && !TargetPath.IsEmpty)
-        {
-            _target = GetNodeOrNull<Node2D>(TargetPath);
-            return;
-        }
         if (!string.IsNullOrEmpty(TargetGroup))
         {
             var nodes = GetTree().GetNodesInGroup(TargetGroup);
