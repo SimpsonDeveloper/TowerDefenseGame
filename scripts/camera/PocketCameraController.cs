@@ -1,3 +1,4 @@
+using System;
 using Godot;
 
 namespace towerdefensegame;
@@ -11,8 +12,12 @@ namespace towerdefensegame;
 public partial class PocketCameraController : Camera2D
 {
     [Export] public float ZoomSpeed { get; set; } = 0.1f;
-    [Export] public float MinZoom { get; set; } = 0.25f;
+    [Export] public float MinZoom { get; set; } = 0.5f;
     [Export] public float MaxZoom { get; set; } = 4.0f;
+    [Export] public bool UseSmoothing { get; set; }
+    [Export] public bool SnapZoom { get; set; } = true;
+
+    public bool InputEnabled { get; set; } = true;
 
     private float _targetZoom;
     private bool _isDragging;
@@ -25,41 +30,54 @@ public partial class PocketCameraController : Camera2D
 
     public override void _Process(double delta)
     {
-        float currentZoom = Mathf.Lerp(Zoom.X, _targetZoom, 10f * (float)delta);
-        Zoom = new Vector2(currentZoom, currentZoom);
+        if (UseSmoothing)
+        {
+            float currentZoom = Mathf.Lerp(Zoom.X, _targetZoom, 10f * (float)delta);
+            Zoom = new Vector2(currentZoom, currentZoom);
+        }
+        else
+        {
+            Zoom = new Vector2(_targetZoom, _targetZoom);
+        }
+        
     }
 
     public override void _Input(InputEvent @event)
     {
-        if (@event is InputEventMouseButton mb && mb.ButtonIndex == MouseButton.Left)
+        if (!InputEnabled) return;
+        switch (@event)
         {
-            _isDragging = mb.Pressed;
-            _lastMousePos = mb.Position;
-        }
-        else if (@event is InputEventMouseMotion motion && _isDragging)
-        {
-            ApplyPan(-(motion.Position - _lastMousePos));
-            _lastMousePos = motion.Position;
+            case InputEventMouseButton { ButtonIndex: MouseButton.Left } mb:
+                _isDragging = mb.Pressed;
+                _lastMousePos = mb.Position;
+                GetViewport().SetInputAsHandled();
+                break;
+            case InputEventMouseMotion motion when _isDragging:
+                ApplyPan(-(motion.Position - _lastMousePos));
+                _lastMousePos = motion.Position;
+                GetViewport().SetInputAsHandled();
+                break;
         }
     }
 
     public override void _UnhandledInput(InputEvent @event)
     {
-        if (@event is not InputEventMouseButton mb)
-            return;
-
-        if (mb.ButtonIndex == MouseButton.WheelUp)
-            _targetZoom += ZoomSpeed;
-        else if (mb.ButtonIndex == MouseButton.WheelDown)
-            _targetZoom -= ZoomSpeed;
-
-        _targetZoom = Mathf.Clamp(_targetZoom, MinZoom, MaxZoom);
+        if (@event is InputEventMouseButton { ButtonIndex: MouseButton.WheelUp or MouseButton.WheelDown, Pressed: true } mb)
+        {
+            float dir = mb.ButtonIndex == MouseButton.WheelUp ? 1f : -1f;
+            ApplyZoomStep(dir);
+            GetViewport().SetInputAsHandled();
+        }
     }
 
-    /// <summary>Called by WorldManager when scrolling over the mini viewport.</summary>
+    /// <summary>Zoom by direction: +1 = zoom in, -1 = zoom out.</summary>
     public void ApplyZoomStep(float direction)
     {
-        _targetZoom += direction * ZoomSpeed;
+        if (SnapZoom)
+            _targetZoom *= direction > 0 ? 2f : 0.5f;
+        else
+            _targetZoom += direction * ZoomSpeed;
+        
         _targetZoom = Mathf.Clamp(_targetZoom, MinZoom, MaxZoom);
     }
 

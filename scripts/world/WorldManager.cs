@@ -47,22 +47,22 @@ public partial class WorldManager : Node2D
 
         if (@event is InputEventMouseButton mb)
         {
-            bool isScroll = mb.ButtonIndex == MouseButton.WheelUp || mb.ButtonIndex == MouseButton.WheelDown;
-
-            if (overMini && isScroll)
+            bool isScroll = mb.ButtonIndex is MouseButton.WheelUp or MouseButton.WheelDown;
+            if (overMini && isScroll && mb.IsPressed())
             {
+                float dir = mb.ButtonIndex == MouseButton.WheelUp ? 1f : -1f;
                 // Forward scroll to pocket camera only when it is the mini viewport;
                 // either way consume the event so the main camera is not affected.
                 if (_overworldIsMain && PocketDimensionCamera != null)
                 {
-                    float dir = mb.ButtonIndex == MouseButton.WheelUp ? 1f : -1f;
                     PocketDimensionCamera.ApplyZoomStep(dir);
+                    GetViewport().SetInputAsHandled();
                 }
                 else if (!_overworldIsMain && OverworldCamera != null)
                 {
-                    OverworldCamera.HandleZoom(mb);
+                    OverworldCamera.ApplyZoomStep(dir);
+                    GetViewport().SetInputAsHandled();
                 }
-                GetViewport().SetInputAsHandled();
             }
             else if (mb.ButtonIndex == MouseButton.Left)
             {
@@ -75,6 +75,7 @@ public partial class WorldManager : Node2D
                 else if (!mb.Pressed && _isDraggingMini)
                 {
                     _isDraggingMini = false;
+                    GetViewport().SetInputAsHandled();
                 }
             }
         }
@@ -120,9 +121,17 @@ public partial class WorldManager : Node2D
         miniContainer.Size     = miniSize;
         miniContainer.ZIndex   = 1; // draw on top of main
 
-        // Route input only to the active world (probably not needed, but keeping it as commented)
-        // mainViewport.HandleInputLocally = true;
-        // miniViewport.HandleInputLocally = false;
+        // Both viewports handle input locally. The mini viewport's nodes have their
+        // own input guards (e.g. PocketCameraController.InputEnabled) to stay inert.
+        // Setting the mini to false would re-push events to the root viewport and
+        // cause WorldManager._Input to fire twice for every event.
+        mainViewport.HandleInputLocally = true;
+        miniViewport.HandleInputLocally = true;
+
+        // Disable PocketCamera's own drag handler when it is the mini viewport;
+        // WorldManager drives it via ApplyPan in that case.
+        if (PocketDimensionCamera != null)
+            PocketDimensionCamera.InputEnabled = !_overworldIsMain;
         
         // Enable player movement only in active world (probably not needed, but keeping it as commented)
         // if (OverworldPlayer != null)

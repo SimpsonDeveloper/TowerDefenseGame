@@ -30,7 +30,7 @@
 [ext_resource type="Texture2D" uid="uid://56tehltoshbg" path="res://icon.svg" id="31_y7ma3"]
 [ext_resource type="Resource" uid="uid://c54gxd5gu86v1" path="res://assets/coord_config.tres" id="33_coordcfg"]
 [ext_resource type="Script" uid="uid://bnphhwegnok8r" path="res://scripts/world/PolygonTerrainManager.cs" id="34_polytm"]
-[ext_resource type="Script" path="res://scripts/player/PlayerSpawner.cs" id="35_spawner"]
+[ext_resource type="Script" uid="uid://biw3x0efa8pp6" path="res://scripts/player/PlayerSpawner.cs" id="35_spawner"]
 
 [sub_resource type="Resource" id="Resource_ak604"]
 script = ExtResource("7_02d50")
@@ -177,7 +177,6 @@ CoordConfig = ExtResource("33_coordcfg")
 [node name="PlayerCamera" type="Camera2D" parent="OverworldContainer/OverworldViewport"]
 position = Vector2(576, 324)
 script = ExtResource("10_lhwp2")
-MinZoom = 0.4
 MaxZoom = 4.0
 
 [node name="CrystalSpawner" type="Node2D" parent="OverworldContainer/OverworldViewport"]
@@ -226,8 +225,8 @@ render_target_update_mode = 4
 
 [node name="PocketDimension" parent="PocketDimensionContainer/PocketDimensionViewport" instance=ExtResource("0_pd")]
 
-[connection signal="PlayerSpawned" from="OverworldContainer/OverworldViewport/PlayerSpawner" to="OverworldContainer/OverworldViewport/PlayerCamera" method="OnPlayerSpawned"]
-[connection signal="PlayerSpawned" from="OverworldContainer/OverworldViewport/PlayerSpawner" to="OverworldContainer/OverworldViewport/CrystalSpawner" method="OnPlayerSpawned"]
-[connection signal="PlayerSpawned" from="OverworldContainer/OverworldViewport/PlayerSpawner" to="OverworldContainer/OverworldViewport/InventoryUI" method="OnPlayerSpawned"]
 [connection signal="PlayerSpawned" from="OverworldContainer/OverworldViewport/PlayerSpawner" to="SpawnFadeOverlay" method="OnPlayerSpawned"]
 [connection signal="PlayerSpawned" from="OverworldContainer/OverworldViewport/PlayerSpawner" to="WorldManager" method="OnPlayerSpawned"]
+[connection signal="PlayerSpawned" from="OverworldContainer/OverworldViewport/PlayerSpawner" to="OverworldContainer/OverworldViewport/InventoryUI" method="OnPlayerSpawned"]
+[connection signal="PlayerSpawned" from="OverworldContainer/OverworldViewport/PlayerSpawner" to="OverworldContainer/OverworldViewport/PlayerCamera" method="OnPlayerSpawned"]
+[connection signal="PlayerSpawned" from="OverworldContainer/OverworldViewport/PlayerSpawner" to="OverworldContainer/OverworldViewport/CrystalSpawner" method="OnPlayerSpawned"]

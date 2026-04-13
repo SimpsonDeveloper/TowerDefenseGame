@@ -178,7 +178,6 @@ CoordConfig = ExtResource("33_coordcfg")
 [node name="PlayerCamera" type="Camera2D" parent="OverworldContainer/OverworldViewport"]
 position = Vector2(576, 324)
 script = ExtResource("10_lhwp2")
-MinZoom = 0.4
 MaxZoom = 4.0
 
 [node name="CrystalSpawner" type="Node2D" parent="OverworldContainer/OverworldViewport"]
@@ -192,12 +191,11 @@ ChunkManager = NodePath("../TerrainGen/ChunkManager")
 CoordConfig = ExtResource("33_coordcfg")
 DebugDrawEnabled = true
 
-[node name="NavGridManager" type="Node2D" parent="OverworldContainer/OverworldViewport" node_paths=PackedStringArray("TerrainManager", "ChunkManager", "Center")]
+[node name="NavGridManager" type="Node2D" parent="OverworldContainer/OverworldViewport" node_paths=PackedStringArray("TerrainManager", "ChunkManager")]
 script = ExtResource("35_navgrid")
 TerrainManager = NodePath("../PolygonTerrainManager")
 ChunkManager = NodePath("../TerrainGen/ChunkManager")
 CoordConfig = ExtResource("33_coordcfg")
-Center = NodePath("")
 DebugDrawEnabled = true
 
 [node name="TestEnemy" type="CharacterBody2D" parent="OverworldContainer/OverworldViewport" node_paths=PackedStringArray("NavAgent")]
