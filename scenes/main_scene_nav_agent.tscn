@@ -235,6 +235,8 @@ render_target_update_mode = 4
 
 [node name="PocketDimension" parent="PocketDimensionContainer/PocketDimensionViewport" instance=ExtResource("0_pd")]
 
+[connection signal="DimensionSwapped" from="WorldManager" to="PocketDimensionContainer/PocketDimensionViewport/PocketDimension/TowerPlacementManager" method="OnDimensionSwapped"]
+[connection signal="DimensionSwapped" from="WorldManager" to="PocketDimensionContainer/PocketDimensionViewport/PocketDimension/TowerPlacementUI" method="OnDimensionSwapped"]
 [connection signal="PlayerSpawned" from="OverworldContainer/OverworldViewport/PlayerSpawner" to="SpawnFadeOverlay" method="OnPlayerSpawned"]
 [connection signal="PlayerSpawned" from="OverworldContainer/OverworldViewport/PlayerSpawner" to="WorldManager" method="OnPlayerSpawned"]
 [connection signal="PlayerSpawned" from="OverworldContainer/OverworldViewport/PlayerSpawner" to="OverworldContainer/OverworldViewport/InventoryUI" method="OnPlayerSpawned"]

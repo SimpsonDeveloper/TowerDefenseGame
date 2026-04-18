@@ -12,6 +12,13 @@ namespace towerdefensegame;
 /// </summary>
 public partial class WorldManager : Node2D
 {
+    /// <summary>
+    /// Emitted whenever the main/mini viewport swap occurs.
+    /// pocketIsMain is true when the pocket dimension becomes the full-screen viewport.
+    /// </summary>
+    [Signal]
+    public delegate void DimensionSwappedEventHandler(bool pocketIsMain);
+
     [Export] public SubViewportContainer OverworldContainer { get; set; }
     [Export] public SubViewportContainer PocketDimensionContainer { get; set; }
     [Export] public SubViewport OverworldViewport { get; set; }
@@ -132,9 +139,11 @@ public partial class WorldManager : Node2D
         // WorldManager drives it via ApplyPan in that case.
         if (PocketDimensionCamera != null)
             PocketDimensionCamera.InputEnabled = !_overworldIsMain;
-        
+
         // Enable player movement only in active world (probably not needed, but keeping it as commented)
         // if (OverworldPlayer != null)
         //     OverworldPlayer.InputEnabled = _overworldIsMain;
+
+        EmitSignal(SignalName.DimensionSwapped, !_overworldIsMain);
     }
 }

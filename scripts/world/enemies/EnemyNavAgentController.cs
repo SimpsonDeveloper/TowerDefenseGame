@@ -126,9 +126,15 @@ public partial class EnemyNavAgentController : CharacterBody2D
     {
         if (!string.IsNullOrEmpty(TargetGroup))
         {
-            var nodes = GetTree().GetNodesInGroup(TargetGroup);
-            if (nodes.Count > 0)
-                _target = nodes[0] as Node2D;
+            var viewport = GetViewport();
+            foreach (Node node in GetTree().GetNodesInGroup(TargetGroup))
+            {
+                if (node is Node2D n2d && n2d.GetViewport() == viewport)
+                {
+                    _target = n2d;
+                    break;
+                }
+            }
         }
         if (_target != null)
             NavAgent.TargetPosition = _target.GlobalPosition;

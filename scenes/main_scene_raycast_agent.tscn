@@ -1,4 +1,4 @@
-[gd_scene load_steps=40 format=3 uid="uid://bvr6e1vs0egs7"]
+[gd_scene load_steps=37 format=3 uid="uid://bvr6e1vs0egs7"]
 
 [ext_resource type="PackedScene" uid="uid://d23xmn1ko1rqq" path="res://scenes/pocket_dimension.tscn" id="0_pd"]
 [ext_resource type="Script" uid="uid://dlf3scmu37ybh" path="res://scripts/world/WorldManager.cs" id="0_wm"]
@@ -28,10 +28,7 @@
 [ext_resource type="Texture2D" uid="uid://xcgwhqceqswt" path="res://assets/world_resources/sprites/enemies/rocket.png" id="29_tsrfn"]
 [ext_resource type="Script" uid="uid://dysrxl15kdjsk" path="res://scripts/world/enemies/EnemyRaycastController.cs" id="30_enemy"]
 [ext_resource type="Script" uid="uid://ccu4vr8pgyovi" path="res://scripts/components/SpriteComponent.cs" id="31_sprite"]
-[ext_resource type="Texture2D" uid="uid://b617im1fwulau" path="res://assets/towers/tower64_top_down_base.png" id="31_xqq0x"]
-[ext_resource type="Texture2D" uid="uid://ci0q6g1612nwm" path="res://assets/towers/tower64_top_down_turret.png" id="32_gqsym"]
 [ext_resource type="Resource" uid="uid://c54gxd5gu86v1" path="res://assets/coord_config.tres" id="33_coordcfg"]
-[ext_resource type="Script" uid="uid://c5o7bnj2ah8mx" path="res://scenes/TurretTower.cs" id="33_gqsym"]
 [ext_resource type="Script" uid="uid://bnphhwegnok8r" path="res://scripts/world/PolygonTerrainManager.cs" id="34_polytm"]
 [ext_resource type="Script" uid="uid://biw3x0efa8pp6" path="res://scripts/player/PlayerSpawner.cs" id="35_spawner"]
 
@@ -217,19 +214,6 @@ shape = SubResource("CircleShape2D_enemy")
 texture = ExtResource("29_tsrfn")
 script = ExtResource("31_sprite")
 
-[node name="TurretTower" type="Node2D" parent="OverworldContainer/OverworldViewport" node_paths=PackedStringArray("TurretSprite", "Target")]
-position = Vector2(483.685, 281.365)
-script = ExtResource("33_gqsym")
-TurretSprite = NodePath("TowerTurret")
-Target = NodePath("../TestEnemy")
-
-[node name="TowerBase" type="Sprite2D" parent="OverworldContainer/OverworldViewport/TurretTower"]
-texture = ExtResource("31_xqq0x")
-
-[node name="TowerTurret" type="Sprite2D" parent="OverworldContainer/OverworldViewport/TurretTower"]
-texture = ExtResource("32_gqsym")
-script = ExtResource("31_sprite")
-
 [node name="PocketDimensionContainer" type="SubViewportContainer" parent="."]
 texture_filter = 1
 stretch = true
@@ -243,6 +227,8 @@ render_target_update_mode = 4
 
 [node name="PocketDimension" parent="PocketDimensionContainer/PocketDimensionViewport" instance=ExtResource("0_pd")]
 
+[connection signal="DimensionSwapped" from="WorldManager" to="PocketDimensionContainer/PocketDimensionViewport/PocketDimension/TowerPlacementManager" method="OnDimensionSwapped"]
+[connection signal="DimensionSwapped" from="WorldManager" to="PocketDimensionContainer/PocketDimensionViewport/PocketDimension/TowerPlacementUI" method="OnDimensionSwapped"]
 [connection signal="PlayerSpawned" from="OverworldContainer/OverworldViewport/PlayerSpawner" to="SpawnFadeOverlay" method="OnPlayerSpawned"]
 [connection signal="PlayerSpawned" from="OverworldContainer/OverworldViewport/PlayerSpawner" to="WorldManager" method="OnPlayerSpawned"]
 [connection signal="PlayerSpawned" from="OverworldContainer/OverworldViewport/PlayerSpawner" to="OverworldContainer/OverworldViewport/InventoryUI" method="OnPlayerSpawned"]

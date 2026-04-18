@@ -42,7 +42,7 @@ public partial class PocketCameraController : Camera2D
         
     }
 
-    public override void _Input(InputEvent @event)
+    public override void _UnhandledInput(InputEvent @event)
     {
         if (!InputEnabled) return;
         switch (@event)
@@ -57,16 +57,10 @@ public partial class PocketCameraController : Camera2D
                 _lastMousePos = motion.Position;
                 GetViewport().SetInputAsHandled();
                 break;
-        }
-    }
-
-    public override void _UnhandledInput(InputEvent @event)
-    {
-        if (@event is InputEventMouseButton { ButtonIndex: MouseButton.WheelUp or MouseButton.WheelDown, Pressed: true } mb)
-        {
-            float dir = mb.ButtonIndex == MouseButton.WheelUp ? 1f : -1f;
-            ApplyZoomStep(dir);
-            GetViewport().SetInputAsHandled();
+            case InputEventMouseButton { ButtonIndex: MouseButton.WheelUp or MouseButton.WheelDown, Pressed: true } mb:
+                ApplyZoomStep(mb.ButtonIndex == MouseButton.WheelUp ? 1f : -1f);
+                GetViewport().SetInputAsHandled();
+                break;
         }
     }
 

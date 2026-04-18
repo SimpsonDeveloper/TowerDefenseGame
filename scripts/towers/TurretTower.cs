@@ -1,7 +1,7 @@
 using Godot;
 using System;
 
-public partial class TurretTower : Node2D
+public partial class TurretTower : StaticBody2D
 {
 	[Export] public SpriteComponent TurretSprite;
 	[Export] public Node2D Target;
@@ -30,13 +30,13 @@ public partial class TurretTower : Node2D
 		// Rotate turret sprite towards target while clamped at maximum speed
 		Vector2 directionToTarget = _target.GlobalPosition - TurretSprite.GlobalPosition;
 		float targetAngle = directionToTarget.Angle();
-    
+	
 		// Calculate the shortest angular difference
 		float angleDiff = Mathf.Wrap(targetAngle - TurretSprite.Rotation, -Mathf.Pi, Mathf.Pi);
-    
+	
 		// Rotate by the maximum allowed speed, or less if closer
 		float rotationStep = Mathf.Clamp(angleDiff, -RotationSpeed * (float)delta, RotationSpeed * (float)delta);
-    
+	
 		TurretSprite.Rotation += rotationStep;
 	}
 	
@@ -44,9 +44,15 @@ public partial class TurretTower : Node2D
 	{
 		if (!string.IsNullOrEmpty(TargetGroupFallback))
 		{
-			var nodes = GetTree().GetNodesInGroup(TargetGroupFallback);
-			if (nodes.Count > 0)
-				_target = nodes[0] as Node2D;
+			var viewport = GetViewport();
+			foreach (Node node in GetTree().GetNodesInGroup(TargetGroupFallback))
+			{
+				if (node is Node2D n2d && n2d.GetViewport() == viewport)
+				{
+					_target = n2d;
+					break;
+				}
+			}
 		}
 	}
 }

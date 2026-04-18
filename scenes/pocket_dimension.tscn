@@ -1,4 +1,4 @@
-[gd_scene load_steps=10 format=3 uid="uid://d23xmn1ko1rqq"]
+[gd_scene load_steps=14 format=3 uid="uid://d23xmn1ko1rqq"]
 
 [ext_resource type="Script" uid="uid://dnb5iegcl3s5r" path="res://scripts/terrain/TerrainGen.cs" id="2_tgen"]
 [ext_resource type="Script" uid="uid://bn66bgttlo0pn" path="res://scripts/terrain/GenRange.cs" id="3_grange"]
@@ -8,6 +8,10 @@
 [ext_resource type="Resource" uid="uid://c54gxd5gu86v1" path="res://assets/coord_config.tres" id="7_ck6mf"]
 [ext_resource type="Resource" uid="uid://cvuw7ah7gs566" path="res://assets/terrain_configs/grass_config.tres" id="7_gcfg"]
 [ext_resource type="Resource" path="res://assets/terrain_configs/terrain_config.tres" id="8_terraincfg"]
+[ext_resource type="Script" path="res://scripts/towers/TowerFootprintTracker.cs" id="9_tft"]
+[ext_resource type="Script" path="res://scripts/towers/TowerPlacementManager.cs" id="10_tpm"]
+[ext_resource type="Script" path="res://scripts/towers/TowerPlacementUI.cs" id="11_tpui"]
+[ext_resource type="Resource" path="res://assets/towers/turret_tower_def.tres" id="12_ttdef"]
 
 [sub_resource type="Resource" id="Resource_pdgenrange"]
 script = ExtResource("3_grange")
@@ -49,3 +53,20 @@ PreGenerateAll = true
 [node name="PocketCamera" type="Camera2D" parent="."]
 position = Vector2(2560, 2560)
 script = ExtResource("6_cam")
+
+[node name="TowerFootprintTracker" type="Node" parent="."]
+script = ExtResource("9_tft")
+
+[node name="TowerPlacementManager" type="Node2D" parent="." node_paths=PackedStringArray("FootprintTracker", "PlacedTowersContainer")]
+script = ExtResource("10_tpm")
+Coords = ExtResource("7_ck6mf")
+FootprintTracker = NodePath("../TowerFootprintTracker")
+PlacedTowersContainer = NodePath("PlacedTowers")
+
+[node name="PlacedTowers" type="Node2D" parent="TowerPlacementManager"]
+
+[node name="TowerPlacementUI" type="CanvasLayer" parent="." node_paths=PackedStringArray("PlacementManager")]
+visible = false
+script = ExtResource("11_tpui")
+PlacementManager = NodePath("../TowerPlacementManager")
+AvailableTowers = Array[Object]([ExtResource("12_ttdef")])
