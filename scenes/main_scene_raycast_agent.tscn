@@ -177,7 +177,7 @@ CoordConfig = ExtResource("33_coordcfg")
 [node name="PlayerCamera" type="Camera2D" parent="OverworldContainer/OverworldViewport"]
 position = Vector2(576, 324)
 script = ExtResource("10_lhwp2")
-MaxZoom = 4.0
+MinZoom = 1.0
 
 [node name="CrystalSpawner" type="Node2D" parent="OverworldContainer/OverworldViewport"]
 script = ExtResource("11_l40q6")

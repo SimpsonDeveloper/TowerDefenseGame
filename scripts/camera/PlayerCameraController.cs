@@ -14,7 +14,7 @@ public partial class PlayerCameraController : Camera2D
 
 	public override void _Ready()
 	{
-		Zoom = new Vector2(1, 1);
+		Zoom = new Vector2(2, 2);
 		_targetZoom = Zoom.X;
 	}
 
