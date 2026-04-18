@@ -25,9 +25,9 @@
 [ext_resource type="Resource" uid="uid://cs0ux6r0q7jwv" path="res://assets/terrain_configs/sand_config.tres" id="27_sand"]
 [ext_resource type="Resource" uid="uid://cxr1s1s660n54" path="res://assets/terrain_configs/water_config.tres" id="28_water"]
 [ext_resource type="Resource" path="res://assets/terrain_configs/terrain_config.tres" id="29_terrain"]
+[ext_resource type="Texture2D" uid="uid://xcgwhqceqswt" path="res://assets/world_resources/sprites/enemies/rocket.png" id="29_tsrfn"]
 [ext_resource type="Script" uid="uid://dysrxl15kdjsk" path="res://scripts/world/enemies/EnemyRaycastController.cs" id="30_enemy"]
 [ext_resource type="Script" uid="uid://ccu4vr8pgyovi" path="res://scripts/components/SpriteComponent.cs" id="31_sprite"]
-[ext_resource type="Texture2D" uid="uid://56tehltoshbg" path="res://icon.svg" id="31_y7ma3"]
 [ext_resource type="Resource" uid="uid://c54gxd5gu86v1" path="res://assets/coord_config.tres" id="33_coordcfg"]
 [ext_resource type="Script" uid="uid://bnphhwegnok8r" path="res://scripts/world/PolygonTerrainManager.cs" id="34_polytm"]
 [ext_resource type="Script" uid="uid://biw3x0efa8pp6" path="res://scripts/player/PlayerSpawner.cs" id="35_spawner"]
@@ -197,19 +197,21 @@ ChunkManager = NodePath("../TerrainGen/ChunkManager")
 CoordConfig = ExtResource("33_coordcfg")
 DebugDrawEnabled = true
 
-[node name="TestEnemy" type="CharacterBody2D" parent="OverworldContainer/OverworldViewport"]
+[node name="TestEnemy" type="CharacterBody2D" parent="OverworldContainer/OverworldViewport" node_paths=PackedStringArray("Sprite")]
 position = Vector2(400, 324)
 collision_layer = 4
 script = ExtResource("30_enemy")
-MoveSpeed = 40.0
+Sprite = NodePath("EnemySprite")
+MoveSpeed = 110.0
 Acceleration = 5.0
+SightRange = 300.0
 DebugDraw = true
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="OverworldContainer/OverworldViewport/TestEnemy"]
 shape = SubResource("CircleShape2D_enemy")
 
 [node name="EnemySprite" type="Sprite2D" parent="OverworldContainer/OverworldViewport/TestEnemy"]
-texture = ExtResource("31_y7ma3")
+texture = ExtResource("29_tsrfn")
 script = ExtResource("31_sprite")
 
 [node name="PocketDimensionContainer" type="SubViewportContainer" parent="."]

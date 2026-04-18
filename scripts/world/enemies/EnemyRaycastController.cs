@@ -33,6 +33,10 @@ public partial class EnemyRaycastController : CharacterBody2D
     // ── State ──────────────────────────────────────────────────────────────
 
     private enum NavState { Waiting, Chasing, FollowingChain }
+    
+    // ── Sprite ─────────────────────────────────────────────────────────────
+    [ExportGroup("Sprite")]
+    [Export] SpriteComponent Sprite { get; set; }
 
     // ── Configuration ──────────────────────────────────────────────────────
 
@@ -217,6 +221,10 @@ public partial class EnemyRaycastController : CharacterBody2D
         Velocity = Velocity.Lerp(_desiredVelocity, Acceleration * (float)delta);
         MoveAndSlide();
 
+        if (Velocity.X > 0)
+            Sprite.FlipH = true;
+        else if (Velocity.X < 0)
+            Sprite.FlipH = false;
         if (DebugDraw)
             QueueRedraw();
         OnPhysicsTick(delta, distToTarget);
