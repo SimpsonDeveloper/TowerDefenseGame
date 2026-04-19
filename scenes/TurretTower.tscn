@@ -1,18 +1,24 @@
-[gd_scene load_steps=6 format=3 uid="uid://2xgnso3nt742"]
+[gd_scene load_steps=8 format=3 uid="uid://2xgnso3nt742"]
 
 [ext_resource type="Script" uid="uid://c5o7bnj2ah8mx" path="res://scripts/towers/TurretTower.cs" id="1_script"]
 [ext_resource type="Texture2D" uid="uid://b617im1fwulau" path="res://assets/towers/tower64_top_down_base.png" id="2_base"]
 [ext_resource type="Texture2D" uid="uid://ci0q6g1612nwm" path="res://assets/towers/tower64_top_down_turret.png" id="3_turret"]
 [ext_resource type="Script" uid="uid://ccu4vr8pgyovi" path="res://scripts/components/SpriteComponent.cs" id="4_sprite"]
+[ext_resource type="Script" uid="uid://chr0avfu2nwee" path="res://scripts/components/DetectionZone.cs" id="5_dz"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_1"]
 size = Vector2(64, 64)
 
-[node name="TurretTower" type="StaticBody2D" node_paths=PackedStringArray("TurretSprite")]
+[sub_resource type="CircleShape2D" id="CircleShape2D_detect"]
+radius = 256.0
+
+[node name="TurretTower" type="StaticBody2D" node_paths=PackedStringArray("TurretSprite", "TargetingZone", "TargetingZoneCollisionShape")]
 collision_layer = 16
 collision_mask = 0
 script = ExtResource("1_script")
 TurretSprite = NodePath("TurretSprite")
+TargetingZone = NodePath("TargetingZone")
+TargetingZoneCollisionShape = NodePath("TargetingZone/CollisionShape2D")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("RectangleShape2D_1")
@@ -23,3 +29,11 @@ texture = ExtResource("2_base")
 [node name="TurretSprite" type="Sprite2D" parent="."]
 texture = ExtResource("3_turret")
 script = ExtResource("4_sprite")
+
+[node name="TargetingZone" type="Area2D" parent="."]
+collision_layer = 0
+collision_mask = 4
+script = ExtResource("5_dz")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="TargetingZone"]
+shape = SubResource("CircleShape2D_detect")

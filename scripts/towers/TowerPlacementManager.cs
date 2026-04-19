@@ -42,7 +42,13 @@ public partial class TowerPlacementManager : Node2D
         CancelPlacement();
 
         _pending = def;
-        _ghost   = new Sprite2D { Texture = def.PreviewTexture, Modulate = ValidColor };
+
+        var ghost = new Node2D { Modulate = ValidColor };
+        ghost.AddChild(new Sprite2D { Texture = def.PreviewTexture });
+        if (def.TargetRadius > 0f)
+            ghost.AddChild(BuildRadiusIndicator(def.TargetRadius));
+
+        _ghost = ghost;
         AddChild(_ghost);
     }
 
@@ -108,6 +114,8 @@ public partial class TowerPlacementManager : Node2D
 
         var tower = _pending.TowerScene.Instantiate<Node2D>();
         tower.GlobalPosition = snapped;
+        if (tower is ITowerPlaceable placeable)
+            placeable.Configure(_pending);
         PlacedTowersContainer.AddChild(tower);
         FootprintTracker.Register(footprint);
 
@@ -122,5 +130,21 @@ public partial class TowerPlacementManager : Node2D
         _inputEnabled = pocketIsMain;
         if (!pocketIsMain)
             CancelPlacement();
+    }
+
+    private static Line2D BuildRadiusIndicator(float radius)
+    {
+        const int Segments = 64;
+        var line = new Line2D
+        {
+            Width        = 1f,
+            DefaultColor = Colors.Aqua,
+        };
+        for (int i = 0; i <= Segments; i++)
+        {
+            float angle = i * Mathf.Tau / Segments;
+            line.AddPoint(new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * radius);
+        }
+        return line;
     }
 }

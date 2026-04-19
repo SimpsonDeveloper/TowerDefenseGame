@@ -11,3 +11,4 @@ DisplayName = "Turret"
 TowerScene = ExtResource("2_scene")
 SizePixels = Vector2i(64, 64)
 PreviewTexture = ExtResource("3_preview")
+TargetRadius = 256.0

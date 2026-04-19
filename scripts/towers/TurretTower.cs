@@ -1,58 +1,57 @@
 using Godot;
-using System;
 
-public partial class TurretTower : StaticBody2D
+namespace towerdefensegame;
+
+public partial class TurretTower : StaticBody2D, ITowerPlaceable
 {
 	[Export] public SpriteComponent TurretSprite;
-	[Export] public Node2D Target;
-	[Export] public string TargetGroupFallback { get; set; } = "Player";
-
+	[Export] public DetectionZone TargetingZone;
+	[Export] public CollisionShape2D TargetingZoneCollisionShape;
 	[Export] public float RotationSpeed = 8;
 
 	private Node2D _target;
-	
+	private float _targetRadius;
+
+	// Stores radius before entering the tree; TargetingZone resolves in _Ready.
+	public void Configure(TowerDef def) => _targetRadius = def.TargetRadius;
+
 	public override void _Ready()
 	{
-		if (Target != null)
-		{
-			_target = Target;
-		}
+		if (TargetingZoneCollisionShape?.Shape is CircleShape2D circle)
+			circle.Radius = _targetRadius;
 	}
-	
+
 	public override void _Process(double delta)
 	{
-		if (_target == null)
-		{
-			ResolveTarget();
-			if (_target == null) return;
-		}
-		
-		// Rotate turret sprite towards target while clamped at maximum speed
+		_target = FindClosestInZone();
+		if (_target == null) return;
+
 		Vector2 directionToTarget = _target.GlobalPosition - TurretSprite.GlobalPosition;
 		float targetAngle = directionToTarget.Angle();
-	
-		// Calculate the shortest angular difference
+
 		float angleDiff = Mathf.Wrap(targetAngle - TurretSprite.Rotation, -Mathf.Pi, Mathf.Pi);
-	
-		// Rotate by the maximum allowed speed, or less if closer
 		float rotationStep = Mathf.Clamp(angleDiff, -RotationSpeed * (float)delta, RotationSpeed * (float)delta);
-	
+
 		TurretSprite.Rotation += rotationStep;
 	}
-	
-	private void ResolveTarget()
+
+	// Returns the closest body in the DetectionZone that belongs to the enemies group.
+	private Node2D FindClosestInZone()
 	{
-		if (!string.IsNullOrEmpty(TargetGroupFallback))
+		Node2D closest = null;
+		float closestDist = float.MaxValue;
+
+		foreach (Node2D body in TargetingZone.GetOverlappingBodies())
 		{
-			var viewport = GetViewport();
-			foreach (Node node in GetTree().GetNodesInGroup(TargetGroupFallback))
+			if (!body.IsInGroup("enemies")) continue;
+			float dist = GlobalPosition.DistanceTo(body.GlobalPosition);
+			if (dist < closestDist)
 			{
-				if (node is Node2D n2d && n2d.GetViewport() == viewport)
-				{
-					_target = n2d;
-					break;
-				}
+				closestDist = dist;
+				closest = body;
 			}
 		}
+
+		return closest;
 	}
 }

@@ -26,6 +26,9 @@ public partial class TowerDef : Resource
     /// <summary>Texture shown as a semi-transparent ghost during placement preview.</summary>
     [Export] public Texture2D PreviewTexture { get; set; }
 
+    /// <summary>World-pixel radius of this tower's targeting zone.</summary>
+    [Export] public float TargetRadius { get; set; }
+
     /// <summary>Resources consumed when the tower is built.</summary>
     [Export] public Array<TowerCost> Cost { get; set; } = new();
 }
