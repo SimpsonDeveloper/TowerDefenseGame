@@ -43,24 +43,24 @@ public partial class DropSpawner : Node2D
 
         if (drop is not Node2D dropNode)
         {
-            GD.PushWarning($"HarvestableResource '{Name}': DropScene root must be a Node2D.");
+            GD.PushWarning($"DropSpawner '{Name}': DropScene root must be a Node2D.");
             drop.QueueFree();
             return;
         }
 
-        bool hasHarvestDrop = false;
+        bool hasResourceDrop = false;
         foreach (var child in dropNode.GetChildren())
         {
-            if (child is HarvestDrop)
+            if (child is ResourceDrop)
             {
-                hasHarvestDrop = true;
+                hasResourceDrop = true;
                 break;
             }
         }
 
-        if (!hasHarvestDrop)
+        if (!hasResourceDrop)
         {
-            GD.PushWarning($"HarvestableResource '{Name}': DropScene has no HarvestDrop component as a direct child.");
+            GD.PushWarning($"DropSpawner '{Name}': DropScene has no ResourceDrop component as a direct child.");
             dropNode.QueueFree();
             return;
         }

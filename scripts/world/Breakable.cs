@@ -5,9 +5,10 @@ using towerdefensegame.scripts.components;
 namespace towerdefensegame.scripts.world;
 
 /// <summary>
-/// Component that handles harvesting behaviour: HP, crack shader, shake, and
+/// Component that handles breaking behaviour: HP, crack shader, shake, and
 /// colour-sampled particles. Emits Broken when HP reaches zero, which frees the
-/// parent body. Connect Broken → HarvestableResource.OnHarvestableBroken in the scene.
+/// parent body. For spawning drops, connect Broken → DropSpawner.OnBreakableBroken
+/// in the scene.
 /// </summary>
 public partial class Breakable : Node2D
 {
@@ -37,8 +38,8 @@ public partial class Breakable : Node2D
         Sprite.Material = _crackMaterial;
     }
 
-    /// <summary>Called by HarvesterComponent on each harvest tick.</summary>
-    public void ApplyHarvestTick()
+    /// <summary>Called by BreakerComponent on each break tick.</summary>
+    public void ApplyBreakTick()
     {
         _hp = Mathf.Max(_hp - 1, 0);
 

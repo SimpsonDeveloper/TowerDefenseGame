@@ -7,10 +7,10 @@ namespace towerdefensegame.scripts.components;
 /// Detects and ticks any Breakable within range using a HitBoxComponent.
 /// Polls the HitBox each physics frame for reliable StaticBody2D detection.
 /// </summary>
-public partial class HarvesterComponent : Node2D
+public partial class BreakerComponent : Node2D
 {
-    /// <summary>Seconds between harvest ticks while in contact with a breakable.</summary>
-    [Export] public float HarvestTickInterval { get; set; } = 0.5f;
+    /// <summary>Seconds between break ticks while in contact with a breakable.</summary>
+    [Export] public float BreakTickInterval { get; set; } = 0.5f;
 
     /// <summary>DetectionZone used to detect nearby Breakables.</summary>
     [Export] public DetectionZone HitBox { get; set; }
@@ -29,10 +29,10 @@ public partial class HarvesterComponent : Node2D
             return;
 
         _tickTimer += (float)delta;
-        if (_tickTimer >= HarvestTickInterval)
+        if (_tickTimer >= BreakTickInterval)
         {
             _tickTimer = 0f;
-            _currentTarget.ApplyHarvestTick();
+            _currentTarget.ApplyBreakTick();
         }
     }
 
@@ -60,7 +60,7 @@ public partial class HarvesterComponent : Node2D
             _currentTarget.Broken -= OnTargetBroken;
 
         _currentTarget = found;
-        _tickTimer = HarvestTickInterval; // fire first tick on the next physics step
+        _tickTimer = BreakTickInterval; // fire first tick on the next physics step
 
         if (_currentTarget != null)
             _currentTarget.Broken += OnTargetBroken;

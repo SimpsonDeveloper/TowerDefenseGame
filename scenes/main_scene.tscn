@@ -21,7 +21,7 @@
 [ext_resource type="Resource" uid="uid://dfds2240tu2v7" path="res://assets/world_resources/variants/crystal_variant_yellow.tres" id="18_cn4eu"]
 [ext_resource type="Script" uid="uid://bmttg70ob2ksw" path="res://scripts/player/PlayerController.cs" id="19_0wyf6"]
 [ext_resource type="Script" uid="uid://wwkhwblavkv8" path="res://scripts/inventory/Inventory.cs" id="20_xp01v"]
-[ext_resource type="Script" uid="uid://b4350bcui80cy" path="res://scripts/components/HarvesterComponent.cs" id="21_jix7a"]
+[ext_resource type="Script" uid="uid://b4350bcui80cy" path="res://scripts/components/BreakerComponent.cs" id="21_jix7a"]
 [ext_resource type="Script" uid="uid://chr0avfu2nwee" path="res://scripts/components/DetectionZone.cs" id="22_segjr"]
 [ext_resource type="Shader" uid="uid://b5b6c4tbr141y" path="res://cloud_circle_nofade_cw.gdshader" id="23_beobj"]
 [ext_resource type="Texture2D" uid="uid://cl3kiv6h4frsf" path="res://assets/32px circle.png" id="24_267kh"]

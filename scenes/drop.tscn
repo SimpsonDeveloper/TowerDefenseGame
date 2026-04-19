@@ -1,6 +1,6 @@
 [gd_scene load_steps=11 format=3 uid="uid://c38yeabg3j00p"]
 
-[ext_resource type="Script" uid="uid://bia7o0bu4ms1r" path="res://scripts/world/drops/HarvestDrop.cs" id="1_harvd"]
+[ext_resource type="Script" uid="uid://bia7o0bu4ms1r" path="res://scripts/world/drops/ResourceDrop.cs" id="1_harvd"]
 [ext_resource type="Script" uid="uid://b308t5jfrhlvv" path="res://scripts/world/drops/InventoryPickup.cs" id="2_invpu"]
 [ext_resource type="Script" uid="uid://chr0avfu2nwee" path="res://scripts/components/DetectionZone.cs" id="3_dzone"]
 [ext_resource type="Script" uid="uid://ccu4vr8pgyovi" path="res://scripts/components/SpriteComponent.cs" id="4_sprc"]

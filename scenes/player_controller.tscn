@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" uid="uid://bmttg70ob2ksw" path="res://scripts/player/PlayerController.cs" id="1_7va2w"]
 [ext_resource type="Script" uid="uid://wwkhwblavkv8" path="res://scripts/inventory/Inventory.cs" id="3_ga2kn"]
-[ext_resource type="Script" uid="uid://b4350bcui80cy" path="res://scripts/components/HarvesterComponent.cs" id="4_lwvb4"]
+[ext_resource type="Script" uid="uid://b4350bcui80cy" path="res://scripts/components/BreakerComponent.cs" id="4_lwvb4"]
 [ext_resource type="Script" uid="uid://chr0avfu2nwee" path="res://scripts/components/DetectionZone.cs" id="5_mfmwq"]
 [ext_resource type="Shader" uid="uid://b5b6c4tbr141y" path="res://cloud_circle_nofade_cw.gdshader" id="6_1kmjt"]
 [ext_resource type="Texture2D" uid="uid://cl3kiv6h4frsf" path="res://assets/32px circle.png" id="7_bqnof"]
@@ -88,14 +88,14 @@ shape = SubResource("CircleShape2D_player")
 [node name="Inventory" type="Node2D" parent="."]
 script = ExtResource("3_ga2kn")
 
-[node name="HarvesterComponent" type="Node2D" parent="." node_paths=PackedStringArray("HitBox")]
+[node name="BreakerComponent" type="Node2D" parent="." node_paths=PackedStringArray("HitBox")]
 script = ExtResource("4_lwvb4")
-HitBox = NodePath("../HarvestHitBox")
+HitBox = NodePath("../BreakerHitBox")
 
-[node name="HarvestHitBox" type="Area2D" parent="."]
+[node name="BreakerHitBox" type="Area2D" parent="."]
 script = ExtResource("5_mfmwq")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="HarvestHitBox"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="BreakerHitBox"]
 shape = SubResource("CircleShape2D_harvest")
 
 [node name="SubViewport" type="SubViewport" parent="."]

@@ -5,7 +5,7 @@ using towerdefensegame.scripts.player;
 namespace towerdefensegame.scripts.world.drops;
 
 /// <summary>
-/// Handles the physical lifecycle of a harvest drop:
+/// Handles the physical lifecycle of a drop:
 ///   1. On spawn — applies a random burst velocity so drops scatter from the crystal.
 ///   2. Each frame — once the player enters the MagnetZone the drop accelerates toward
 ///      them continuously until picked up.
