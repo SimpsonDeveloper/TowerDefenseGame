@@ -1,7 +1,8 @@
-using Godot;
 using System.Collections.Generic;
+using Godot;
+using towerdefensegame.scripts.components;
 
-namespace towerdefensegame;
+namespace towerdefensegame.scripts.world.enemies;
 
 /// <summary>
 /// Enemy variant that navigates via raycasts and a chain of "last seen" checkpoints.

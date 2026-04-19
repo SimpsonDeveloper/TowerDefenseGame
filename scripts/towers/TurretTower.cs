@@ -1,6 +1,7 @@
 using Godot;
+using towerdefensegame.scripts.components;
 
-namespace towerdefensegame;
+namespace towerdefensegame.scripts.towers;
 
 public partial class TurretTower : StaticBody2D, ITowerPlaceable
 {

@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using Godot;
 
-namespace towerdefensegame;
+namespace towerdefensegame.scripts.terrain;
 
 public partial class TerrainGen : Node2D, ISimplexGenConfigurable
 {
@@ -14,7 +14,7 @@ public partial class TerrainGen : Node2D, ISimplexGenConfigurable
     
     [Export] public ChunkManager ChunkManager;
 
-    public Dictionary<TerrainType, SimplexGen> SimplexGensMapped { get; private set; }
+    public System.Collections.Generic.Dictionary<TerrainType, SimplexGen> SimplexGensMapped { get; private set; }
         
     private FastNoiseLite _noise;
     
@@ -240,7 +240,7 @@ public partial class TerrainGen : Node2D, ISimplexGenConfigurable
     /// <summary>
     /// Builds a lookup from TerrainType to its SimplexGen.
     /// </summary>
-    private Dictionary<TerrainType, SimplexGen> BuildSimplexGenLookup()
+    private System.Collections.Generic.Dictionary<TerrainType, SimplexGen> BuildSimplexGenLookup()
     {
         var lookup = new Dictionary<TerrainType, SimplexGen>();
         foreach (var gen in SimplexGens)

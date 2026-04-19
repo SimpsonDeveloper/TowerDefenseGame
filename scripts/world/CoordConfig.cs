@@ -1,6 +1,6 @@
 using Godot;
 
-namespace towerdefensegame;
+namespace towerdefensegame.scripts.world;
 
 /// <summary>
 /// Single source of truth for every coordinate-space size constant in the game.

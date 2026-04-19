@@ -1,7 +1,7 @@
 using Godot;
 using Godot.Collections;
 
-namespace towerdefensegame;
+namespace towerdefensegame.scripts.towers;
 
 /// <summary>
 /// Data resource describing one tower type.

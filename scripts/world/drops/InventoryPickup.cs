@@ -1,4 +1,9 @@
 using Godot;
+using towerdefensegame.scripts.components;
+using towerdefensegame.scripts.inventory;
+using towerdefensegame.scripts.player;
+
+namespace towerdefensegame.scripts.world.drops;
 
 /// <summary>
 /// Picks up the parent drop Node2D when the player enters the HitBox.

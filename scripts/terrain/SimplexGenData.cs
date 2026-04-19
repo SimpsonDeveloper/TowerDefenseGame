@@ -1,6 +1,6 @@
 using Godot;
 
-namespace towerdefensegame;
+namespace towerdefensegame.scripts.terrain;
 
 /// <summary>
 /// Resource that stores simplex noise configuration values.

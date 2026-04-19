@@ -1,5 +1,7 @@
 using Godot;
 
+namespace towerdefensegame.scripts.components;
+
 /// <summary>
 /// A typed Area2D used as a detection zone for overlap-based actions such as
 /// harvesting and picking up items. Attach a CollisionShape2D child to define

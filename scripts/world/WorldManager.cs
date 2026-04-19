@@ -1,6 +1,8 @@
 using Godot;
+using towerdefensegame.scripts.camera;
+using towerdefensegame.scripts.player;
 
-namespace towerdefensegame;
+namespace towerdefensegame.scripts.world;
 
 /// <summary>
 /// Manages the dual-viewport system: overworld and pocket dimension.

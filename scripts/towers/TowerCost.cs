@@ -1,6 +1,7 @@
 using Godot;
+using towerdefensegame.scripts.world;
 
-namespace towerdefensegame;
+namespace towerdefensegame.scripts.towers;
 
 /// <summary>
 /// One entry in a tower's build cost: a resource type and the quantity required.

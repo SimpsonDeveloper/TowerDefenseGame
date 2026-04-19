@@ -1,7 +1,7 @@
 using Godot;
 using Godot.Collections;
 
-namespace towerdefensegame;
+namespace towerdefensegame.scripts.towers;
 
 /// <summary>
 /// Mock placement UI: a panel anchored to the right edge of the pocket dimension

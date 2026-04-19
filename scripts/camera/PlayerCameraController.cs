@@ -1,4 +1,7 @@
 using Godot;
+using towerdefensegame.scripts.player;
+
+namespace towerdefensegame.scripts.camera;
 
 public partial class PlayerCameraController : Camera2D
 {

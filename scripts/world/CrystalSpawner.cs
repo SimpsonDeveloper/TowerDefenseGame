@@ -1,5 +1,7 @@
 using Godot;
+using towerdefensegame.scripts.player;
 
+namespace towerdefensegame.scripts.world;
 /// <summary>
 /// Spawns a ring of crystals around the player when <see cref="OnPlayerSpawned"/>
 /// is called. Connect <see cref="PlayerSpawner.PlayerSpawned"/> to this method in

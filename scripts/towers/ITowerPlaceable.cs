@@ -1,4 +1,4 @@
-namespace towerdefensegame;
+namespace towerdefensegame.scripts.towers;
 
 /// <summary>
 /// Implemented by tower scene roots to receive configuration from TowerDef

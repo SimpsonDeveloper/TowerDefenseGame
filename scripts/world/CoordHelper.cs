@@ -1,6 +1,6 @@
 using Godot;
 
-namespace towerdefensegame;
+namespace towerdefensegame.scripts.world;
 
 /// <summary>
 /// Static conversion helpers between every coordinate space in the game.

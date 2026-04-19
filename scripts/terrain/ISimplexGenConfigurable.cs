@@ -1,4 +1,4 @@
-﻿namespace towerdefensegame;
+﻿namespace towerdefensegame.scripts.terrain;
 
 public interface ISimplexGenConfigurable
 {

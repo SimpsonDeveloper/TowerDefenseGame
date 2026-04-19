@@ -1,5 +1,6 @@
 using Godot;
-using towerdefensegame;
+
+namespace towerdefensegame.scripts.ui;
 
 /// <summary>
 /// Builds labeled HSlider widgets arranged on a two-column grid inside any Container.

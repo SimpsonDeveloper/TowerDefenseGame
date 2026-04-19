@@ -1,6 +1,6 @@
 using Godot;
 
-namespace towerdefensegame;
+namespace towerdefensegame.scripts.world.enemies;
 
 /// <summary>
 /// Enemy variant that delegates pathfinding to Godot's built-in NavigationAgent2D.

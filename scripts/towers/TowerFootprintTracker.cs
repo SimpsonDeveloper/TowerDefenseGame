@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using Godot;
 
-namespace towerdefensegame;
+namespace towerdefensegame.scripts.towers;
 
 /// <summary>
 /// Tracks which tile coordinates are occupied by placed towers inside the

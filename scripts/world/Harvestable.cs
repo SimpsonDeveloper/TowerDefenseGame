@@ -1,5 +1,8 @@
 using System.Collections.Generic;
 using Godot;
+using towerdefensegame.scripts.components;
+
+namespace towerdefensegame.scripts.world;
 
 /// <summary>
 /// Component that handles harvesting behaviour: HP, crack shader, shake, and

@@ -1,5 +1,7 @@
 using Godot;
 
+namespace towerdefensegame.scripts.components;
+
 /// <summary>
 /// A typed Sprite2D used as a sprite component. Other systems (e.g. InventoryPickup,
 /// InventoryUI) reference this to access the sprite's texture without coupling to a

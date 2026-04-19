@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using Godot;
 
-namespace towerdefensegame;
+namespace towerdefensegame.scripts.terrain;
 
 /// <summary>
 /// Defines the types of terrain in the game.

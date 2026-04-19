@@ -1,7 +1,6 @@
-using System;
 using Godot;
 
-namespace towerdefensegame;
+namespace towerdefensegame.scripts.camera;
 
 /// <summary>
 /// Free-pan camera for the pocket dimension.

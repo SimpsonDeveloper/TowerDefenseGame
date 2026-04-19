@@ -1,8 +1,9 @@
 using System;
 using System.Collections.Generic;
 using Godot;
+using towerdefensegame.scripts.terrain;
 
-namespace towerdefensegame;
+namespace towerdefensegame.scripts.world;
 
 /// <summary>
 /// Maintains a sparse grid of NavigationRegion2D cells around a moving center node.

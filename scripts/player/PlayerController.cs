@@ -1,5 +1,7 @@
 using Godot;
 
+namespace towerdefensegame.scripts.player;
+
 public partial class PlayerController : CharacterBody2D
 {
 	[Export] public float MoveSpeed { get; set; } = 200.0f;

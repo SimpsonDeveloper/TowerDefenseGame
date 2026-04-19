@@ -1,7 +1,8 @@
 using System.Collections.Generic;
 using Godot;
+using towerdefensegame.scripts.world;
 
-namespace towerdefensegame;
+namespace towerdefensegame.scripts.towers;
 
 /// <summary>
 /// Stateless snap math for tower placement.

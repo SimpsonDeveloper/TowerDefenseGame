@@ -1,4 +1,7 @@
 using Godot;
+using towerdefensegame.scripts.ui;
+
+namespace towerdefensegame.scripts.camera;
 
 public partial class PlayerCameraConfig : Container
 {

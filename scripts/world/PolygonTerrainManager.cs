@@ -1,7 +1,9 @@
+using System;
 using System.Collections.Generic;
 using Godot;
+using towerdefensegame.scripts.terrain;
 
-namespace towerdefensegame;
+namespace towerdefensegame.scripts.world;
 
 /// <summary>
 /// Incrementally builds terrain collision polygons as chunks generate.
@@ -40,7 +42,7 @@ public partial class PolygonTerrainManager : Node2D
     /// consumed by a merge, so nav cells can selectively rebake only the affected area.
     /// </summary>
     public IReadOnlyList<Vector2I> LastAffectedChunks { get; private set; } =
-        System.Array.Empty<Vector2I>();
+        Array.Empty<Vector2I>();
 
     [Export] public ChunkManager ChunkManager { get; set; }
     [Export] public CoordConfig CoordConfig { get; set; }
@@ -107,7 +109,7 @@ public partial class PolygonTerrainManager : Node2D
             child.QueueFree();
         _timer = -1;
         RefreshDebugDraw();
-        LastAffectedChunks = System.Array.Empty<Vector2I>(); // empty = full invalidation
+        LastAffectedChunks = Array.Empty<Vector2I>(); // empty = full invalidation
         EmitSignal(SignalName.BlobsUpdated);
     }
 
@@ -334,7 +336,7 @@ public partial class PolygonTerrainManager : Node2D
     private static Vector2I FirstKey(Dictionary<Vector2I, List<Vector2I>> dict)
     {
         foreach (var key in dict.Keys) return key;
-        throw new System.InvalidOperationException("Empty graph.");
+        throw new InvalidOperationException("Empty graph.");
     }
 
     // ── Blob management ────────────────────────────────────────────────────────
@@ -409,7 +411,7 @@ public partial class PolygonTerrainManager : Node2D
     {
         foreach (var child in body.GetChildren())
             if (child is CollisionPolygon2D cp) return cp.Polygon;
-        return System.Array.Empty<Vector2>();
+        return Array.Empty<Vector2>();
     }
 
     private void RegisterBlob(StaticBody2D body, HashSet<Vector2I> chunks)

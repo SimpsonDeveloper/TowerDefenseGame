@@ -1,5 +1,8 @@
 using Godot;
-using towerdefensegame;
+using towerdefensegame.scripts.terrain;
+using towerdefensegame.scripts.world;
+
+namespace towerdefensegame.scripts.player;
 
 /// <summary>
 /// Finds valid (non-colliding) spawn positions by scanning terrain tile data outward

@@ -1,6 +1,6 @@
 ﻿using Godot;
 
-namespace towerdefensegame;
+namespace towerdefensegame.scripts.terrain;
 
 [GlobalClass]
 public partial class GenRange : Resource

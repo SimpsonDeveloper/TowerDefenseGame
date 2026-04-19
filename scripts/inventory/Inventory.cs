@@ -2,6 +2,8 @@ using System.Collections.Generic;
 using System.Linq;
 using Godot;
 
+namespace towerdefensegame.scripts.inventory;
+
 /// <summary>
 /// Tracks the player's collected items. Items of the same name stack up to MaxStackSize
 /// before a new slot is created. Emits InventoryChanged whenever the contents change.

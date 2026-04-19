@@ -1,8 +1,9 @@
 using System;
 using System.Collections.Generic;
 using Godot;
+using towerdefensegame.scripts.world;
 
-namespace towerdefensegame;
+namespace towerdefensegame.scripts.terrain;
 
 /// <summary>
 /// Renders a chunk using a Sprite2D with a generated texture.

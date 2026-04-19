@@ -1,4 +1,7 @@
 using Godot;
+using towerdefensegame.scripts.world;
+
+namespace towerdefensegame.scripts.components;
 
 /// <summary>
 /// Detects and ticks any Harvestable within range using a HitBoxComponent.

@@ -1,4 +1,7 @@
 using Godot;
+using towerdefensegame.scripts.player;
+
+namespace towerdefensegame.scripts.ui;
 
 /// <summary>
 /// Full-screen black overlay that fades out when the player finishes spawning.

@@ -1,4 +1,7 @@
 using Godot;
+using towerdefensegame.scripts.player;
+
+namespace towerdefensegame.scripts.inventory;
 
 /// <summary>
 /// CanvasLayer that renders the player's inventory as a row of slots anchored to the

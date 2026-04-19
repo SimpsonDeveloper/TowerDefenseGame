@@ -1,7 +1,7 @@
 using System;
 using Godot;
 
-namespace towerdefensegame;
+namespace towerdefensegame.scripts.terrain;
 
 [GlobalClass]
 public partial class SimplexGen : Node2D, ISimplexGenConfigurable

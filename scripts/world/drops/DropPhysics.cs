@@ -1,4 +1,8 @@
 using Godot;
+using towerdefensegame.scripts.components;
+using towerdefensegame.scripts.player;
+
+namespace towerdefensegame.scripts.world.drops;
 
 /// <summary>
 /// Handles the physical lifecycle of a harvest drop:

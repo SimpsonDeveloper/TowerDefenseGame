@@ -1,6 +1,6 @@
 using Godot;
 
-namespace towerdefensegame;
+namespace towerdefensegame.scripts.terrain;
 
 /// <summary>
 /// Holds the generated tile data for a chunk.

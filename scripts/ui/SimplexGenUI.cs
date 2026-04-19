@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
 using Godot;
+using towerdefensegame.scripts.terrain;
+using Range = Godot.Range;
 
-namespace towerdefensegame;
+namespace towerdefensegame.scripts.ui;
 
 public partial class SimplexGenUI : Container
 {
@@ -31,7 +33,7 @@ public partial class SimplexGenUI : Container
         AddSlider(cfg.Name + " Gain",       cfg.Gain,       1, 1, OnFractalGainChanged);
     }
 
-    private void AddSlider(string name, float initial, int row, int col, Godot.Range.ValueChangedEventHandler cb)
+    private void AddSlider(string name, float initial, int row, int col, Range.ValueChangedEventHandler cb)
     {
         bool isInt = Mathf.IsEqualApprox(initial, Mathf.Round(initial));
         (float min, float max) = isInt ? ComputeIntRange(initial) : ComputeRange(initial);

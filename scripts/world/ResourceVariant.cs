@@ -1,5 +1,6 @@
 using Godot;
-using towerdefensegame.scripts.world;
+
+namespace towerdefensegame.scripts.world;
 
 /// <summary>
 /// Data resource describing one harvestable resource variant.

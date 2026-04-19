@@ -1,7 +1,8 @@
 using System.Collections.Generic;
 using Godot;
+using towerdefensegame.scripts.world;
 
-namespace towerdefensegame;
+namespace towerdefensegame.scripts.towers;
 
 /// <summary>
 /// Manages the tower placement state machine inside the pocket dimension.
@@ -134,15 +135,15 @@ public partial class TowerPlacementManager : Node2D
 
     private static Line2D BuildRadiusIndicator(float radius)
     {
-        const int Segments = 64;
+        const int segments = 64;
         var line = new Line2D
         {
             Width        = 1f,
             DefaultColor = Colors.Aqua,
         };
-        for (int i = 0; i <= Segments; i++)
+        for (int i = 0; i <= segments; i++)
         {
-            float angle = i * Mathf.Tau / Segments;
+            float angle = i * Mathf.Tau / segments;
             line.AddPoint(new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * radius);
         }
         return line;

@@ -3,8 +3,9 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Godot;
+using towerdefensegame.scripts.world;
 
-namespace towerdefensegame;
+namespace towerdefensegame.scripts.terrain;
 
 /// <summary>
 /// Manages terrain chunk generation and tracking.
