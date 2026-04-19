@@ -5,27 +5,27 @@ using towerdefensegame.scripts.world;
 namespace towerdefensegame.scripts;
 /// <summary>
 /// Autoload singleton. Populate the Variants array in item_registry.tcsn in the editor with all
-/// ResourceVariant .tres files. Add item_registry.tcsn to autoloads via Project → Project Settings → Globals.
+/// ResourceData .tres files. Add item_registry.tcsn to autoloads via Project → Project Settings → Globals.
 /// </summary>
 public partial class ItemRegistry : Node2D
 {
     public static ItemRegistry Instance { get; private set; }
 
-    [Export] public ResourceVariant[] Variants { get; set; } = [];
+    [Export] public ResourceData[] Resources { get; set; } = [];
 
-    private readonly Dictionary<string, ResourceVariant> _variants = new();
+    private readonly Dictionary<ResourceId, ResourceData> _resourcesById = new();
 
     public override void _Ready()
     {
         Instance = this;
 
-        foreach (var variant in Variants)
+        foreach (var resource in Resources)
         {
-            if (variant != null)
-                _variants[variant.ItemName] = variant;
+            if (resource != null)
+                _resourcesById[resource.ResourceId] = resource;
         }
     }
 
-    public ResourceVariant Get(string itemName) =>
-        _variants.GetValueOrDefault(itemName);
+    public ResourceData Get(ResourceId resourceId) =>
+        _resourcesById.GetValueOrDefault(resourceId);
 }

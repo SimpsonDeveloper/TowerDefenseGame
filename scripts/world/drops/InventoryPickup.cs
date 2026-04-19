@@ -18,7 +18,7 @@ public partial class InventoryPickup : Node2D
     /// <summary>Seconds before an uncollected drop despawns. Default is 5 minutes.</summary>
     [Export] public float DespawnTime { get; set; } = 300f;
 
-    public string ItemName { get; set; } = "Unknown";
+    public ResourceId ItemResourceId { get; set; } = ResourceId.Unknown;
     private bool  _pickedUp;
     private float _age;
 
@@ -53,7 +53,7 @@ public partial class InventoryPickup : Node2D
             }
 
             _pickedUp = true;
-            inventory.AddItem(ItemName);
+            inventory.AddItem(ItemResourceId);
             GetParent().QueueFree();
             return;
         }

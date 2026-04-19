@@ -10,4 +10,4 @@
 
 [node name="ItemRegistry" type="Node2D"]
 script = ExtResource("1_15i13")
-Variants = Array[Object]([ExtResource("2_k6db5"), ExtResource("3_33es5"), ExtResource("4_ym51f"), ExtResource("5_5umy2"), ExtResource("6_fosj3"), ExtResource("7_02di7")])
+Resources = Array[Object]([ExtResource("2_k6db5"), ExtResource("3_33es5"), ExtResource("4_ym51f"), ExtResource("5_5umy2"), ExtResource("6_fosj3"), ExtResource("7_02di7")])

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Godot;
+using towerdefensegame.scripts.world;
 
 namespace towerdefensegame.scripts.inventory;
 
@@ -15,28 +16,40 @@ public partial class Inventory : Node2D
     [Signal]
     public delegate void InventoryChangedEventHandler();
 
-    public class InventoryItem
+    public class InventoryItemStack
     {
-        public string Name;
-        public int    Count;
+        public ResourceId ResourceId;
+        public int          Count;
     }
 
-    private readonly List<InventoryItem> _items = new();
+    private readonly Dictionary<ResourceId, List<InventoryItemStack>> _items = new();
 
-    public IReadOnlyList<InventoryItem> Items => _items;
+    /// <summary>
+    /// Flattens the _items dictionary with deferred execution. Doesn't create an intermediate collection.
+    /// </summary>
+    public IEnumerable<InventoryItemStack> Items => _items.Values.SelectMany(list => list);
 
-    public void AddItem(string name)
+    public void AddItem(ResourceId resourceId)
     {
-        var existing = _items.LastOrDefault(i => i.Name == name && i.Count < MaxStackSize);
-        if (existing != null)
+        // Check for existing item stacks with the same resourceEnumValue
+        if (_items.TryGetValue(resourceId, out List<InventoryItemStack> candidateStacks))
         {
-            existing.Count++;
+            // Find an existing item stack which hasn't reached MaxStackSize
+            var existing = candidateStacks.FirstOrDefault(i => i.Count < MaxStackSize);
+            if (existing != null)
+                // Add to the existing stack
+                existing.Count++;
+            else
+                // Start a new stack
+                candidateStacks.Add(new InventoryItemStack { Count = 1, ResourceId = resourceId });
         }
         else
         {
-            _items.Add(new InventoryItem { Name = name, Count = 1 });
+            // Start a new stack
+            _items[resourceId] = [ new InventoryItemStack { Count = 1, ResourceId = resourceId } ];
         }
 
+        // Signify the inventory has changed
         EmitSignal(SignalName.InventoryChanged);
     }
 }

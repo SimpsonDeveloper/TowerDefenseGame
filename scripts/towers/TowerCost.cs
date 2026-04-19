@@ -9,6 +9,6 @@ namespace towerdefensegame.scripts.towers;
 [GlobalClass]
 public partial class TowerCost : Resource
 {
-    [Export] public ResourceVariant Variant { get; set; }
+    [Export] public ResourceData Data { get; set; }
     [Export] public int Amount { get; set; } = 1;
 }

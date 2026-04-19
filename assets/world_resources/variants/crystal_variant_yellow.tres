@@ -1,13 +1,18 @@
-[gd_resource type="Resource" script_class="ResourceVariant" load_steps=4 format=3 uid="uid://dfds2240tu2v7"]
+[gd_resource type="Resource" script_class="ResourceData" load_steps=6 format=3 uid="uid://dfds2240tu2v7"]
 
 [ext_resource type="Texture2D" uid="uid://dyawvlep14n77" path="res://assets/world_resources/sprites/crystal/crystal_yellow_shard.png" id="1_hqu6t"]
 [ext_resource type="Texture2D" uid="uid://bxspw1uoeyj5i" path="res://assets/world_resources/sprites/crystal/crystal_yellow.png" id="2_4iqxu"]
-[ext_resource type="Script" uid="uid://crt2c3ejj8hxo" path="res://scripts/world/ResourceVariant.cs" id="3_s0r88"]
+[ext_resource type="Script" uid="uid://bxpts7jc8yyeo" path="res://scripts/world/ResourceId.cs" id="3_4iqxu"]
+[ext_resource type="Script" uid="uid://crt2c3ejj8hxo" path="res://scripts/world/ResourceData.cs" id="4_s0r88"]
+
+[sub_resource type="Resource" id="Resource_8mmoh"]
+script = ExtResource("3_4iqxu")
+Id = "crystal_yellow"
+metadata/_custom_type_script = "uid://bxpts7jc8yyeo"
 
 [resource]
-script = ExtResource("3_s0r88")
+script = ExtResource("4_s0r88")
 HarvestableTexture = ExtResource("2_4iqxu")
 DropTexture = ExtResource("1_hqu6t")
-ItemName = "crystal_yellow"
-ResourceEnum = 5
+ResourceId = SubResource("Resource_8mmoh")
 metadata/_custom_type_script = "uid://crt2c3ejj8hxo"

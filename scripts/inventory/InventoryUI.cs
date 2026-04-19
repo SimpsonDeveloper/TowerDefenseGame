@@ -81,14 +81,14 @@ public partial class InventoryUI : CanvasLayer
             _slotsContainer.AddChild(CreateSlot(item));
     }
 
-    private static Control CreateSlot(Inventory.InventoryItem item)
+    private static Control CreateSlot(Inventory.InventoryItemStack itemStack)
     {
         var panel = new Panel
         {
             CustomMinimumSize = new Vector2(SlotSize, SlotSize),
         };
 
-        var dropTexture = ItemRegistry.Instance?.Get(item.Name)?.DropTexture;
+        var dropTexture = ItemRegistry.Instance?.Get(itemStack.ResourceId)?.DropTexture;
         if (dropTexture != null)
         {
             var texture = new TextureRect
@@ -103,7 +103,7 @@ public partial class InventoryUI : CanvasLayer
 
         var label = new Label
         {
-            Text           = item.Count.ToString(),
+            Text           = itemStack.Count.ToString(),
             AnchorLeft     = 1f,
             AnchorRight    = 1f,
             AnchorBottom   = 1f,

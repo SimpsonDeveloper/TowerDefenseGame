@@ -11,7 +11,7 @@ namespace towerdefensegame.scripts.world;
 /// </summary>
 public partial class HarvestableResource : Node2D
 {
-    [Export] public ResourceVariant Variant { get; set; }
+    [Export] public ResourceData Data { get; set; }
     [Export] public PackedScene DropScene { get; set; }
     [Export] public SpriteComponent Sprite { get; set; }
     [Export] public int MinDropCount { get; set; } = 1;
@@ -23,8 +23,8 @@ public partial class HarvestableResource : Node2D
     {
         _rng.Randomize();
 
-        if (Variant?.HarvestableTexture != null && Sprite != null)
-            Sprite.Texture = Variant.HarvestableTexture;
+        if (Data?.HarvestableTexture != null && Sprite != null)
+            Sprite.Texture = Data.HarvestableTexture;
     }
 
     // Connected to Harvestable.Broken in the scene.
@@ -73,18 +73,18 @@ public partial class HarvestableResource : Node2D
             return;
         }
 
-        if (Variant?.DropTexture != null)
+        if (Data?.DropTexture != null)
         {
             var dropSprite = dropNode.GetNodeOrNull<SpriteComponent>("DropSprite");
             if (dropSprite != null)
-                dropSprite.Texture = Variant.DropTexture;
+                dropSprite.Texture = Data.DropTexture;
         }
 
-        if (Variant?.ItemName != null)
+        if (Data?.ResourceId != null)
         {
             var pickup = dropNode.GetNodeOrNull<InventoryPickup>("InventoryPickup");
             if (pickup != null)
-                pickup.ItemName = Variant.ItemName;
+                pickup.ItemResourceId = Data.ResourceId;
         }
 
         GetParent<Node2D>().GetParent().AddChild(dropNode);

@@ -5,7 +5,7 @@ namespace towerdefensegame.scripts.world;
 /// <summary>
 /// Spawns a ring of crystals around the player when <see cref="OnPlayerSpawned"/>
 /// is called. Connect <see cref="PlayerSpawner.PlayerSpawned"/> to this method in
-/// the scene. Each spawned crystal is assigned a random <see cref="ResourceVariant"/>
+/// the scene. Each spawned crystal is assigned a random <see cref="ResourceData"/>
 /// from the <see cref="Variants"/> array.
 /// </summary>
 public partial class CrystalSpawner : Node2D
@@ -20,10 +20,10 @@ public partial class CrystalSpawner : Node2D
     [Export] public float SpawnRadius { get; set; } = 300f;
 
     /// <summary>
-    /// Available resource variants. Each spawned crystal picks one at random.
+    /// Available crystal resource variants. Each spawned crystal picks one at random.
     /// Leave empty to use the scene's default textures.
     /// </summary>
-    [Export] public ResourceVariant[] Variants { get; set; } = [];
+    [Export] public ResourceData[] Variants { get; set; } = [];
 
     private RandomNumberGenerator _rng = new();
 
@@ -63,13 +63,13 @@ public partial class CrystalSpawner : Node2D
         }
     }
 
-    private static void ApplyVariant(Node2D crystal, ResourceVariant variant)
+    private static void ApplyVariant(Node2D crystal, ResourceData data)
     {
         foreach (var child in crystal.GetChildren())
         {
             if (child is HarvestableResource resource)
             {
-                resource.Variant = variant;
+                resource.Data = data;
                 return;
             }
         }
