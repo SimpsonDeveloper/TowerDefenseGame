@@ -1,20 +1,21 @@
-[gd_scene load_steps=5 format=3 uid="uid://dw7guwm5ixpgi"]
+[gd_scene load_steps=6 format=3 uid="uid://dw7guwm5ixpgi"]
 
-[ext_resource type="Script" uid="uid://cqm5ak22ldw0g" path="res://scripts/world/HarvestableResource.cs" id="1_harvr"]
-[ext_resource type="Script" uid="uid://b1mov0qvgdmcc" path="res://scripts/world/Harvestable.cs" id="2_harv"]
+[ext_resource type="Script" uid="uid://cqm5ak22ldw0g" path="res://scripts/world/resources/DropSpawner.cs" id="1_harvr"]
+[ext_resource type="Script" uid="uid://b1mov0qvgdmcc" path="res://scripts/world/Breakable.cs" id="2_harv"]
 [ext_resource type="Script" uid="uid://ccu4vr8pgyovi" path="res://scripts/components/SpriteComponent.cs" id="3_sprc"]
 [ext_resource type="PackedScene" uid="uid://c38yeabg3j00p" path="res://scenes/drop.tscn" id="4_drop"]
+[ext_resource type="Shader" uid="uid://cqtpyfy41g601" path="res://crystal_crack.gdshader" id="6_shdr"]
 
 [node name="HarvestableCrystal" type="StaticBody2D" groups=["nav_obstacle"]]
 
-[node name="HarvestableResource" type="Node2D" parent="." node_paths=PackedStringArray("Sprite")]
+[node name="DropSpawner" type="Node2D" parent="."]
 script = ExtResource("1_harvr")
 DropScene = ExtResource("4_drop")
-Sprite = NodePath("../CrystalSprite")
 
-[node name="Harvestable" type="Node2D" parent="." node_paths=PackedStringArray("Sprite")]
+[node name="Breakable" type="Node2D" parent="." node_paths=PackedStringArray("Sprite")]
 script = ExtResource("2_harv")
 Sprite = NodePath("../CrystalSprite")
+CrackShader = ExtResource("6_shdr")
 
 [node name="CrystalSprite" type="Sprite2D" parent="."]
 script = ExtResource("3_sprc")
@@ -22,4 +23,4 @@ script = ExtResource("3_sprc")
 [node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="."]
 polygon = PackedVector2Array(-27.5, 4.5, -25.5, 13.5, -7.5, 21, -17.5, 33, 25, 32.5, 11, 13, 27, -13, 19, -29.5, 5, -24, -7, -32, -18, -16.5, -9.5, 4, -12, 6)
 
-[connection signal="Broken" from="Harvestable" to="HarvestableResource" method="OnHarvestableBroken"]
+[connection signal="Broken" from="Breakable" to="DropSpawner" method="OnBreakableBroken"]

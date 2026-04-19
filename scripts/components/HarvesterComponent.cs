@@ -4,18 +4,18 @@ using towerdefensegame.scripts.world;
 namespace towerdefensegame.scripts.components;
 
 /// <summary>
-/// Detects and ticks any Harvestable within range using a HitBoxComponent.
+/// Detects and ticks any Breakable within range using a HitBoxComponent.
 /// Polls the HitBox each physics frame for reliable StaticBody2D detection.
 /// </summary>
 public partial class HarvesterComponent : Node2D
 {
-    /// <summary>Seconds between harvest ticks while in contact with a harvestable.</summary>
+    /// <summary>Seconds between harvest ticks while in contact with a breakable.</summary>
     [Export] public float HarvestTickInterval { get; set; } = 0.5f;
 
-    /// <summary>DetectionZone used to detect nearby Harvestables.</summary>
+    /// <summary>DetectionZone used to detect nearby Breakables.</summary>
     [Export] public DetectionZone HitBox { get; set; }
 
-    private Harvestable _currentTarget;
+    private Breakable _currentTarget;
     private float       _tickTimer;
 
     public override void _PhysicsProcess(double delta)
@@ -38,12 +38,12 @@ public partial class HarvesterComponent : Node2D
 
     private void UpdateTarget()
     {
-        Harvestable found = null;
+        Breakable found = null;
         foreach (var body in HitBox.GetOverlappingBodies())
         {
             foreach (var child in body.GetChildren())
             {
-                if (child is Harvestable h)
+                if (child is Breakable h)
                 {
                     found = h;
                     break;

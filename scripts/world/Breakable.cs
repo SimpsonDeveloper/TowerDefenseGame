@@ -9,11 +9,12 @@ namespace towerdefensegame.scripts.world;
 /// colour-sampled particles. Emits Broken when HP reaches zero, which frees the
 /// parent body. Connect Broken → HarvestableResource.OnHarvestableBroken in the scene.
 /// </summary>
-public partial class Harvestable : Node2D
+public partial class Breakable : Node2D
 {
     [Export] public int MaxHp { get; set; } = 5;
     [Export] public int ParticlesPerTick { get; set; } = 6;
     [Export] public SpriteComponent Sprite { get; set; }
+    [Export] public Shader CrackShader { get; set; }
 
     [Signal]
     public delegate void BrokenEventHandler();
@@ -22,7 +23,6 @@ public partial class Harvestable : Node2D
     private Node2D         _root;
     private Vector2        _spriteOrigin;
     private ShaderMaterial _crackMaterial;
-    private Image          _spriteImage;
     private Tween          _shakeTween;
     private RandomNumberGenerator _rng = new();
 
@@ -33,11 +33,8 @@ public partial class Harvestable : Node2D
         _spriteOrigin = Sprite.Position;
         _rng.Randomize();
 
-        var shader = GD.Load<Shader>("res://crystal_crack.gdshader");
-        _crackMaterial = new ShaderMaterial { Shader = shader };
+        _crackMaterial = new ShaderMaterial { Shader = CrackShader };
         Sprite.Material = _crackMaterial;
-
-        _spriteImage = Sprite.Texture.GetImage();
     }
 
     /// <summary>Called by HarvesterComponent on each harvest tick.</summary>
@@ -126,15 +123,16 @@ public partial class Harvestable : Node2D
 
     private List<Color> SampleSpriteColors(int count)
     {
+        var spriteImage = Sprite.Texture.GetImage();
         var colors   = new List<Color>();
-        int width    = _spriteImage.GetWidth();
-        int height   = _spriteImage.GetHeight();
+        int width    = spriteImage.GetWidth();
+        int height   = spriteImage.GetHeight();
         int attempts = 0;
 
         while (colors.Count < count && attempts < count * 20)
         {
             attempts++;
-            var color = _spriteImage.GetPixel(
+            var color = spriteImage.GetPixel(
                 _rng.RandiRange(0, width  - 1),
                 _rng.RandiRange(0, height - 1));
 

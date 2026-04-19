@@ -2,8 +2,8 @@
 
 [ext_resource type="Texture2D" uid="uid://b2c2bvoeah1p0" path="res://assets/world_resources/sprites/crystal/crystal_blue_shard.png" id="1_ur836"]
 [ext_resource type="Texture2D" uid="uid://ckdcmcqx0iek5" path="res://assets/world_resources/sprites/crystal/crystal_blue.png" id="2_mrx0p"]
-[ext_resource type="Script" uid="uid://bxpts7jc8yyeo" path="res://scripts/world/ResourceId.cs" id="3_yh807"]
-[ext_resource type="Script" uid="uid://crt2c3ejj8hxo" path="res://scripts/world/ResourceData.cs" id="4_0cr6k"]
+[ext_resource type="Script" uid="uid://bxpts7jc8yyeo" path="res://scripts/world/resources/ResourceId.cs" id="3_yh807"]
+[ext_resource type="Script" uid="uid://crt2c3ejj8hxo" path="res://scripts/world/resources/ResourceData.cs" id="4_0cr6k"]
 
 [sub_resource type="Resource" id="Resource_yh807"]
 script = ExtResource("3_yh807")

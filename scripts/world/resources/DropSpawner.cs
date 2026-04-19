@@ -2,33 +2,25 @@ using Godot;
 using towerdefensegame.scripts.components;
 using towerdefensegame.scripts.world.drops;
 
-namespace towerdefensegame.scripts.world;
+namespace towerdefensegame.scripts.world.resources;
 
-/// <summary>
-/// Component that handles resource-specific behaviour for a harvestable node:
-/// applies the variant textures in _Ready and spawns drops when the sibling
-/// Harvestable emits its Broken signal (wired up in the scene).
-/// </summary>
-public partial class HarvestableResource : Node2D
+public partial class DropSpawner : Node2D
 {
-    [Export] public ResourceData Data { get; set; }
     [Export] public PackedScene DropScene { get; set; }
-    [Export] public SpriteComponent Sprite { get; set; }
     [Export] public int MinDropCount { get; set; } = 1;
     [Export] public int MaxDropCount { get; set; } = 3;
 
+    public ResourceId ResourceId { get; set; }
+    
     private RandomNumberGenerator _rng = new();
 
     public override void _Ready()
     {
         _rng.Randomize();
-
-        if (Data?.HarvestableTexture != null && Sprite != null)
-            Sprite.Texture = Data.HarvestableTexture;
     }
 
-    // Connected to Harvestable.Broken in the scene.
-    private void OnHarvestableBroken()
+    // Connected to Breakable.Broken in the scene.
+    private void OnBreakableBroken()
     {
         SpawnDrops(GetParent<Node2D>().GlobalPosition);
     }
@@ -73,18 +65,15 @@ public partial class HarvestableResource : Node2D
             return;
         }
 
-        if (Data?.DropTexture != null)
-        {
-            var dropSprite = dropNode.GetNodeOrNull<SpriteComponent>("DropSprite");
-            if (dropSprite != null)
-                dropSprite.Texture = Data.DropTexture;
-        }
-
-        if (Data?.ResourceId != null)
+        if (ResourceId != null)
         {
             var pickup = dropNode.GetNodeOrNull<InventoryPickup>("InventoryPickup");
             if (pickup != null)
-                pickup.ItemResourceId = Data.ResourceId;
+                pickup.ItemResourceId = ResourceId;
+            
+            var dropSprite = dropNode.GetNodeOrNull<SpriteComponent>("DropSprite");
+            if (dropSprite != null)
+                dropSprite.Texture = ItemRegistry.Instance.Get(ResourceId).DropTexture;
         }
 
         GetParent<Node2D>().GetParent().AddChild(dropNode);

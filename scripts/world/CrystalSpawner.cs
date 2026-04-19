@@ -1,5 +1,7 @@
 using Godot;
+using towerdefensegame.scripts.components;
 using towerdefensegame.scripts.player;
+using towerdefensegame.scripts.world.resources;
 
 namespace towerdefensegame.scripts.world;
 /// <summary>
@@ -65,11 +67,22 @@ public partial class CrystalSpawner : Node2D
 
     private static void ApplyVariant(Node2D crystal, ResourceData data)
     {
+        bool harvestTextureApplied = false;
+        bool dropDataApplied = false;
         foreach (var child in crystal.GetChildren())
         {
-            if (child is HarvestableResource resource)
+            if (child is SpriteComponent spriteComponent)
             {
-                resource.Data = data;
+                spriteComponent.Texture = data.HarvestableTexture;
+                harvestTextureApplied = true;
+            }
+            else if (child is DropSpawner spawner)
+            {
+                spawner.ResourceId = data.ResourceId;
+                dropDataApplied = true;
+            }
+            else if (harvestTextureApplied && dropDataApplied)
+            {
                 return;
             }
         }
