@@ -18,6 +18,7 @@ public partial class TurretTower : StaticBody2D, ITowerPlaceable
 
 	public override void _Ready()
 	{
+		AddToGroup("Towers");
 		if (TargetingZoneCollisionShape?.Shape is CircleShape2D circle)
 			circle.Radius = _targetRadius;
 	}

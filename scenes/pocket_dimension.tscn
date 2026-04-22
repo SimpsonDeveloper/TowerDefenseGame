@@ -1,4 +1,4 @@
-[gd_scene load_steps=14 format=3 uid="uid://d23xmn1ko1rqq"]
+[gd_scene load_steps=19 format=3 uid="uid://d23xmn1ko1rqq"]
 
 [ext_resource type="Script" uid="uid://dnb5iegcl3s5r" path="res://scripts/terrain/TerrainGen.cs" id="2_tgen"]
 [ext_resource type="Script" uid="uid://bn66bgttlo0pn" path="res://scripts/terrain/GenRange.cs" id="3_grange"]
@@ -8,16 +8,22 @@
 [ext_resource type="Resource" uid="uid://c54gxd5gu86v1" path="res://assets/coord_config.tres" id="7_ck6mf"]
 [ext_resource type="Resource" uid="uid://cvuw7ah7gs566" path="res://assets/terrain_configs/grass_config.tres" id="7_gcfg"]
 [ext_resource type="Resource" path="res://assets/terrain_configs/terrain_config.tres" id="8_terraincfg"]
-[ext_resource type="Script" path="res://scripts/towers/TowerFootprintTracker.cs" id="9_tft"]
-[ext_resource type="Script" path="res://scripts/towers/TowerPlacementManager.cs" id="10_tpm"]
-[ext_resource type="Script" path="res://scripts/towers/TowerPlacementUI.cs" id="11_tpui"]
-[ext_resource type="Resource" path="res://assets/towers/turret_tower_def.tres" id="12_ttdef"]
+[ext_resource type="Script" uid="uid://c7qj3sbk5vasn" path="res://scripts/towers/TowerFootprintTracker.cs" id="9_tft"]
+[ext_resource type="Script" uid="uid://dqe7kydia2ros" path="res://scripts/towers/TowerPlacementManager.cs" id="10_tpm"]
+[ext_resource type="Script" uid="uid://ch17qk346ti87" path="res://scripts/towers/TowerPlacementUI.cs" id="11_tpui"]
+[ext_resource type="Resource" uid="uid://cty8l0mgobduv" path="res://assets/towers/turret_tower_def.tres" id="12_ttdef"]
+[ext_resource type="Script" uid="uid://d4my3kkn7sesj" path="res://scripts/world/PocketNavGridManager.cs" id="13_pngm"]
+[ext_resource type="Script" uid="uid://dxaxgggwt2dpn" path="res://scripts/world/enemies/EnemyNavAgentController.cs" id="14_enemy"]
+[ext_resource type="Script" uid="uid://6fcff7tjoj3y" path="res://scripts/towers/TowerDef.cs" id="15_2mfk8"]
+[ext_resource type="Texture2D" uid="uid://56tehltoshbg" path="res://icon.svg" id="15_icon"]
 
 [sub_resource type="Resource" id="Resource_pdgenrange"]
 script = ExtResource("3_grange")
 FirstIndex = -1
 LastIndex = 1
 metadata/_custom_type_script = "uid://bn66bgttlo0pn"
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_enemy"]
 
 [node name="PocketDimension" type="Node2D"]
 
@@ -65,8 +71,31 @@ PlacedTowersContainer = NodePath("PlacedTowers")
 
 [node name="PlacedTowers" type="Node2D" parent="TowerPlacementManager"]
 
+[node name="PocketNavGridManager" type="Node2D" parent="." node_paths=PackedStringArray("ChunkManager", "TowerPlacementManager")]
+script = ExtResource("13_pngm")
+ChunkManager = NodePath("../TerrainGen/ChunkManager")
+CoordConfig = ExtResource("7_ck6mf")
+TowerPlacementManager = NodePath("../TowerPlacementManager")
+
+[node name="TestEnemy" type="CharacterBody2D" parent="." node_paths=PackedStringArray("NavAgent")]
+position = Vector2(512, 512)
+collision_layer = 4
+script = ExtResource("14_enemy")
+MoveSpeed = 40.0
+NavAgent = NodePath("NavigationAgent2D")
+TargetGroup = "Towers"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="TestEnemy"]
+shape = SubResource("CircleShape2D_enemy")
+
+[node name="NavigationAgent2D" type="NavigationAgent2D" parent="TestEnemy"]
+debug_enabled = true
+
+[node name="EnemySprite" type="Sprite2D" parent="TestEnemy"]
+texture = ExtResource("15_icon")
+
 [node name="TowerPlacementUI" type="CanvasLayer" parent="." node_paths=PackedStringArray("PlacementManager")]
 visible = false
 script = ExtResource("11_tpui")
 PlacementManager = NodePath("../TowerPlacementManager")
-AvailableTowers = Array[Object]([ExtResource("12_ttdef")])
+AvailableTowers = Array[ExtResource("15_2mfk8")]([ExtResource("12_ttdef")])

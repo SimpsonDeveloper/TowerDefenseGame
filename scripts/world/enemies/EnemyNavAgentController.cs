@@ -78,13 +78,13 @@ public partial class EnemyNavAgentController : CharacterBody2D
             ? GlobalPosition.DistanceTo(_target.GlobalPosition)
             : float.MaxValue;
 
-        // Periodically push the moving target's position to the nav agent
+        // Periodically re-resolve closest target and push its position to the nav agent.
+        // Re-resolving each tick handles towers being placed/destroyed during play.
         _targetUpdateTimer -= (float)delta;
         if (_targetUpdateTimer <= 0f)
         {
             _targetUpdateTimer = TargetUpdateInterval;
-            if (_target != null)
-                NavAgent.TargetPosition = _target.GlobalPosition;
+            ResolveTarget();
         }
 
         if (_target == null || NavAgent.IsNavigationFinished())
@@ -124,18 +124,20 @@ public partial class EnemyNavAgentController : CharacterBody2D
 
     private void ResolveTarget()
     {
-        if (!string.IsNullOrEmpty(TargetGroup))
+        if (string.IsNullOrEmpty(TargetGroup)) return;
+
+        var viewport = GetViewport();
+        Node2D closest = null;
+        float closestDist = float.MaxValue;
+
+        foreach (Node node in GetTree().GetNodesInGroup(TargetGroup))
         {
-            var viewport = GetViewport();
-            foreach (Node node in GetTree().GetNodesInGroup(TargetGroup))
-            {
-                if (node is Node2D n2d && n2d.GetViewport() == viewport)
-                {
-                    _target = n2d;
-                    break;
-                }
-            }
+            if (node is not Node2D n2d || n2d.GetViewport() != viewport) continue;
+            float dist = GlobalPosition.DistanceTo(n2d.GlobalPosition);
+            if (dist < closestDist) { closestDist = dist; closest = n2d; }
         }
+
+        _target = closest;
         if (_target != null)
             NavAgent.TargetPosition = _target.GlobalPosition;
     }

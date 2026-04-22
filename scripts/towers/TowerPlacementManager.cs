@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Godot;
 using towerdefensegame.scripts.world;
@@ -33,6 +34,12 @@ public partial class TowerPlacementManager : Node2D
     private static readonly Color InvalidColor = new(1.0f, 0.25f, 0.25f, 0.6f);
 
     public bool IsPlacing => _pending != null;
+
+    /// <summary>Fired after a tower is successfully committed. Carries the tile footprint.</summary>
+    public event Action<IReadOnlyList<Vector2I>>? TowerPlaced;
+
+    /// <summary>Fired after a placed tower is removed. Carries the tile footprint it occupied.</summary>
+    public event Action<IReadOnlyList<Vector2I>>? TowerRemoved;
 
     // ── Public API ──────────────────────────────────────────────────────────────
 
@@ -119,6 +126,7 @@ public partial class TowerPlacementManager : Node2D
             placeable.Configure(_pending);
         PlacedTowersContainer.AddChild(tower);
         FootprintTracker.Register(footprint);
+        TowerPlaced?.Invoke(footprint);
 
         // Stay in Placing mode so the user can chain placements of the same type.
         var def = _pending;
