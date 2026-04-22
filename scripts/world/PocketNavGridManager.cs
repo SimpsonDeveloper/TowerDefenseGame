@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Godot;
 using towerdefensegame.scripts.terrain;
 using towerdefensegame.scripts.towers;
+using towerdefensegame.scripts.world.enemies;
 
 namespace towerdefensegame.scripts.world;
 
@@ -19,6 +20,7 @@ public partial class PocketNavGridManager : Node2D
 {
     [Export] public ChunkManager ChunkManager { get; set; }
     [Export] public CoordConfig CoordConfig { get; set; }
+    [Export] public EnemyConfig EnemyConfig { get; set; }
     [Export] public TowerPlacementManager TowerPlacementManager { get; set; }
 
     [Export] public bool DebugDrawEnabled { get; set; }
@@ -46,6 +48,7 @@ public partial class PocketNavGridManager : Node2D
     {
         if (ChunkManager == null) { GD.PushWarning($"{Name}: ChunkManager not assigned."); return; }
         if (CoordConfig  == null) { GD.PushWarning($"{Name}: CoordConfig not assigned.");  return; }
+        if (EnemyConfig  == null) { GD.PushWarning($"{Name}: EnemyConfig not assigned.");  return; }
 
         if (!ChunkManager.BoundsEnabled)
             GD.PushWarning($"{Name}: ChunkManager.BoundsEnabled is false — PocketNavGridManager requires bounded terrain.");
@@ -59,12 +62,12 @@ public partial class PocketNavGridManager : Node2D
         var cellMin = CoordHelper.ChunkToNavCell(ChunkManager.BoundsMin, CoordConfig);
         var cellMax = CoordHelper.ChunkToNavCell(ChunkManager.BoundsMax, CoordConfig);
 
-        for (int cy = cellMin.Y; cy <= cellMax.Y; cy++)
-        for (int cx = cellMin.X; cx <= cellMax.X; cx++)
+        for (int cellY = cellMin.Y; cellY <= cellMax.Y; cellY++)
+        for (int cellX = cellMin.X; cellX <= cellMax.X; cellX++)
         {
-            var coord = new Vector2I(cx, cy);
-            _cells[coord] = new NavCell { State = CellState.Queued };
-            _bakePending.Add(coord);
+            var cellCoord = new Vector2I(cellX, cellY);
+            _cells[cellCoord] = new NavCell { State = CellState.Queued };
+            _bakePending.Add(cellCoord);
         }
 
         _debugDraw = new DebugCellDraw(this);
@@ -115,34 +118,34 @@ public partial class PocketNavGridManager : Node2D
         if (_baking || _bakePending.Count == 0) return;
 
         // No distance-to-center prioritization needed — pick any pending cell.
-        Vector2I coord = default;
-        foreach (var c in _bakePending) { coord = c; break; }
+        Vector2I cellCoord = default;
+        foreach (var pending in _bakePending) { cellCoord = pending; break; }
 
-        _bakePending.Remove(coord);
-        if (_cells.TryGetValue(coord, out var cell) && cell.State == CellState.Queued)
-            BakeCell(coord, cell);
+        _bakePending.Remove(cellCoord);
+        if (_cells.TryGetValue(cellCoord, out var cell) && cell.State == CellState.Queued)
+            BakeCell(cellCoord, cell);
     }
 
     // ── Baking ──────────────────────────────────────────────────────────────────
 
-    private void BakeCell(Vector2I coord, NavCell cell)
+    private void BakeCell(Vector2I cellCoord, NavCell cell)
     {
         _baking    = true;
         cell.State = CellState.Baking;
 
-        const float agentRadius = 5f;
+        float agentRadius = EnemyConfig.AgentRadius;
         float cellPx = CoordHelper.NavCellSizePixels(CoordConfig);
-        var origin   = new Vector2(coord.X * cellPx, coord.Y * cellPx);
+        var cellWorldPos = CoordHelper.NavCellToWorld(cellCoord, CoordConfig);
 
         // Expand boundary outward by agentRadius so the eroded navigable area lands
         // exactly on the true cell edge — keeps adjacent cells stitchable.
         var e = new Vector2(agentRadius, agentRadius);
         var expandedRect = new[]
         {
-            origin - e,
-            origin + new Vector2(cellPx + agentRadius, -agentRadius),
-            origin + new Vector2(cellPx + agentRadius,  cellPx + agentRadius),
-            origin + new Vector2(-agentRadius,           cellPx + agentRadius),
+            cellWorldPos - e,
+            cellWorldPos + new Vector2(cellPx + agentRadius, -agentRadius),
+            cellWorldPos + new Vector2(cellPx + agentRadius,  cellPx + agentRadius),
+            cellWorldPos + new Vector2(-agentRadius,           cellPx + agentRadius),
         };
 
         var navPoly    = new NavigationPolygon { AgentRadius = agentRadius };
@@ -179,15 +182,15 @@ public partial class PocketNavGridManager : Node2D
 
         var capturedRegion = cell.Region;
         NavigationServer2D.BakeFromSourceGeometryData(navPoly, sourceData, Callable.From(() =>
-            Callable.From(() => ApplyCellBake(coord, navPoly, capturedRegion)).CallDeferred()
+            Callable.From(() => ApplyCellBake(cellCoord, navPoly, capturedRegion)).CallDeferred()
         ));
     }
 
-    private void ApplyCellBake(Vector2I coord, NavigationPolygon navPoly, NavigationRegion2D? capturedRegion)
+    private void ApplyCellBake(Vector2I cellCoord, NavigationPolygon navPoly, NavigationRegion2D? capturedRegion)
     {
         _baking = false;
 
-        if (!_cells.TryGetValue(coord, out var cell)) return;
+        if (!_cells.TryGetValue(cellCoord, out var cell)) return;
 
         if (capturedRegion == null)
         {
@@ -202,7 +205,7 @@ public partial class PocketNavGridManager : Node2D
             capturedRegion.NavigationPolygon = navPoly;
         }
 
-        cell.State = _bakePending.Contains(coord) ? CellState.Queued : CellState.Active;
+        cell.State = _bakePending.Contains(cellCoord) ? CellState.Queued : CellState.Active;
     }
 
     // ── Helpers ─────────────────────────────────────────────────────────────────
@@ -241,10 +244,10 @@ public partial class PocketNavGridManager : Node2D
             if (!manager.DebugDrawEnabled) return;
             float cellPx = CoordHelper.NavCellSizePixels(manager.CoordConfig);
 
-            foreach (var (coord, cell) in manager._cells)
+            foreach (var (cellCoord, cell) in manager._cells)
             {
-                var origin = new Vector2(coord.X * cellPx, coord.Y * cellPx);
-                var size   = Vector2.One * cellPx;
+                var cellWorldPos = CoordHelper.NavCellToWorld(cellCoord, manager.CoordConfig);
+                var size         = Vector2.One * cellPx;
 
                 var fill = cell.State switch
                 {
@@ -253,11 +256,11 @@ public partial class PocketNavGridManager : Node2D
                     _                => ColQueued,
                 };
 
-                DrawRect(new Rect2(origin, size), fill);
-                DrawRect(new Rect2(origin, size), new Color(fill, 0.7f), false, 3f);
+                DrawRect(new Rect2(cellWorldPos, size), fill);
+                DrawRect(new Rect2(cellWorldPos, size), new Color(fill, 0.7f), false, 3f);
 
-                var center = origin + size * 0.5f;
-                DrawString(ThemeDB.FallbackFont, center, coord.ToString(),
+                var center = cellWorldPos + size * 0.5f;
+                DrawString(ThemeDB.FallbackFont, center, cellCoord.ToString(),
                     HorizontalAlignment.Center, -1, (int)(cellPx * 0.12f), Colors.White);
             }
         }

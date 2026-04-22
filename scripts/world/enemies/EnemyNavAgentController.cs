@@ -1,4 +1,5 @@
 using Godot;
+using towerdefensegame.scripts.components;
 
 namespace towerdefensegame.scripts.world.enemies;
 
@@ -20,6 +21,8 @@ public partial class EnemyNavAgentController : CharacterBody2D
 
     [ExportGroup("Navigation")]
     [Export] public NavigationAgent2D NavAgent;
+    [Export] public CollisionShape2D Hitbox { get; set; }
+    [Export] public EnemyConfig EnemyConfig { get; set; }
     
     /// <summary>
     /// How close the agent must get to each path waypoint before it advances.
@@ -43,6 +46,9 @@ public partial class EnemyNavAgentController : CharacterBody2D
     [ExportGroup("Target")]
     [Export] public string TargetGroup { get; set; } = "Player";
 
+    [ExportGroup("Sprite")]
+    [Export] SpriteComponent Sprite { get; set; }
+
     // ── Virtual hooks ─────────────────────────────────────────────────────
 
     protected virtual void OnReady() { }
@@ -63,6 +69,18 @@ public partial class EnemyNavAgentController : CharacterBody2D
         NavAgent.PathDesiredDistance = PathDesiredDistance;
         NavAgent.TargetDesiredDistance = TargetDesiredDistance;
         NavAgent.MaxSpeed = MoveSpeed;
+        if (EnemyConfig != null)
+        {
+            NavAgent.Radius = EnemyConfig.AgentRadius;
+            if (Hitbox?.Shape is CircleShape2D circle)
+                circle.Radius = EnemyConfig.AgentRadius;
+            else
+                GD.PushWarning($"{Name}: Hitbox missing or not a CircleShape2D — physical radius won't match nav radius.");
+        }
+        else
+        {
+            GD.PushWarning($"{Name}: EnemyConfig not assigned — NavAgent.Radius and hitbox may not match nav-bake radius.");
+        }
 
         AddToGroup("enemies");
         ResolveTarget();
@@ -99,6 +117,12 @@ public partial class EnemyNavAgentController : CharacterBody2D
         Vector2 desiredVelocity = (nextPos - GlobalPosition).Normalized() * MoveSpeed;
         Velocity = Velocity.Lerp(desiredVelocity, Acceleration * (float)delta);
         MoveAndSlide();
+
+        if (Sprite != null)
+        {
+            if (Velocity.X > 0)      Sprite.FlipH = true;
+            else if (Velocity.X < 0) Sprite.FlipH = false;
+        }
 
         OnPhysicsTick(delta, distToTarget);
     }

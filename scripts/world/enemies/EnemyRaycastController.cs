@@ -52,6 +52,8 @@ public partial class EnemyRaycastController : CharacterBody2D
     /// governs both perception range and maximum follow distance.
     /// </summary>
     [ExportGroup("Navigation")]
+    [Export] public CollisionShape2D Hitbox { get; set; }
+    [Export] public EnemyConfig EnemyConfig { get; set; }
     [Export] public float SightRange { get; set; } = 400f;
 
     /// <summary>
@@ -192,6 +194,18 @@ public partial class EnemyRaycastController : CharacterBody2D
         int staggerSteps = Mathf.Max(1, Mathf.RoundToInt(SteeringUpdateInterval / PhysicsFrameDuration));
         _steeringTimer = (_globalStaggerCounter % staggerSteps) * PhysicsFrameDuration;
         _globalStaggerCounter++;
+
+        if (EnemyConfig != null)
+        {
+            if (Hitbox?.Shape is CircleShape2D circle)
+                circle.Radius = EnemyConfig.AgentRadius;
+            else
+                GD.PushWarning($"{Name}: Hitbox missing or not a CircleShape2D — physical radius won't match EnemyConfig.");
+        }
+        else
+        {
+            GD.PushWarning($"{Name}: EnemyConfig not assigned — hitbox radius won't match shared enemy config.");
+        }
 
         AddToGroup("enemies");
         ResolveTarget();
