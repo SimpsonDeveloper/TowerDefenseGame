@@ -1,5 +1,6 @@
-[gd_scene load_steps=18 format=3 uid="uid://d23xmn1ko1rqq"]
+[gd_scene load_steps=19 format=3 uid="uid://d23xmn1ko1rqq"]
 
+[ext_resource type="Script" path="res://scripts/towers/TowerPerimeterPointServer.cs" id="16_tpps"]
 [ext_resource type="Script" uid="uid://dnb5iegcl3s5r" path="res://scripts/terrain/TerrainGen.cs" id="2_tgen"]
 [ext_resource type="Script" uid="uid://bn66bgttlo0pn" path="res://scripts/terrain/GenRange.cs" id="3_grange"]
 [ext_resource type="Script" uid="uid://d33brm7vp1jgy" path="res://scripts/terrain/SimplexGen.cs" id="4_sgen"]
@@ -60,6 +61,9 @@ script = ExtResource("6_cam")
 
 [node name="TowerFootprintTracker" type="Node" parent="."]
 script = ExtResource("9_tft")
+
+[node name="TowerPerimeterPointServer" type="Node" parent="."]
+script = ExtResource("16_tpps")
 
 [node name="TowerPlacementManager" type="Node2D" parent="." node_paths=PackedStringArray("FootprintTracker", "PlacedTowersContainer")]
 script = ExtResource("10_tpm")
