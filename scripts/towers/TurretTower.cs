@@ -8,7 +8,6 @@ public partial class TurretTower : StaticBody2D, ITowerPlaceable
 	[Export] public SpriteComponent TurretSprite;
 	[Export] public DetectionZone TargetingZone;
 	[Export] public CollisionShape2D TargetingZoneCollisionShape;
-	[Export] public CollisionShape2D BodyCollisionShape;
 	[Export] public float RotationSpeed = 8;
 
 	private Node2D _target;
@@ -22,12 +21,11 @@ public partial class TurretTower : StaticBody2D, ITowerPlaceable
 		AddToGroup("Towers");
 		if (TargetingZoneCollisionShape?.Shape is CircleShape2D circle)
 			circle.Radius = _targetRadius;
-		TowerPerimeterPointServer.Instance?.Register(this, BodyCollisionShape);
 	}
 
 	public override void _ExitTree()
 	{
-		TowerPerimeterPointServer.Instance?.Unregister(this);
+		TowerFootprintTracker.Instance?.Unregister(this);
 	}
 
 	public override void _Process(double delta)

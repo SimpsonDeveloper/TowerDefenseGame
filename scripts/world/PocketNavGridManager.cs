@@ -85,11 +85,7 @@ public partial class PocketNavGridManager : Node2D
 
     // ── Tower change handling ───────────────────────────────────────────────────
 
-    private void OnTowerFootprintChanged(IReadOnlyList<Vector2I> tiles)
-    {
-        RebakeFootprint(tiles);
-        towerdefensegame.scripts.towers.TowerPerimeterPointServer.Instance?.MarkAllStale();
-    }
+    private void OnTowerFootprintChanged(IReadOnlyList<Vector2I> tiles) => RebakeFootprint(tiles);
 
     /// <summary>
     /// Re-queues every nav cell that intersects the given tile footprint.

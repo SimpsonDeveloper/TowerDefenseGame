@@ -96,8 +96,6 @@ public partial class EnemyNavAgentController : CharacterBody2D
     // ── Internal state ────────────────────────────────────────────────────
     private Node2D _target;
     private float _targetUpdateTimer;
-    private readonly HashSet<Node2D> _unreachable = new();
-    private TowerPerimeterPointServer _perimeterServer;
 
     // ── Lifecycle ─────────────────────────────────────────────────────────
 
@@ -121,18 +119,8 @@ public partial class EnemyNavAgentController : CharacterBody2D
 
         AddToGroup("enemies");
 
-        _perimeterServer = TowerPerimeterPointServer.Instance;
-        if (_perimeterServer != null)
-            _perimeterServer.NavInvalidated += OnNavInvalidated;
-
         RetargetAndSetDestination();
         OnReady();
-    }
-
-    public sealed override void _ExitTree()
-    {
-        if (_perimeterServer != null)
-            _perimeterServer.NavInvalidated -= OnNavInvalidated;
     }
 
     public sealed override void _PhysicsProcess(double delta)
@@ -183,12 +171,6 @@ public partial class EnemyNavAgentController : CharacterBody2D
 
     // ── Targeting ─────────────────────────────────────────────────────────
 
-    private void OnNavInvalidated()
-    {
-        _unreachable.Clear();
-        _targetUpdateTimer = 0f; // force retarget next tick — cached reachability may now be stale
-    }
-
     /// <summary>
     /// Picks a tower, computes a reachable approach point, and feeds it to the
     /// nav agent. Retries with the next tower if no approach point is reachable.
@@ -202,7 +184,6 @@ public partial class EnemyNavAgentController : CharacterBody2D
         foreach (Node node in GetTree().GetNodesInGroup(TargetGroup))
         {
             if (node is not Node2D n2d || n2d.GetViewport() != viewport) continue;
-            if (_unreachable.Contains(n2d)) continue;
             candidates.Add(n2d);
         }
         candidates.Sort((a, b) =>
@@ -217,7 +198,6 @@ public partial class EnemyNavAgentController : CharacterBody2D
                 NavAgent.TargetPosition = approach;
                 return;
             }
-            _unreachable.Add(tower);
         }
 
         _target = null;
@@ -239,10 +219,12 @@ public partial class EnemyNavAgentController : CharacterBody2D
             return true;
         }
 
-        // Step 2: perimeter fallback. Pre-computed shape-boundary samples
-        // (snapped to nav mesh). Sort by distance-to-enemy, take first reachable.
-        if (_perimeterServer == null) return false;
-        Vector2[] perimeter = _perimeterServer.GetPerimeterPoints(tower);
+        // Step 2: perimeter fallback. Outer-tile corners of the tower's
+        // footprint from TowerFootprintTracker. Snap each to nav mesh, sort
+        // by distance-to-enemy, pick first reachable.
+        var tracker = TowerFootprintTracker.Instance;
+        if (tracker == null) return false;
+        Vector2[] perimeter = tracker.GetPerimeterPoints(tower);
         if (perimeter.Length == 0) return false;
 
         var sorted = (Vector2[])perimeter.Clone();
@@ -251,7 +233,10 @@ public partial class EnemyNavAgentController : CharacterBody2D
 
         foreach (Vector2 p in sorted)
         {
-            Vector2 nudged = NudgeForAttackRange(p, tower.GlobalPosition, navMap);
+            Vector2 snapped = NavigationServer2D.MapGetClosestPoint(navMap, p);
+            // Reject snaps that moved far — landed across a wall.
+            if (snapped.DistanceSquaredTo(p) > 256f) continue;
+            Vector2 nudged = NudgeForAttackRange(snapped, tower.GlobalPosition, navMap);
             if (IsReachable(navMap, nudged))
             {
                 approach = nudged;

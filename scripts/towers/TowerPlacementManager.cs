@@ -125,7 +125,7 @@ public partial class TowerPlacementManager : Node2D
         if (tower is ITowerPlaceable placeable)
             placeable.Configure(_pending);
         PlacedTowersContainer.AddChild(tower);
-        FootprintTracker.Register(footprint);
+        FootprintTracker.Register(tower, footprint);
         TowerPlaced?.Invoke(footprint);
 
         // Stay in Placing mode so the user can chain placements of the same type.
