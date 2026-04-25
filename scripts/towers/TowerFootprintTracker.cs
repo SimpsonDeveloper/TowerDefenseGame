@@ -113,20 +113,50 @@ public partial class TowerFootprintTracker : Node
     /// Closest point on any outward-facing footprint edge of <paramref name="tower"/>
     /// to <paramref name="fromWorld"/>. "Outward-facing" = side of a tile whose
     /// 4-neighbor is not in the footprint, so concave shapes work.
-    ///
-    /// Cost: O(footprint × 4). Returns false if tower has no registered tiles.
     /// </summary>
     public bool TryGetNearestApproachPoint(Node2D tower, Vector2 fromWorld, out Vector2 point)
     {
         point = default;
+        if (!TryGetTiles(tower, out var tiles, out var set)) return false;
+        NearestEdgePoint(tiles, set, fromWorld, out point);
+        return true;
+    }
+
+    /// <summary>
+    /// Squared distance from <paramref name="worldPoint"/> to the nearest
+    /// outward-facing footprint edge of <paramref name="tower"/>. Returns
+    /// float.MaxValue if the tower has no registered tiles.
+    /// </summary>
+    public float DistanceSqToFootprint(Node2D tower, Vector2 worldPoint)
+    {
+        if (!TryGetTiles(tower, out var tiles, out var set)) return float.MaxValue;
+        return NearestEdgePoint(tiles, set, worldPoint, out _);
+    }
+
+    /// <summary>True if <paramref name="worldPoint"/> lies within <paramref name="distance"/> px of any outward-facing footprint edge.</summary>
+    public bool IsWithinDistance(Node2D tower, Vector2 worldPoint, float distance)
+        => DistanceSqToFootprint(tower, worldPoint) <= distance * distance;
+
+    private bool TryGetTiles(Node2D tower, out Vector2I[] tiles, out HashSet<Vector2I> set)
+    {
+        tiles = null; set = null;
         if (tower == null || Coords == null) return false;
-        if (!_byTower.TryGetValue(tower, out var tiles) || tiles.Length == 0) return false;
+        if (!_byTower.TryGetValue(tower, out tiles) || tiles.Length == 0) return false;
+        set = new HashSet<Vector2I>(tiles);
+        return true;
+    }
 
-        var set = new HashSet<Vector2I>(tiles);
+    /// <summary>
+    /// Scans every outward-facing edge of every footprint tile and returns
+    /// the squared distance from <paramref name="p"/> to the nearest edge
+    /// point, with that edge point in <paramref name="closest"/>.
+    /// O(footprint × 4). Shared by approach-point and distance queries.
+    /// </summary>
+    private float NearestEdgePoint(Vector2I[] tiles, HashSet<Vector2I> set, Vector2 p, out Vector2 closest)
+    {
+        float bestSq = float.MaxValue;
+        closest = default;
         float tp = Coords.TilePixelSize;
-        float bestDistSq = float.MaxValue;
-        bool found = false;
-
         foreach (var t in tiles)
         {
             Vector2 origin = CoordHelper.TileToWorld(t, Coords);
@@ -134,59 +164,26 @@ public partial class TowerFootprintTracker : Node
             Vector2 tr = origin + new Vector2(tp, 0);
             Vector2 bl = origin + new Vector2(0, tp);
             Vector2 br = origin + new Vector2(tp, tp);
-
-            if (!set.Contains(t + Vector2I.Up))    TryEdge(tl, tr, fromWorld, ref bestDistSq, ref point, ref found);
-            if (!set.Contains(t + Vector2I.Down))  TryEdge(bl, br, fromWorld, ref bestDistSq, ref point, ref found);
-            if (!set.Contains(t + Vector2I.Left))  TryEdge(tl, bl, fromWorld, ref bestDistSq, ref point, ref found);
-            if (!set.Contains(t + Vector2I.Right)) TryEdge(tr, br, fromWorld, ref bestDistSq, ref point, ref found);
+            if (!set.Contains(t + Vector2I.Up))    TryEdge(tl, tr, p, ref bestSq, ref closest);
+            if (!set.Contains(t + Vector2I.Down))  TryEdge(bl, br, p, ref bestSq, ref closest);
+            if (!set.Contains(t + Vector2I.Left))  TryEdge(tl, bl, p, ref bestSq, ref closest);
+            if (!set.Contains(t + Vector2I.Right)) TryEdge(tr, br, p, ref bestSq, ref closest);
         }
-        return found;
+        return bestSq;
     }
 
     /// <summary>
-    /// Tests segment [<paramref name="a"/>,<paramref name="b"/>] against
-    /// <paramref name="p"/>: computes the closest point on the segment to
-    /// <paramref name="p"/> and updates <paramref name="best"/>/<paramref name="bestDistSq"/>
-    /// if it beats the current best.
-    ///
-    /// Used by <see cref="TryGetNearestApproachPoint"/> to scan every
-    /// outward-facing tile edge of a tower's footprint and pick the single
-    /// edge point closest to the query position.
+    /// Computes the closest point on segment [<paramref name="a"/>,<paramref name="b"/>]
+    /// to <paramref name="p"/> and updates the running best if it beats <paramref name="bestSq"/>.
+    /// Used by <see cref="NearestEdgePoint"/> to scan footprint edges.
     /// </summary>
-    private static void TryEdge(Vector2 a, Vector2 b, Vector2 p,
-        ref float bestDistSq, ref Vector2 best, ref bool found)
+    private static void TryEdge(Vector2 a, Vector2 b, Vector2 p, ref float bestSq, ref Vector2 best)
     {
         Vector2 ab = b - a;
         float lenSq = ab.LengthSquared();
         float t = lenSq > 0f ? Mathf.Clamp((p - a).Dot(ab) / lenSq, 0f, 1f) : 0f;
         Vector2 c = a + ab * t;
         float d = c.DistanceSquaredTo(p);
-        if (d < bestDistSq) { bestDistSq = d; best = c; found = true; }
-    }
-
-    /// <summary>
-    /// True if the tile containing <paramref name="worldPoint"/> is within
-    /// Euclidean distance sqrt(2) * maxTiles * TilePixelSize of any footprint
-    /// tile of <paramref name="tower"/> (tile origins compared in world pixels).
-    /// Caller picks maxTiles = ceil(AgentRadius / TilePixelSize).
-    /// </summary>
-    public bool IsWithinTileReach(Node2D tower, Vector2 worldPoint, int maxTiles)
-    {
-        if (tower == null || Coords == null) return false;
-        if (!_byTower.TryGetValue(tower, out var tiles) || tiles.Length == 0) return false;
-
-        Vector2I snappedTile = CoordHelper.WorldToTile(worldPoint, Coords);
-        Vector2 snappedWorld = CoordHelper.TileToWorld(snappedTile, Coords);
-
-        float scaledTileSize = maxTiles * Coords.TilePixelSize;
-        float requiredDistanceSq = 2f * scaledTileSize * scaledTileSize;
-
-        foreach (var t in tiles)
-        {
-            Vector2 towerTileWorld = CoordHelper.TileToWorld(t, Coords);
-            if (snappedWorld.DistanceSquaredTo(towerTileWorld) <= requiredDistanceSq)
-                return true;
-        }
-        return false;
+        if (d < bestSq) { bestSq = d; best = c; }
     }
 }

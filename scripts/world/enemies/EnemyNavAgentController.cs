@@ -9,18 +9,16 @@ namespace towerdefensegame.scripts.world.enemies;
 /// <summary>
 /// Enemy variant that delegates pathfinding to Godot's built-in NavigationAgent2D.
 ///
-/// Targeting strategy (vs. plain "closest tower center"):
+/// Targeting strategy (per retarget):
 ///   1. Pick the closest candidate tower in TargetGroup.
-///   2. Raycast from the enemy toward the tower's center. If the ray hits the
-///      target tower's body, snap the hit point to the nav mesh and use it as
-///      the path destination — this gives the enemy a natural enemy-side
-///      approach rather than the euclidean-closest nav polygon to the center,
-///      which often causes wrap-around.
-///   3. If the raycast fails or its snapped point is unreachable, query a
-///      single path toward the tower's center. The tower counts as reachable
-///      when the path's endpoint tile lies within one agent-radius (in tile
-///      steps) of the footprint, in which case the endpoint is used as the
-///      approach. Otherwise, retry with the next closest candidate tower.
+///   2. Pre-pick a path destination on the footprint's outward-facing edge
+///      nearest the enemy (geometric, no nav query).
+///   3. Run a single NavigationServer2D.MapGetPath to that destination.
+///   4. Walk the returned path corners; the first corner within
+///      (agentRadius + AttackRange) of the footprint is the stop zone.
+///   5. Refine via bisection on the entering segment so the final point sits
+///      precisely on the standoff boundary, oriented along the approach.
+///   6. If no corner enters the standoff zone, retry with the next candidate.
 ///
 /// Note: reachability is tested via NavigationServer2D.MapGetPath; NavAgent
 /// then re-queries internally when TargetPosition is set. Accepted duplicate
@@ -68,16 +66,9 @@ public partial class EnemyNavAgentController : CharacterBody2D
     [Export] public string TargetGroup { get; set; } = "Player";
 
     /// <summary>
-    /// Collision mask used when raycasting toward a tower center. Should
-    /// include the tower body collision layer (default 16 = layer 5).
-    /// </summary>
-    [Export(PropertyHint.Layers2DPhysics)] public uint TowerRaycastMask { get; set; } = 16;
-
-    /// <summary>
-    /// Reach of the enemy's attack. Snapped approach points are nudged
-    /// outward by this amount along the direction from tower → point, so the
-    /// enemy stops just inside its own reach rather than walking all the way
-    /// to the surface. Set to 0 for strict melee-on-contact.
+    /// Reach of the enemy's attack. Added to agentRadius to form the standoff
+    /// distance from the tower footprint at which the approach path is cut
+    /// short. Set to 0 for strict melee-on-contact.
     /// </summary>
     [Export] public float AttackRange { get; set; } = 0f;
 
@@ -205,27 +196,23 @@ public partial class EnemyNavAgentController : CharacterBody2D
         _target = null;
     }
 
+    /// <summary>
+    /// Resolves an approach point for <paramref name="tower"/>:
+    ///   1. Pre-pick path destination = closest outward edge point on the
+    ///      footprint (cheap geometric scan — avoids wrap-around bias of
+    ///      pathing to tower center).
+    ///   2. MapGetPath to that destination.
+    ///   3. Walk path corners; first corner whose distance to the footprint
+    ///      is ≤ (agentRadius + AttackRange) is the stop zone.
+    ///   4. Refine with bisection along the entering segment to land
+    ///      precisely on the standoff boundary.
+    /// </summary>
     private bool TryResolveApproachPoint(Node2D tower, out Vector2 approach)
     {
         approach = default;
         Rid navMap = GetWorld2D().NavigationMap;
         if (!navMap.IsValid) return false;
 
-        // Step 1: raycast toward tower center. The hit gives an enemy-side
-        // surface point, which avoids wrap-around when the nav-mesh-closest
-        // point to tower center lies on the far side of the tower.
-        // if (TryRaycastApproach(tower, navMap, out Vector2 rayPoint))
-        // {
-        //     approach = rayPoint;
-        //     return true;
-        // }
-
-        // Step 2: single path query toward the footprint edge nearest the
-        // enemy (cheap geometric pre-pick — avoids the wrap-around bias you
-        // get when pathing to tower center). Walk the returned corners and
-        // accept the first one that's within one agent-radius (in tile steps)
-        // of the footprint. Truncating at first-reach prevents the agent
-        // from snaking around to a far-side endpoint.
         var tracker = TowerFootprintTracker.Instance;
         if (tracker == null || tracker.Coords == null) return false;
 
@@ -238,57 +225,41 @@ public partial class EnemyNavAgentController : CharacterBody2D
         if (path.Length == 0) return false;
 
         float agentRadius = EnemyConfig?.AgentRadius ?? 0f;
-        int maxTiles = Mathf.CeilToInt(agentRadius / tracker.Coords.TilePixelSize);
+        float standoff = agentRadius + AttackRange;
+        float standoffSq = standoff * standoff;
 
         for (int i = 0; i < path.Length; i++)
         {
-            if (tracker.IsWithinTileReach(tower, path[i], maxTiles))
+            if (tracker.DistanceSqToFootprint(tower, path[i]) <= standoffSq)
             {
-                approach = NudgeForAttackRange(path[i], tower.GlobalPosition, navMap);
+                approach = i == 0
+                    ? path[0]
+                    : BisectStandoff(tracker, tower, path[i - 1], path[i], standoffSq);
                 return true;
             }
         }
         return false;
     }
 
-    private bool TryRaycastApproach(Node2D tower, Rid navMap, out Vector2 snapped)
-    {
-        snapped = default;
-        var space = GetWorld2D().DirectSpaceState;
-        var query = PhysicsRayQueryParameters2D.Create(GlobalPosition, tower.GlobalPosition);
-        query.CollisionMask = TowerRaycastMask;
-        query.CollideWithAreas = false;
-        query.Exclude = [GetRid()];
-
-        var hit = space.IntersectRay(query);
-        if (hit.Count == 0) return false;
-        // Reject hits on other bodies (e.g. another tower between us and target).
-        if (hit["collider"].AsGodotObject() != tower) return false;
-
-        Vector2 hitPos = (Vector2)hit["position"];
-        Vector2 rawSnap = NavigationServer2D.MapGetClosestPoint(navMap, hitPos);
-        // Reject snaps that moved far — likely landed across a wall.
-        float agentRadius = EnemyConfig?.AgentRadius ?? 0f;
-        float maxSnapJump = Math.Max(agentRadius, AttackRange);
-        if (rawSnap.DistanceSquaredTo(hitPos) > 2 * maxSnapJump * maxSnapJump + 0.1f) return false;
-
-        snapped = NudgeForAttackRange(rawSnap, tower.GlobalPosition, navMap);
-        return true;
-    }
-
     /// <summary>
-    /// Pushes <paramref name="point"/> outward from <paramref name="towerCenter"/>
-    /// by AttackRange and re-snaps to the nav mesh. Ensures the enemy stops
-    /// just inside its attack reach rather than walking all the way to the
-    /// tower's surface. No-op when AttackRange is 0.
+    /// Finds the earliest point on segment [<paramref name="outside"/>,
+    /// <paramref name="inside"/>] whose distance to <paramref name="tower"/>'s
+    /// footprint is ≤ sqrt(<paramref name="standoffSq"/>). Assumes outside is
+    /// past standoff and inside is within. 8 bisection steps → ~segment_len/256
+    /// precision.
     /// </summary>
-    private Vector2 NudgeForAttackRange(Vector2 point, Vector2 towerCenter, Rid navMap)
+    private static Vector2 BisectStandoff(TowerFootprintTracker tracker, Node2D tower,
+        Vector2 outside, Vector2 inside, float standoffSq)
     {
-        if (AttackRange <= 0f) return point;
-        Vector2 outward = (point - towerCenter);
-        if (outward.LengthSquared() < 1e-6f) return point;
-        Vector2 nudged = point + outward.Normalized() * AttackRange;
-        return NavigationServer2D.MapGetClosestPoint(navMap, nudged);
+        float lo = 0f, hi = 1f;
+        for (int k = 0; k < 8; k++)
+        {
+            float mid = 0.5f * (lo + hi);
+            Vector2 m = outside.Lerp(inside, mid);
+            if (tracker.DistanceSqToFootprint(tower, m) <= standoffSq) hi = mid;
+            else lo = mid;
+        }
+        return outside.Lerp(inside, hi);
     }
 
     public override void _Draw()
