@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Godot;
 using towerdefensegame.scripts.components;
@@ -94,6 +95,9 @@ public partial class EnemyNavAgentController : CharacterBody2D
     // ── Internal state ────────────────────────────────────────────────────
     private Node2D _target;
     private float _targetUpdateTimer;
+    private Vector2 _drawWorldPos;
+    private float _drawSize;
+    private Color _drawColor;
 
     // ── Lifecycle ─────────────────────────────────────────────────────────
 
@@ -123,6 +127,7 @@ public partial class EnemyNavAgentController : CharacterBody2D
 
     public sealed override void _PhysicsProcess(double delta)
     {
+        QueueRedraw();
         _targetUpdateTimer -= (float)delta;
         bool targetGone = _target == null || !IsInstanceValid(_target);
         if (_targetUpdateTimer <= 0f || targetGone)
@@ -210,31 +215,39 @@ public partial class EnemyNavAgentController : CharacterBody2D
         // Step 1: raycast toward tower center. The hit gives an enemy-side
         // surface point, which avoids wrap-around when the nav-mesh-closest
         // point to tower center lies on the far side of the tower.
-        if (TryRaycastApproach(tower, navMap, out Vector2 rayPoint))
-        {
-            approach = rayPoint;
-            return true;
-        }
+        // if (TryRaycastApproach(tower, navMap, out Vector2 rayPoint))
+        // {
+        //     approach = rayPoint;
+        //     return true;
+        // }
 
-        // Step 2: single path query toward tower center. Tower is reachable
-        // if the path's endpoint tile lies within one agent-radius of the
-        // tower footprint (in tile steps). Avoids per-perimeter-point path
-        // queries.
+        // Step 2: single path query toward the footprint edge nearest the
+        // enemy (cheap geometric pre-pick — avoids the wrap-around bias you
+        // get when pathing to tower center). Walk the returned corners and
+        // accept the first one that's within one agent-radius (in tile steps)
+        // of the footprint. Truncating at first-reach prevents the agent
+        // from snaking around to a far-side endpoint.
         var tracker = TowerFootprintTracker.Instance;
         if (tracker == null || tracker.Coords == null) return false;
 
+        Vector2 destination = tracker.TryGetNearestApproachPoint(tower, GlobalPosition, out var near)
+            ? near
+            : tower.GlobalPosition;
+
         Vector2[] path = NavigationServer2D.MapGetPath(
-            navMap, GlobalPosition, tower.GlobalPosition, true);
+            navMap, GlobalPosition, destination, true);
         if (path.Length == 0) return false;
-        Vector2 endpoint = path[^1];
 
         float agentRadius = EnemyConfig?.AgentRadius ?? 0f;
         int maxTiles = Mathf.CeilToInt(agentRadius / tracker.Coords.TilePixelSize);
 
-        if (tracker.IsWithinTileReach(tower, endpoint, maxTiles))
+        for (int i = 0; i < path.Length; i++)
         {
-            approach = NudgeForAttackRange(endpoint, tower.GlobalPosition, navMap);
-            return true;
+            if (tracker.IsWithinTileReach(tower, path[i], maxTiles))
+            {
+                approach = NudgeForAttackRange(path[i], tower.GlobalPosition, navMap);
+                return true;
+            }
         }
         return false;
     }
@@ -277,5 +290,14 @@ public partial class EnemyNavAgentController : CharacterBody2D
         if (outward.LengthSquared() < 1e-6f) return point;
         Vector2 nudged = point + outward.Normalized() * AttackRange;
         return NavigationServer2D.MapGetClosestPoint(navMap, nudged);
+    }
+
+    public override void _Draw()
+    {
+        if (_drawWorldPos == Vector2.Zero) return;
+        if (_drawSize <= 0f) return;
+        Vector2 local = ToLocal(_drawWorldPos);
+        Vector2 half = new(_drawSize / 2f, _drawSize / 2f);
+        DrawRect(new Rect2(local - half, _drawSize, _drawSize), _drawColor);
     }
 }
