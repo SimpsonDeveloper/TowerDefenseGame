@@ -51,11 +51,11 @@ CoordConfig = ExtResource("7_ck6mf")
 ChunksToApplyPerFrame = 50
 MaxConcurrentGenerations = 16
 BoundsEnabled = true
-BoundsMax = Vector2i(15, 15)
+BoundsMax = Vector2i(3, 3)
 PreGenerateAll = true
 
 [node name="PocketCamera" type="Camera2D" parent="."]
-position = Vector2(2560, 2560)
+position = Vector2(512, 512)
 script = ExtResource("6_cam")
 MinZoom = 1.0
 

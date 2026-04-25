@@ -97,7 +97,7 @@ public partial class TowerFootprintTracker : Node
                 !set.Contains(t + Vector2I.Right);
             if (!outer) continue;
 
-            Vector2 o = new(t.X * tp, t.Y * tp);
+            Vector2 o = CoordHelper.TileToWorld(t, Coords);
             corners.Add(o);
             corners.Add(o + new Vector2(tp, 0));
             corners.Add(o + new Vector2(0,  tp));
@@ -110,23 +110,27 @@ public partial class TowerFootprintTracker : Node
     }
 
     /// <summary>
-    /// True if <paramref name="worldPoint"/>'s tile is within
-    /// <paramref name="maxTiles"/> Manhattan tile-steps of any tile in
-    /// <paramref name="tower"/>'s footprint. Caller picks maxTiles based on
-    /// agent radius: (int)(AgentRadius / TilePixelSize) + 1.
+    /// True if the tile containing <paramref name="worldPoint"/> is within
+    /// Euclidean distance sqrt(2) * maxTiles * TilePixelSize of any footprint
+    /// tile of <paramref name="tower"/> (tile origins compared in world pixels).
+    /// Caller picks maxTiles = ceil(AgentRadius / TilePixelSize).
     /// </summary>
     public bool IsWithinTileReach(Node2D tower, Vector2 worldPoint, int maxTiles)
     {
         if (tower == null || Coords == null) return false;
         if (!_byTower.TryGetValue(tower, out var tiles) || tiles.Length == 0) return false;
 
-        int tp = Coords.TilePixelSize;
-        Vector2I pt = new(Mathf.FloorToInt(worldPoint.X / tp), Mathf.FloorToInt(worldPoint.Y / tp));
+        Vector2I snappedTile = CoordHelper.WorldToTile(worldPoint, Coords);
+        Vector2 snappedWorld = CoordHelper.TileToWorld(snappedTile, Coords);
+
+        float scaledTileSize = maxTiles * Coords.TilePixelSize;
+        float requiredDistanceSq = 2f * scaledTileSize * scaledTileSize;
 
         foreach (var t in tiles)
         {
-            int d = Mathf.Abs(pt.X - t.X) + Mathf.Abs(pt.Y - t.Y);
-            if (d <= maxTiles) return true;
+            Vector2 towerTileWorld = CoordHelper.TileToWorld(t, Coords);
+            if (snappedWorld.DistanceSquaredTo(towerTileWorld) <= requiredDistanceSq)
+                return true;
         }
         return false;
     }

@@ -41,7 +41,7 @@ public partial class EnemyNavAgentController : CharacterBody2D
 
     /// <summary>
     /// How close the agent must get to each path waypoint before it advances.
-    /// Keep this at roughly half a tile width (8px for 16px tiles).
+    /// Keep this at roughly half a tile width (4px for 8px tiles).
     /// </summary>
     [Export] public float PathDesiredDistance { get; set; } = 8f;
 
@@ -49,7 +49,7 @@ public partial class EnemyNavAgentController : CharacterBody2D
     /// How close the agent must get to the final target before navigation is
     /// considered finished.
     /// </summary>
-    [Export] public float TargetDesiredDistance { get; set; } = 20f;
+    [Export] public float TargetDesiredDistance { get; set; } = 8f;
 
     /// <summary>
     /// Seconds between retargets. Each retarget runs a raycast and potentially
@@ -210,8 +210,7 @@ public partial class EnemyNavAgentController : CharacterBody2D
         // Step 1: raycast toward tower center. The hit gives an enemy-side
         // surface point, which avoids wrap-around when the nav-mesh-closest
         // point to tower center lies on the far side of the tower.
-        if (TryRaycastApproach(tower, navMap, out Vector2 rayPoint)
-            && IsReachable(navMap, rayPoint))
+        if (TryRaycastApproach(tower, navMap, out Vector2 rayPoint))
         {
             approach = rayPoint;
             return true;
@@ -227,10 +226,10 @@ public partial class EnemyNavAgentController : CharacterBody2D
         Vector2[] path = NavigationServer2D.MapGetPath(
             navMap, GlobalPosition, tower.GlobalPosition, true);
         if (path.Length == 0) return false;
-        Vector2 endpoint = path[path.Length - 1];
+        Vector2 endpoint = path[^1];
 
-        float agentRadius = EnemyConfig != null ? EnemyConfig.AgentRadius : 0f;
-        int maxTiles = (int)(agentRadius / tracker.Coords.TilePixelSize) + 1;
+        float agentRadius = EnemyConfig?.AgentRadius ?? 0f;
+        int maxTiles = Mathf.CeilToInt(agentRadius / tracker.Coords.TilePixelSize);
 
         if (tracker.IsWithinTileReach(tower, endpoint, maxTiles))
         {
@@ -247,7 +246,7 @@ public partial class EnemyNavAgentController : CharacterBody2D
         var query = PhysicsRayQueryParameters2D.Create(GlobalPosition, tower.GlobalPosition);
         query.CollisionMask = TowerRaycastMask;
         query.CollideWithAreas = false;
-        query.Exclude = new Godot.Collections.Array<Rid> { GetRid() };
+        query.Exclude = [GetRid()];
 
         var hit = space.IntersectRay(query);
         if (hit.Count == 0) return false;
@@ -257,7 +256,9 @@ public partial class EnemyNavAgentController : CharacterBody2D
         Vector2 hitPos = (Vector2)hit["position"];
         Vector2 rawSnap = NavigationServer2D.MapGetClosestPoint(navMap, hitPos);
         // Reject snaps that moved far — likely landed across a wall.
-        if (rawSnap.DistanceSquaredTo(hitPos) > 256f) return false;
+        float agentRadius = EnemyConfig?.AgentRadius ?? 0f;
+        float maxSnapJump = Math.Max(agentRadius, AttackRange);
+        if (rawSnap.DistanceSquaredTo(hitPos) > 2 * maxSnapJump * maxSnapJump + 0.1f) return false;
 
         snapped = NudgeForAttackRange(rawSnap, tower.GlobalPosition, navMap);
         return true;
@@ -276,14 +277,5 @@ public partial class EnemyNavAgentController : CharacterBody2D
         if (outward.LengthSquared() < 1e-6f) return point;
         Vector2 nudged = point + outward.Normalized() * AttackRange;
         return NavigationServer2D.MapGetClosestPoint(navMap, nudged);
-    }
-
-    private bool IsReachable(Rid navMap, Vector2 candidate)
-    {
-        // Duplicate of NavAgent's internal path query — accepted cost for
-        // letting NavAgent handle path following and smoothing.
-        Vector2[] path = NavigationServer2D.MapGetPath(navMap, GlobalPosition, candidate, true);
-        if (path.Length == 0) return false;
-        return path[path.Length - 1].DistanceSquaredTo(candidate) <= ReachableEndpointTolerance;
     }
 }
