@@ -79,9 +79,6 @@ public partial class EnemyNavAgentController : CharacterBody2D
     // ── Internal state ────────────────────────────────────────────────────
     private Node2D _target;
     private float _targetUpdateTimer;
-    private Vector2 _drawWorldPos;
-    private float _drawSize;
-    private Color _drawColor;
 
     // ── Lifecycle ─────────────────────────────────────────────────────────
 
@@ -230,14 +227,5 @@ public partial class EnemyNavAgentController : CharacterBody2D
             }
         }
         return false;
-    }
-
-    public override void _Draw()
-    {
-        if (_drawWorldPos == Vector2.Zero) return;
-        if (_drawSize <= 0f) return;
-        Vector2 local = ToLocal(_drawWorldPos);
-        Vector2 half = new(_drawSize / 2f, _drawSize / 2f);
-        DrawRect(new Rect2(local - half, _drawSize, _drawSize), _drawColor);
     }
 }
