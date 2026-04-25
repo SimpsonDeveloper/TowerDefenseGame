@@ -108,4 +108,26 @@ public partial class TowerFootprintTracker : Node
         corners.CopyTo(arr);
         return arr;
     }
+
+    /// <summary>
+    /// True if <paramref name="worldPoint"/>'s tile is within
+    /// <paramref name="maxTiles"/> Manhattan tile-steps of any tile in
+    /// <paramref name="tower"/>'s footprint. Caller picks maxTiles based on
+    /// agent radius: (int)(AgentRadius / TilePixelSize) + 1.
+    /// </summary>
+    public bool IsWithinTileReach(Node2D tower, Vector2 worldPoint, int maxTiles)
+    {
+        if (tower == null || Coords == null) return false;
+        if (!_byTower.TryGetValue(tower, out var tiles) || tiles.Length == 0) return false;
+
+        int tp = Coords.TilePixelSize;
+        Vector2I pt = new(Mathf.FloorToInt(worldPoint.X / tp), Mathf.FloorToInt(worldPoint.Y / tp));
+
+        foreach (var t in tiles)
+        {
+            int d = Mathf.Abs(pt.X - t.X) + Mathf.Abs(pt.Y - t.Y);
+            if (d <= maxTiles) return true;
+        }
+        return false;
+    }
 }

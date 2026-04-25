@@ -9,19 +9,17 @@ namespace towerdefensegame.scripts.world.enemies;
 /// Enemy variant that delegates pathfinding to Godot's built-in NavigationAgent2D.
 ///
 /// Targeting strategy (vs. plain "closest tower center"):
-///   1. Pick the closest candidate tower in TargetGroup (skipping towers we've
-///      flagged unreachable since the last nav rebake).
+///   1. Pick the closest candidate tower in TargetGroup.
 ///   2. Raycast from the enemy toward the tower's center. If the ray hits the
 ///      target tower's body, snap the hit point to the nav mesh and use it as
 ///      the path destination — this gives the enemy a natural enemy-side
 ///      approach rather than the euclidean-closest nav polygon to the center,
 ///      which often causes wrap-around.
-///   3. If the ray fails (occluded, hits a different body, snap out of
-///      tolerance, destination unreachable), fall back to TowerPerimeterPointServer.
-///      Sort the tower's cached perimeter points by distance-to-enemy and pick
-///      the first reachable one.
-///   4. If no perimeter point is reachable, flag this tower unreachable and
-///      retry with the next closest candidate tower.
+///   3. If the raycast fails or its snapped point is unreachable, query a
+///      single path toward the tower's center. The tower counts as reachable
+///      when the path's endpoint tile lies within one agent-radius (in tile
+///      steps) of the footprint, in which case the endpoint is used as the
+///      approach. Otherwise, retry with the next closest candidate tower.
 ///
 /// Note: reachability is tested via NavigationServer2D.MapGetPath; NavAgent
 /// then re-queries internally when TargetPosition is set. Accepted duplicate
@@ -219,29 +217,25 @@ public partial class EnemyNavAgentController : CharacterBody2D
             return true;
         }
 
-        // Step 2: perimeter fallback. Outer-tile corners of the tower's
-        // footprint from TowerFootprintTracker. Snap each to nav mesh, sort
-        // by distance-to-enemy, pick first reachable.
+        // Step 2: single path query toward tower center. Tower is reachable
+        // if the path's endpoint tile lies within one agent-radius of the
+        // tower footprint (in tile steps). Avoids per-perimeter-point path
+        // queries.
         var tracker = TowerFootprintTracker.Instance;
-        if (tracker == null) return false;
-        Vector2[] perimeter = tracker.GetPerimeterPoints(tower);
-        if (perimeter.Length == 0) return false;
+        if (tracker == null || tracker.Coords == null) return false;
 
-        var sorted = (Vector2[])perimeter.Clone();
-        System.Array.Sort(sorted, (a, b) =>
-            GlobalPosition.DistanceSquaredTo(a).CompareTo(GlobalPosition.DistanceSquaredTo(b)));
+        Vector2[] path = NavigationServer2D.MapGetPath(
+            navMap, GlobalPosition, tower.GlobalPosition, true);
+        if (path.Length == 0) return false;
+        Vector2 endpoint = path[path.Length - 1];
 
-        foreach (Vector2 p in sorted)
+        float agentRadius = EnemyConfig != null ? EnemyConfig.AgentRadius : 0f;
+        int maxTiles = (int)(agentRadius / tracker.Coords.TilePixelSize) + 1;
+
+        if (tracker.IsWithinTileReach(tower, endpoint, maxTiles))
         {
-            Vector2 snapped = NavigationServer2D.MapGetClosestPoint(navMap, p);
-            // Reject snaps that moved far — landed across a wall.
-            if (snapped.DistanceSquaredTo(p) > 256f) continue;
-            Vector2 nudged = NudgeForAttackRange(snapped, tower.GlobalPosition, navMap);
-            if (IsReachable(navMap, nudged))
-            {
-                approach = nudged;
-                return true;
-            }
+            approach = NudgeForAttackRange(endpoint, tower.GlobalPosition, navMap);
+            return true;
         }
         return false;
     }
