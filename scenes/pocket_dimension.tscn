@@ -57,6 +57,7 @@ PreGenerateAll = true
 [node name="PocketCamera" type="Camera2D" parent="."]
 position = Vector2(2560, 2560)
 script = ExtResource("6_cam")
+MinZoom = 1.0
 
 [node name="TowerFootprintTracker" type="Node" parent="."]
 script = ExtResource("9_tft")
