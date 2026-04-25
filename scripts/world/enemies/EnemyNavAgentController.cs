@@ -50,7 +50,7 @@ public partial class EnemyNavAgentController : CharacterBody2D
     /// How close the agent must get to the final target before navigation is
     /// considered finished.
     /// </summary>
-    [Export] public float TargetDesiredDistance { get; set; } = 8f;
+    [Export] public float TargetDesiredDistance { get; set; } = 1f;
 
     /// <summary>
     /// Seconds between retargets. Each retarget runs a raycast and potentially
@@ -142,8 +142,7 @@ public partial class EnemyNavAgentController : CharacterBody2D
 
         if (_target == null || NavAgent.IsNavigationFinished())
         {
-            Velocity = Velocity.Lerp(Vector2.Zero, Acceleration * (float)delta);
-            MoveAndSlide();
+            Velocity = Vector2.Zero;
             OnPhysicsTick(delta, distToTarget);
             return;
         }
