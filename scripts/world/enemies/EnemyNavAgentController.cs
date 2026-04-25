@@ -51,19 +51,12 @@ public partial class EnemyNavAgentController : CharacterBody2D
     [Export] public float TargetDesiredDistance { get; set; } = 1f;
 
     /// <summary>
-    /// Seconds between retargets. Each retarget runs a raycast and potentially
-    /// several MapGetPath reachability queries, so keep this above 0.1s.
+    /// Seconds between retargets. Each retarget runs two MapGetPath (one for reachability and one for agent) queries, so keep this above 0.1s.
     /// </summary>
     [Export] public float TargetUpdateInterval { get; set; } = 0.25f;
 
-    /// <summary>
-    /// Tolerance (px²) used when deciding whether MapGetPath's endpoint matches
-    /// the requested candidate — i.e. whether the path actually reaches it.
-    /// </summary>
-    [Export] public float ReachableEndpointTolerance { get; set; } = 4f;
-
     [ExportGroup("Target")]
-    [Export] public string TargetGroup { get; set; } = "Player";
+    [Export] public string TargetGroup { get; set; } = "Towers";
 
     /// <summary>
     /// Reach of the enemy's attack. Added to agentRadius to form the standoff
@@ -214,11 +207,9 @@ public partial class EnemyNavAgentController : CharacterBody2D
         if (!navMap.IsValid) return false;
 
         var tracker = TowerFootprintTracker.Instance;
-        if (tracker == null || tracker.Coords == null) return false;
+        if (tracker == null || !tracker.TryGetFootprint(tower, out var footprint)) return false;
 
-        Vector2 destination = tracker.TryGetNearestApproachPoint(tower, GlobalPosition, out var near)
-            ? near
-            : tower.GlobalPosition;
+        Vector2 destination = footprint.NearestEdgePoint(GlobalPosition);
 
         Vector2[] path = NavigationServer2D.MapGetPath(
             navMap, GlobalPosition, destination, true);
@@ -230,36 +221,15 @@ public partial class EnemyNavAgentController : CharacterBody2D
 
         for (int i = 0; i < path.Length; i++)
         {
-            if (tracker.DistanceSqToFootprint(tower, path[i]) <= standoffSq)
+            if (footprint.DistanceSqTo(path[i]) <= standoffSq)
             {
                 approach = i == 0
                     ? path[0]
-                    : BisectStandoff(tracker, tower, path[i - 1], path[i], standoffSq);
+                    : footprint.FindStandoffPoint(path[i - 1], path[i], standoffSq);
                 return true;
             }
         }
         return false;
-    }
-
-    /// <summary>
-    /// Finds the earliest point on segment [<paramref name="outside"/>,
-    /// <paramref name="inside"/>] whose distance to <paramref name="tower"/>'s
-    /// footprint is ≤ sqrt(<paramref name="standoffSq"/>). Assumes outside is
-    /// past standoff and inside is within. 8 bisection steps → ~segment_len/256
-    /// precision.
-    /// </summary>
-    private static Vector2 BisectStandoff(TowerFootprintTracker tracker, Node2D tower,
-        Vector2 outside, Vector2 inside, float standoffSq)
-    {
-        float lo = 0f, hi = 1f;
-        for (int k = 0; k < 8; k++)
-        {
-            float mid = 0.5f * (lo + hi);
-            Vector2 m = outside.Lerp(inside, mid);
-            if (tracker.DistanceSqToFootprint(tower, m) <= standoffSq) hi = mid;
-            else lo = mid;
-        }
-        return outside.Lerp(inside, hi);
     }
 
     public override void _Draw()
