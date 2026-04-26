@@ -188,12 +188,14 @@ public partial class EnemyNavAgentController : CharacterBody2D
 
     /// <summary>
     /// Resolves an approach point for <paramref name="tower"/>:
-    ///   1. Pre-pick path destination = closest outward edge point on the
-    ///      footprint (cheap geometric scan — avoids wrap-around bias of
-    ///      pathing to tower center).
+    ///   1. Footprint picks a navmesh-reachable destination near an outward
+    ///      edge — iterates tiles by distance to enemy, snaps each candidate
+    ///      edge point to the navmesh, accepts first whose snap-to-edge
+    ///      distance ≤ max(agentRadius, AttackRange). Rejects unreachable
+    ///      edges (deep in obstacle / disconnected nav island).
     ///   2. MapGetPath to that destination.
     ///   3. Walk path corners; first corner whose distance to the footprint
-    ///      is ≤ (agentRadius + AttackRange) is the stop zone.
+    ///      is ≤ max(agentRadius, AttackRange) is the stop zone.
     ///   4. Refine with bisection along the entering segment to land
     ///      precisely on the standoff boundary.
     /// </summary>
@@ -206,15 +208,16 @@ public partial class EnemyNavAgentController : CharacterBody2D
         var tracker = TowerFootprintTracker.Instance;
         if (tracker == null || !tracker.TryGetFootprint(tower, out var footprint)) return false;
 
-        Vector2 destination = footprint.NearestEdgePoint(GlobalPosition);
+        float agentRadius = EnemyConfig?.AgentRadius ?? 0f;
+        float standoff = Mathf.Max(agentRadius, AttackRange);
+        float standoffSq = standoff * standoff;
+
+        if (!footprint.TryFindApproachDestination(GlobalPosition, standoff, navMap, out Vector2 destination))
+            return false;
 
         Vector2[] path = NavigationServer2D.MapGetPath(
             navMap, GlobalPosition, destination, true);
         if (path.Length == 0) return false;
-
-        float agentRadius = EnemyConfig?.AgentRadius ?? 0f;
-        float standoff = agentRadius + AttackRange;
-        float standoffSq = standoff * standoff;
 
         for (int i = 0; i < path.Length; i++)
         {

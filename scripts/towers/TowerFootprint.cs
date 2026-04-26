@@ -55,6 +55,81 @@ public sealed class TowerFootprint
         return outside.Lerp(inside, hi);
     }
 
+    /// <summary>
+    /// Finds a navmesh-reachable point within <paramref name="standoff"/> of an
+    /// outward-facing edge. Iterates tiles in ascending distance from
+    /// <paramref name="enemyPos"/>; per tile, picks the nearest point on each
+    /// outward edge to the enemy, snaps via <c>MapGetClosestPoint</c>, and
+    /// accepts the first whose snap-to-edge distance ≤ standoff. The returned
+    /// <paramref name="destination"/> is already on the navmesh — feed straight
+    /// to <c>MapGetPath</c>.
+    /// </summary>
+    public bool TryFindApproachDestination(
+        Vector2 enemyPos, float standoff, Rid navMap, out Vector2 destination)
+    {
+        destination = default;
+        if (!navMap.IsValid || _tiles.Length == 0) return false;
+
+        float standoffSq = standoff * standoff;
+        int[] order = BuildTileOrderByDistance(enemyPos);
+        for (int oi = 0; oi < order.Length; oi++)
+        {
+            if (TryFindApproachOnTile(_tiles[order[oi]], enemyPos, navMap, standoffSq, out destination))
+                return true;
+        }
+        return false;
+    }
+
+    private int[] BuildTileOrderByDistance(Vector2 enemyPos)
+    {
+        int n = _tiles.Length;
+        float half = _tilePx * 0.5f;
+        int[] order = new int[n];
+        float[] distSq = new float[n];
+        for (int i = 0; i < n; i++)
+        {
+            order[i] = i;
+            Vector2 center = CoordHelper.TileToWorld(_tiles[i], _coords)
+                             + new Vector2(half, half);
+            distSq[i] = center.DistanceSquaredTo(enemyPos);
+        }
+        System.Array.Sort(distSq, order);
+        return order;
+    }
+
+    private bool TryFindApproachOnTile(
+        Vector2I tile, Vector2 enemyPos, Rid navMap, float standoffSq, out Vector2 destination)
+    {
+        destination = default;
+        float tp = _tilePx;
+        Vector2 origin = CoordHelper.TileToWorld(tile, _coords);
+        Vector2 tl = origin;
+        Vector2 tr = origin + new Vector2(tp, 0);
+        Vector2 bl = origin + new Vector2(0, tp);
+        Vector2 br = origin + new Vector2(tp, tp);
+
+        if (!_set.Contains(tile + Vector2I.Up)
+            && TrySnapEdge(tl, tr, enemyPos, navMap, standoffSq, out destination)) return true;
+        if (!_set.Contains(tile + Vector2I.Down)
+            && TrySnapEdge(bl, br, enemyPos, navMap, standoffSq, out destination)) return true;
+        if (!_set.Contains(tile + Vector2I.Left)
+            && TrySnapEdge(tl, bl, enemyPos, navMap, standoffSq, out destination)) return true;
+        if (!_set.Contains(tile + Vector2I.Right)
+            && TrySnapEdge(tr, br, enemyPos, navMap, standoffSq, out destination)) return true;
+        return false;
+    }
+
+    private static bool TrySnapEdge(
+        Vector2 a, Vector2 b, Vector2 enemyPos, Rid navMap, float standoffSq, out Vector2 snap)
+    {
+        Vector2 ab = b - a;
+        float lenSq = ab.LengthSquared();
+        float t = lenSq > 0f ? Mathf.Clamp((enemyPos - a).Dot(ab) / lenSq, 0f, 1f) : 0f;
+        Vector2 edgePoint = a + ab * t;
+        snap = NavigationServer2D.MapGetClosestPoint(navMap, edgePoint);
+        return snap.DistanceSquaredTo(edgePoint) <= standoffSq;
+    }
+
     private float NearestEdge(Vector2 p, out Vector2 closest)
     {
         float bestSq = float.MaxValue;
