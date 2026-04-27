@@ -1,4 +1,4 @@
-[gd_scene load_steps=18 format=3 uid="uid://d23xmn1ko1rqq"]
+[gd_scene load_steps=19 format=3 uid="uid://d23xmn1ko1rqq"]
 
 [ext_resource type="Script" uid="uid://dnb5iegcl3s5r" path="res://scripts/terrain/TerrainGen.cs" id="2_tgen"]
 [ext_resource type="Script" uid="uid://bn66bgttlo0pn" path="res://scripts/terrain/GenRange.cs" id="3_grange"]
@@ -16,6 +16,7 @@
 [ext_resource type="PackedScene" uid="uid://ct8oyhx38cldu" path="res://scenes/enemy_nav_agent.tscn" id="13_2mfk8"]
 [ext_resource type="Script" uid="uid://d4my3kkn7sesj" path="res://scripts/world/PocketNavGridManager.cs" id="13_pngm"]
 [ext_resource type="Script" uid="uid://6fcff7tjoj3y" path="res://scripts/towers/TowerDef.cs" id="15_2mfk8"]
+[ext_resource type="Script" path="res://scripts/world/PocketReachabilityIndex.cs" id="16_pri"]
 
 [sub_resource type="Resource" id="Resource_pdgenrange"]
 script = ExtResource("3_grange")
@@ -77,6 +78,16 @@ ChunkManager = NodePath("../TerrainGen/ChunkManager")
 CoordConfig = ExtResource("7_ck6mf")
 EnemyConfig = ExtResource("12_kb8u1")
 TowerPlacementManager = NodePath("../TowerPlacementManager")
+
+[node name="PocketReachabilityIndex" type="Node2D" parent="." node_paths=PackedStringArray("ChunkManager", "TowerPlacementManager", "FootprintTracker")]
+script = ExtResource("16_pri")
+ChunkManager = NodePath("../TerrainGen/ChunkManager")
+CoordConfig = ExtResource("7_ck6mf")
+EnemyConfig = ExtResource("12_kb8u1")
+TowerPlacementManager = NodePath("../TowerPlacementManager")
+FootprintTracker = NodePath("../TowerFootprintTracker")
+DebugDrawAreas = true
+DebugProbeEnabled = true
 
 [node name="EnemyNavAgent" parent="." instance=ExtResource("13_2mfk8")]
 position = Vector2(512, 512)

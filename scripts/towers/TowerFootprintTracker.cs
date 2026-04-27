@@ -16,6 +16,7 @@ public partial class TowerFootprintTracker : Node
 
     private readonly HashSet<Vector2I> _occupied = new();
     private readonly Dictionary<Node2D, TowerFootprint> _byTower = new();
+    private readonly Dictionary<Vector2I, TowerFootprint> _tileToFootprint = new();
 
     public override void _EnterTree()
     {
@@ -44,15 +45,24 @@ public partial class TowerFootprintTracker : Node
     public void Register(Node2D tower, IReadOnlyList<Vector2I> footprint)
     {
         if (tower == null || Coords == null) return;
-        for (int i = 0; i < footprint.Count; i++) _occupied.Add(footprint[i]);
-        _byTower[tower] = new TowerFootprint(footprint, Coords);
+        var fp = new TowerFootprint(footprint, Coords);
+        for (int i = 0; i < footprint.Count; i++)
+        {
+            _occupied.Add(footprint[i]);
+            _tileToFootprint[footprint[i]] = fp;
+        }
+        _byTower[tower] = fp;
     }
 
     /// <summary>Frees the tower's tiles and drops its footprint handle.</summary>
     public void Unregister(Node2D tower)
     {
         if (tower == null || !_byTower.TryGetValue(tower, out var fp)) return;
-        foreach (var t in fp.Tiles) _occupied.Remove(t);
+        foreach (var t in fp.Tiles)
+        {
+            _occupied.Remove(t);
+            _tileToFootprint.Remove(t);
+        }
         _byTower.Remove(tower);
     }
 
@@ -63,4 +73,11 @@ public partial class TowerFootprintTracker : Node
         footprint = null;
         return false;
     }
+
+    /// <summary>True iff any tower's footprint covers <paramref name="tile"/>.</summary>
+    public bool IsOccupied(Vector2I tile) => _occupied.Contains(tile);
+
+    /// <summary>Returns the footprint that owns <paramref name="tile"/>, if any.</summary>
+    public bool TryGetFootprintAt(Vector2I tile, out TowerFootprint footprint)
+        => _tileToFootprint.TryGetValue(tile, out footprint);
 }
