@@ -16,7 +16,7 @@
 [ext_resource type="PackedScene" uid="uid://ct8oyhx38cldu" path="res://scenes/enemy_nav_agent.tscn" id="13_2mfk8"]
 [ext_resource type="Script" uid="uid://d4my3kkn7sesj" path="res://scripts/world/PocketNavGridManager.cs" id="13_pngm"]
 [ext_resource type="Script" uid="uid://6fcff7tjoj3y" path="res://scripts/towers/TowerDef.cs" id="15_2mfk8"]
-[ext_resource type="Script" path="res://scripts/world/PocketReachabilityIndex.cs" id="16_pri"]
+[ext_resource type="Script" uid="uid://dhocbxp6pqng7" path="res://scripts/world/PocketReachabilityIndex.cs" id="16_pri"]
 
 [sub_resource type="Resource" id="Resource_pdgenrange"]
 script = ExtResource("3_grange")
@@ -90,6 +90,8 @@ DebugDrawAreas = true
 DebugProbeEnabled = true
 
 [node name="EnemyNavAgent" parent="." instance=ExtResource("13_2mfk8")]
+process_mode = 4
+visible = false
 position = Vector2(512, 512)
 
 [node name="TowerPlacementUI" type="CanvasLayer" parent="." node_paths=PackedStringArray("PlacementManager")]

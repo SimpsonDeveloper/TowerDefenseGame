@@ -15,6 +15,8 @@ public partial class PocketCameraController : Camera2D
     [Export] public float MaxZoom { get; set; } = 4.0f;
     [Export] public bool UseSmoothing { get; set; }
     [Export] public bool SnapZoom { get; set; } = true;
+    [Export] public float EdgeScrollMargin { get; set; } = 24f;
+    [Export] public float EdgeScrollSpeed { get; set; } = 600f;
 
     public bool InputEnabled { get; set; } = true;
 
@@ -38,7 +40,29 @@ public partial class PocketCameraController : Camera2D
         {
             Zoom = new Vector2(_targetZoom, _targetZoom);
         }
-        
+
+        if (InputEnabled && !_isDragging)
+            ApplyEdgeScroll((float)delta);
+    }
+
+    private void ApplyEdgeScroll(float delta)
+    {
+        Viewport vp = GetViewport();
+        Vector2 mousePos = vp.GetMousePosition();
+        Vector2 size = vp.GetVisibleRect().Size;
+
+        // Ignore if mouse is outside the viewport (e.g. window unfocused).
+        if (mousePos.X < 0 || mousePos.Y < 0 || mousePos.X > size.X || mousePos.Y > size.Y)
+            return;
+
+        Vector2 dir = Vector2.Zero;
+        if (mousePos.X < EdgeScrollMargin)          dir.X = -1f;
+        else if (mousePos.X > size.X - EdgeScrollMargin) dir.X =  1f;
+        if (mousePos.Y < EdgeScrollMargin)          dir.Y = -1f;
+        else if (mousePos.Y > size.Y - EdgeScrollMargin) dir.Y =  1f;
+
+        if (dir != Vector2.Zero)
+            ApplyPan(dir * EdgeScrollSpeed * delta);
     }
 
     public override void _UnhandledInput(InputEvent @event)
