@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Godot;
 using towerdefensegame.scripts.terrain;
@@ -25,6 +26,26 @@ public partial class PocketNavGridManager : Node2D
 
     [Export] public bool DebugDrawEnabled { get; set; }
 
+    /// <summary>Per-viewport registry. Each manager registers itself on
+    /// <see cref="_EnterTree"/> against the viewport it lives in; consumers
+    /// (enemies) resolve their manager by their own viewport. Multi-instance
+    /// counterpart of a singleton — supports the dual-viewport pocket setup.</summary>
+    private static readonly Dictionary<Viewport, PocketNavGridManager> ByViewport = new();
+
+    /// <summary>Returns the manager registered for <paramref name="viewport"/>,
+    /// or null if none. Cache the result; do not call per-frame.</summary>
+    public static PocketNavGridManager ForViewport(Viewport viewport)
+        => viewport != null && ByViewport.TryGetValue(viewport, out var mgr) ? mgr : null;
+
+    /// <summary>Fires on the main thread once the bake queue drains to empty
+    /// (initial bake done, or every tower-driven rebake batch settles). Enemies
+    /// subscribe to retarget against the freshly committed navmesh.</summary>
+    public event Action? BakingComplete;
+
+    /// <summary>True while at least one cell is queued for bake or actively
+    /// baking. Pathfinding consumers should defer queries until this is false.</summary>
+    public bool IsBaking => _baking || _bakePending.Count > 0;
+
     // ── Internal types ──────────────────────────────────────────────────────────
 
     private enum CellState { Queued, Baking, Active }
@@ -43,6 +64,18 @@ public partial class PocketNavGridManager : Node2D
     private DebugCellDraw _debugDraw;
 
     // ── Lifecycle ───────────────────────────────────────────────────────────────
+
+    public override void _EnterTree()
+    {
+        Viewport vp = GetViewport();
+        if (vp == null) return;
+        if (ByViewport.TryGetValue(vp, out var existing) && existing != this)
+        {
+            GD.PushWarning($"{Name}: another PocketNavGridManager already registered for this viewport.");
+            return;
+        }
+        ByViewport[vp] = this;
+    }
 
     public override void _Ready()
     {
@@ -81,6 +114,10 @@ public partial class PocketNavGridManager : Node2D
             TowerPlacementManager.TowerPlaced  -= OnTowerFootprintChanged;
             TowerPlacementManager.TowerRemoved -= OnTowerFootprintChanged;
         }
+
+        Viewport vp = GetViewport();
+        if (vp != null && ByViewport.TryGetValue(vp, out var mgr) && mgr == this)
+            ByViewport.Remove(vp);
     }
 
     // ── Tower change handling ───────────────────────────────────────────────────
@@ -206,6 +243,8 @@ public partial class PocketNavGridManager : Node2D
         }
 
         cell.State = _bakePending.Contains(cellCoord) ? CellState.Queued : CellState.Active;
+
+        if (!IsBaking) BakingComplete?.Invoke();
     }
 
     // ── Helpers ─────────────────────────────────────────────────────────────────

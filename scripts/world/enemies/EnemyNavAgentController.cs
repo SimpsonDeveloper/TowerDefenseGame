@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using Godot;
 using towerdefensegame.scripts.components;
@@ -98,6 +97,8 @@ public partial class EnemyNavAgentController : CharacterBody2D
     // ── Internal state ────────────────────────────────────────────────────
     private Node2D _target;
     private float _targetUpdateTimer;
+    private PocketNavGridManager _navGrid;
+    private TowerFootprintTracker _footprints;
 
     // ── Lifecycle ─────────────────────────────────────────────────────────
 
@@ -121,15 +122,31 @@ public partial class EnemyNavAgentController : CharacterBody2D
 
         AddToGroup("enemies");
 
-        SubmitRetarget();
+        Viewport viewport = GetViewport();
+        _navGrid    = PocketNavGridManager.ForViewport(viewport);
+        _footprints = TowerFootprintTracker.ForViewport(viewport);
+        if (_navGrid != null)
+            _navGrid.BakingComplete += OnBakingComplete;
+
+        TryRetarget();
         OnReady();
     }
 
     public sealed override void _ExitTree()
     {
+        if (_navGrid != null)
+            _navGrid.BakingComplete -= OnBakingComplete;
+
         // Block on any in-flight resolve so the worker isn't reading our
         // candidate snapshot after we're freed.
         EnemyPathfindService.Instance?.Cancel(GetInstanceId());
+    }
+
+    private void OnBakingComplete()
+    {
+        // Navmesh just settled — any cached path may now be stale. Force a
+        // fresh resolve against the new geometry.
+        TryRetarget();
     }
 
     public sealed override void _PhysicsProcess(double delta)
@@ -139,13 +156,9 @@ public partial class EnemyNavAgentController : CharacterBody2D
         DrainPendingResult();
 
         _targetUpdateTimer -= (float)delta;
-        bool targetGone = _target != null && !IsInstanceValid(_target);
-        if (targetGone) _target = null;
+        if (_target != null && !IsInstanceValid(_target)) ClearTarget();
         if (_targetUpdateTimer <= 0f || _target == null)
-        {
-            _targetUpdateTimer = TargetUpdateInterval;
-            SubmitRetarget();
-        }
+            TryRetarget();
 
         float distToTarget = _target != null
             ? GlobalPosition.DistanceTo(_target.GlobalPosition)
@@ -176,37 +189,61 @@ public partial class EnemyNavAgentController : CharacterBody2D
 
     public Node2D Target => _target;
 
+    /// <summary>Drops the current target and parks the NavAgent on the enemy's
+    /// own position so any cached path is abandoned (IsNavigationFinished()
+    /// goes true on the next query). Use whenever <c>_target</c> is invalidated.</summary>
     public void ClearTarget()
     {
         _target = null;
         Velocity = Vector2.Zero;
+        if (NavAgent != null)
+            NavAgent.TargetPosition = GlobalPosition;
     }
 
     // ── Targeting ─────────────────────────────────────────────────────────
 
     /// <summary>
+    /// Single entry point for retargeting. Resets the cadence timer and submits
+    /// only when the navmesh is settled and no prior job is in flight; otherwise
+    /// the next <see cref="OnBakingComplete"/> (or next physics tick once the job
+    /// drains) will retry. Keeps timer-reset and submit-gating in one place so
+    /// they can't drift out of sync.
+    /// </summary>
+    private void TryRetarget()
+    {
+        _targetUpdateTimer = TargetUpdateInterval;
+
+        // Don't path against a navmesh that's about to change under us.
+        if (_navGrid != null && _navGrid.IsBaking) return;
+
+        var service = EnemyPathfindService.Instance;
+        if (service == null) return;
+        if (service.HasJob(GetInstanceId())) return;
+
+        SubmitRetarget();
+    }
+
+    /// <summary>
     /// Snapshots scene-graph state (enemy position, candidate towers, footprint
     /// refs, nav map RID) and submits an off-thread resolve via
-    /// <see cref="EnemyPathfindService"/>. No-op if a prior submission is still
-    /// in-flight or completed-but-undrained — the existing job's result will
-    /// arrive via <see cref="DrainPendingResult"/> first.
+    /// <see cref="EnemyPathfindService"/>. Callers must gate via
+    /// <see cref="TryRetarget"/> — this method assumes the navmesh is ready and
+    /// no job is in flight.
     /// </summary>
     private void SubmitRetarget()
     {
         var service = EnemyPathfindService.Instance;
         if (service == null || string.IsNullOrEmpty(TargetGroup)) return;
-        if (service.HasJob(GetInstanceId())) return;
+
+        if (_footprints == null) return;
 
         Rid navMap = GetWorld2D().NavigationMap;
-        var tracker = TowerFootprintTracker.Instance;
-        if (tracker == null) return;
-
         Viewport viewport = GetViewport();
         List<ApproachCandidate> candidates = new();
         foreach (Node node in GetTree().GetNodesInGroup(TargetGroup))
         {
             if (node is not Node2D n2d || n2d.GetViewport() != viewport) continue;
-            if (!tracker.TryGetFootprint(n2d, out var footprint)) continue;
+            if (!_footprints.TryGetFootprint(n2d, out var footprint)) continue;
             candidates.Add(new ApproachCandidate(n2d.GetInstanceId(), n2d.GlobalPosition, footprint));
         }
         Vector2 enemyPos = GlobalPosition;
@@ -232,11 +269,11 @@ public partial class EnemyNavAgentController : CharacterBody2D
 
         if (!result.Found)
         {
-            _target = null;
+            ClearTarget();
             return;
         }
 
-        GodotObject obj = GodotObject.InstanceFromId(result.TowerInstanceId);
+        GodotObject obj = InstanceFromId(result.TowerInstanceId);
         if (obj is Node2D tower && IsInstanceValid(tower))
         {
             _target = tower;
@@ -244,7 +281,7 @@ public partial class EnemyNavAgentController : CharacterBody2D
         }
         else
         {
-            _target = null;
+            ClearTarget();
         }
     }
 }

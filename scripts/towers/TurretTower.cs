@@ -12,6 +12,7 @@ public partial class TurretTower : StaticBody2D, ITowerPlaceable
 
 	private Node2D _target;
 	private float _targetRadius;
+	private TowerFootprintTracker _footprints;
 
 	// Stores radius before entering the tree; TargetingZone resolves in _Ready.
 	public void Configure(TowerDef def) => _targetRadius = def.TargetRadius;
@@ -21,11 +22,14 @@ public partial class TurretTower : StaticBody2D, ITowerPlaceable
 		AddToGroup("Towers");
 		if (TargetingZoneCollisionShape?.Shape is CircleShape2D circle)
 			circle.Radius = _targetRadius;
+
+		// Cache so _ExitTree doesn't need a viewport lookup during teardown.
+		_footprints = TowerFootprintTracker.ForViewport(GetViewport());
 	}
 
 	public override void _ExitTree()
 	{
-		TowerFootprintTracker.Instance?.Unregister(this);
+		_footprints?.Unregister(this);
 	}
 
 	public override void _Process(double delta)

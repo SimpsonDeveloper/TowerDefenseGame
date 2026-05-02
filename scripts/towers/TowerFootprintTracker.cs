@@ -10,7 +10,15 @@ namespace towerdefensegame.scripts.towers;
 /// </summary>
 public partial class TowerFootprintTracker : Node
 {
-    public static TowerFootprintTracker Instance { get; private set; }
+    /// <summary>Per-viewport registry. Each tracker registers itself on
+    /// <see cref="_EnterTree"/> against the viewport it lives in; consumers
+    /// (towers, enemies) resolve their tracker by their own viewport.</summary>
+    private static readonly Dictionary<Viewport, TowerFootprintTracker> ByViewport = new();
+
+    /// <summary>Returns the tracker registered for <paramref name="viewport"/>,
+    /// or null if none. Cache the result; do not call per-frame.</summary>
+    public static TowerFootprintTracker ForViewport(Viewport viewport)
+        => viewport != null && ByViewport.TryGetValue(viewport, out var t) ? t : null;
 
     [Export] public CoordConfig Coords { get; set; }
 
@@ -20,17 +28,21 @@ public partial class TowerFootprintTracker : Node
 
     public override void _EnterTree()
     {
-        if (Instance != null && Instance != this)
+        Viewport vp = GetViewport();
+        if (vp == null) return;
+        if (ByViewport.TryGetValue(vp, out var existing) && existing != this)
         {
-            GD.PushWarning($"{Name}: another TowerFootprintTracker instance already present.");
+            GD.PushWarning($"{Name}: another TowerFootprintTracker already registered for this viewport.");
             return;
         }
-        Instance = this;
+        ByViewport[vp] = this;
     }
 
     public override void _ExitTree()
     {
-        if (Instance == this) Instance = null;
+        Viewport vp = GetViewport();
+        if (vp != null && ByViewport.TryGetValue(vp, out var t) && t == this)
+            ByViewport.Remove(vp);
     }
 
     /// <summary>Returns true if every tile in the footprint is unoccupied.</summary>
