@@ -10,21 +10,26 @@ namespace towerdefensegame.scripts.world.enemies;
 /// Enemy variant that delegates pathfinding to Godot's built-in NavigationAgent2D.
 ///
 /// Targeting strategy (per retarget):
-///   1. Sort candidates in TargetGroup by Euclidean distance to the enemy.
-///   2. For the next candidate tower, run two MapGetPath queries in parallel:
+///   1. Snapshot scene-graph state on the main thread: enemy position,
+///      candidate towers (Euclidean-sorted) + footprint refs, nav map RID.
+///   2. Submit the snapshot to <see cref="EnemyPathfindService"/>, which runs
+///      <see cref="EnemyApproachResolver"/> on a worker thread.
+///      The resolver iterates candidates and, for each, runs two MapGetPath
+///      queries:
 ///        A. Destination = Euclidean-closest reachable footprint edge
 ///           (validated via per-edge MapGetClosestPoint snap).
 ///        B. Destination = tower node position; MapGetPath snaps it to the
 ///           navmesh, so the path enters the standoff zone via the
 ///           path-shortest side (handles winding-maze geometry where A's
 ///           Euclidean pick would force a long detour).
-///   3. Score each path: walk corners until one is within
+///      Each path is scored: walk corners until one is within
 ///      (max(agentRadius, AttackRange)) of the footprint perimeter, then
-///      refine via bisection on the entering segment so the final point sits
-///      precisely on the standoff boundary. Score = polyline length up to
-///      that refined point.
-///   4. Pick the shorter-scored path; that's the approach point.
-///   5. If neither path enters the standoff zone, retry with the next candidate.
+///      refine via bisection on the entering segment. Score = polyline
+///      length up to that refined point. Shorter wins.
+///   3. On a later physics tick the controller drains the result, validates
+///      the chosen tower is still alive, and assigns NavAgent.TargetPosition.
+///      Until the result arrives, the enemy keeps walking toward its prior
+///      target (or holds still if it has none).
 ///
 /// Note: reachability is tested via NavigationServer2D.MapGetPath; NavAgent
 /// then re-queries internally when TargetPosition is set. Accepted duplicate
@@ -60,6 +65,14 @@ public partial class EnemyNavAgentController : CharacterBody2D
     /// Seconds between retargets. Each retarget runs two MapGetPath (one for reachability and one for agent) queries, so keep this above 0.1s.
     /// </summary>
     [Export] public float TargetUpdateInterval { get; set; } = 0.25f;
+
+    /// <summary>
+    /// Maximum age, in milliseconds, of a path-resolve result before it's
+    /// discarded. If the worker is backlogged and the result lands too late,
+    /// the enemy state has moved enough that the approach point is no longer
+    /// valid; better to drop it and let the next retarget cycle resubmit.
+    /// </summary>
+    [Export] public int MaxResultAgeMs { get; set; } = 500;
 
     [ExportGroup("Target")]
     [Export] public string TargetGroup { get; set; } = "Towers";
@@ -108,19 +121,30 @@ public partial class EnemyNavAgentController : CharacterBody2D
 
         AddToGroup("enemies");
 
-        RetargetAndSetDestination();
+        SubmitRetarget();
         OnReady();
+    }
+
+    public sealed override void _ExitTree()
+    {
+        // Block on any in-flight resolve so the worker isn't reading our
+        // candidate snapshot after we're freed.
+        EnemyPathfindService.Instance?.Cancel(GetInstanceId());
     }
 
     public sealed override void _PhysicsProcess(double delta)
     {
         QueueRedraw();
+
+        DrainPendingResult();
+
         _targetUpdateTimer -= (float)delta;
-        bool targetGone = _target == null || !IsInstanceValid(_target);
-        if (_targetUpdateTimer <= 0f || targetGone)
+        bool targetGone = _target != null && !IsInstanceValid(_target);
+        if (targetGone) _target = null;
+        if (_targetUpdateTimer <= 0f || _target == null)
         {
             _targetUpdateTimer = TargetUpdateInterval;
-            RetargetAndSetDestination();
+            SubmitRetarget();
         }
 
         float distToTarget = _target != null
@@ -161,30 +185,29 @@ public partial class EnemyNavAgentController : CharacterBody2D
     // ── Targeting ─────────────────────────────────────────────────────────
 
     /// <summary>
-    /// Snapshots candidate towers (Euclidean-sorted), invokes the pure
-    /// <see cref="EnemyApproachResolver"/>, and applies the result. The
-    /// snapshot/resolve split is deliberate: only the snapshot step touches
-    /// scene-graph state, so the resolve step can later be moved to a worker
-    /// thread without changing what's captured here.
+    /// Snapshots scene-graph state (enemy position, candidate towers, footprint
+    /// refs, nav map RID) and submits an off-thread resolve via
+    /// <see cref="EnemyPathfindService"/>. No-op if a prior submission is still
+    /// in-flight or completed-but-undrained — the existing job's result will
+    /// arrive via <see cref="DrainPendingResult"/> first.
     /// </summary>
-    private void RetargetAndSetDestination()
+    private void SubmitRetarget()
     {
-        if (string.IsNullOrEmpty(TargetGroup)) { _target = null; return; }
+        var service = EnemyPathfindService.Instance;
+        if (service == null || string.IsNullOrEmpty(TargetGroup)) return;
+        if (service.HasJob(GetInstanceId())) return;
 
         Rid navMap = GetWorld2D().NavigationMap;
         var tracker = TowerFootprintTracker.Instance;
-        if (tracker == null) { _target = null; return; }
+        if (tracker == null) return;
 
         Viewport viewport = GetViewport();
         List<ApproachCandidate> candidates = new();
-        Dictionary<ulong, Node2D> towersById = new();
         foreach (Node node in GetTree().GetNodesInGroup(TargetGroup))
         {
             if (node is not Node2D n2d || n2d.GetViewport() != viewport) continue;
             if (!tracker.TryGetFootprint(n2d, out var footprint)) continue;
-            ulong id = n2d.GetInstanceId();
-            candidates.Add(new ApproachCandidate(id, n2d.GlobalPosition, footprint));
-            towersById[id] = n2d;
+            candidates.Add(new ApproachCandidate(n2d.GetInstanceId(), n2d.GlobalPosition, footprint));
         }
         Vector2 enemyPos = GlobalPosition;
         candidates.Sort((a, b) =>
@@ -192,9 +215,29 @@ public partial class EnemyNavAgentController : CharacterBody2D
                 .CompareTo(enemyPos.DistanceSquaredTo(b.TowerPosition)));
 
         float standoff = Mathf.Max(EnemyConfig?.AgentRadius ?? 0f, AttackRange);
-        ApproachResult result = EnemyApproachResolver.Resolve(enemyPos, navMap, standoff, candidates);
+        service.Submit(GetInstanceId(), enemyPos, navMap, standoff, candidates);
+    }
 
-        if (result.Found && towersById.TryGetValue(result.TowerInstanceId, out Node2D tower))
+    /// <summary>
+    /// Polls the pathfind service for our most recent submission. If a result
+    /// is ready, validates the chosen tower is still alive (it may have been
+    /// destroyed while the resolve ran) and applies it as the new target.
+    /// </summary>
+    private void DrainPendingResult()
+    {
+        var service = EnemyPathfindService.Instance;
+        if (service == null) return;
+        if (!service.TryConsume(GetInstanceId(), out ApproachResult result, out ulong ageMs)) return;
+        if (ageMs > (ulong)MaxResultAgeMs) return; // stale; next retarget will resubmit
+
+        if (!result.Found)
+        {
+            _target = null;
+            return;
+        }
+
+        GodotObject obj = GodotObject.InstanceFromId(result.TowerInstanceId);
+        if (obj is Node2D tower && IsInstanceValid(tower))
         {
             _target = tower;
             NavAgent.TargetPosition = result.Approach;

@@ -90,8 +90,6 @@ DebugDrawAreas = true
 DebugProbeEnabled = true
 
 [node name="EnemyNavAgent" parent="." instance=ExtResource("13_2mfk8")]
-process_mode = 4
-visible = false
 position = Vector2(512, 512)
 
 [node name="TowerPlacementUI" type="CanvasLayer" parent="." node_paths=PackedStringArray("PlacementManager")]
