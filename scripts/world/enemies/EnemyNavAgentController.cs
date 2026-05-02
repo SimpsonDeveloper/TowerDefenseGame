@@ -161,116 +161,47 @@ public partial class EnemyNavAgentController : CharacterBody2D
     // ── Targeting ─────────────────────────────────────────────────────────
 
     /// <summary>
-    /// Picks a tower, computes a reachable approach point, and feeds it to the
-    /// nav agent. Retries with the next tower if no approach point is reachable.
+    /// Snapshots candidate towers (Euclidean-sorted), invokes the pure
+    /// <see cref="EnemyApproachResolver"/>, and applies the result. The
+    /// snapshot/resolve split is deliberate: only the snapshot step touches
+    /// scene-graph state, so the resolve step can later be moved to a worker
+    /// thread without changing what's captured here.
     /// </summary>
     private void RetargetAndSetDestination()
     {
         if (string.IsNullOrEmpty(TargetGroup)) { _target = null; return; }
 
+        Rid navMap = GetWorld2D().NavigationMap;
+        var tracker = TowerFootprintTracker.Instance;
+        if (tracker == null) { _target = null; return; }
+
         Viewport viewport = GetViewport();
-        List<Node2D> candidates = new();
+        List<ApproachCandidate> candidates = new();
+        Dictionary<ulong, Node2D> towersById = new();
         foreach (Node node in GetTree().GetNodesInGroup(TargetGroup))
         {
             if (node is not Node2D n2d || n2d.GetViewport() != viewport) continue;
-            candidates.Add(n2d);
+            if (!tracker.TryGetFootprint(n2d, out var footprint)) continue;
+            ulong id = n2d.GetInstanceId();
+            candidates.Add(new ApproachCandidate(id, n2d.GlobalPosition, footprint));
+            towersById[id] = n2d;
         }
+        Vector2 enemyPos = GlobalPosition;
         candidates.Sort((a, b) =>
-            GlobalPosition.DistanceSquaredTo(a.GlobalPosition)
-                .CompareTo(GlobalPosition.DistanceSquaredTo(b.GlobalPosition)));
+            enemyPos.DistanceSquaredTo(a.TowerPosition)
+                .CompareTo(enemyPos.DistanceSquaredTo(b.TowerPosition)));
 
-        foreach (Node2D tower in candidates)
+        float standoff = Mathf.Max(EnemyConfig?.AgentRadius ?? 0f, AttackRange);
+        ApproachResult result = EnemyApproachResolver.Resolve(enemyPos, navMap, standoff, candidates);
+
+        if (result.Found && towersById.TryGetValue(result.TowerInstanceId, out Node2D tower))
         {
-            if (TryResolveApproachPoint(tower, out Vector2 approach))
-            {
-                _target = tower;
-                NavAgent.TargetPosition = approach;
-                return;
-            }
+            _target = tower;
+            NavAgent.TargetPosition = result.Approach;
         }
-
-        _target = null;
-    }
-
-    /// <summary>
-    /// Resolves an approach point for <paramref name="tower"/>. Runs two
-    /// candidate path queries and picks the shorter:
-    ///   A. Euclidean-closest reachable footprint edge as destination.
-    ///   B. Tower node position as destination (MapGetPath snaps it to navmesh,
-    ///      so the path naturally enters the standoff zone via the
-    ///      path-shortest side, even when that side isn't Euclidean-closest).
-    /// For each path, walk corners until one is within standoff of the
-    /// footprint, refine that corner via bisection on the entering segment,
-    /// and score by total path length up to the refined point.
-    /// </summary>
-    private bool TryResolveApproachPoint(Node2D tower, out Vector2 approach)
-    {
-        approach = default;
-        Rid navMap = GetWorld2D().NavigationMap;
-        if (!navMap.IsValid) return false;
-
-        var tracker = TowerFootprintTracker.Instance;
-        if (tracker == null || !tracker.TryGetFootprint(tower, out var footprint)) return false;
-
-        float agentRadius = EnemyConfig?.AgentRadius ?? 0f;
-        float standoff = Mathf.Max(agentRadius, AttackRange);
-        float standoffSq = standoff * standoff;
-
-        float bestLen = float.MaxValue;
-        bool found = false;
-
-        // Query A: path to the Euclidean-closest reachable footprint edge.
-        if (footprint.TryFindApproachDestination(GlobalPosition, standoff, navMap, out Vector2 euclidDest))
+        else
         {
-            Vector2[] euclidPath = NavigationServer2D.MapGetPath(
-                navMap, GlobalPosition, euclidDest, true);
-            if (TryScorePath(euclidPath, footprint, standoffSq, out Vector2 a, out float len)
-                && len < bestLen)
-            {
-                bestLen = len; approach = a; found = true;
-            }
+            _target = null;
         }
-
-        // Query B: path to the tower node's center; MapGetPath snaps it to the
-        // navmesh, so the path enters the standoff zone at the path-shortest side.
-        Vector2[] towerPath = NavigationServer2D.MapGetPath(
-            navMap, GlobalPosition, tower.GlobalPosition, true);
-        if (TryScorePath(towerPath, footprint, standoffSq, out Vector2 b, out float lenB)
-            && lenB < bestLen)
-        {
-            approach = b; found = true;
-        }
-
-        return found;
-    }
-
-    /// <summary>
-    /// Walks <paramref name="path"/> corners; on the first corner within standoff
-    /// of <paramref name="footprint"/>, returns the bisection-refined approach
-    /// point and the total path length up to it.
-    /// </summary>
-    private static bool TryScorePath(
-        Vector2[] path, TowerFootprint footprint, float standoffSq,
-        out Vector2 approach, out float length)
-    {
-        approach = default; length = 0f;
-        if (path.Length == 0) return false;
-
-        for (int i = 0; i < path.Length; i++)
-        {
-            if (footprint.DistanceSqTo(path[i]) <= standoffSq)
-            {
-                if (i == 0)
-                {
-                    approach = path[0];
-                    return true;
-                }
-                approach = footprint.FindStandoffPoint(path[i - 1], path[i], standoffSq);
-                length += path[i - 1].DistanceTo(approach);
-                return true;
-            }
-            if (i > 0) length += path[i - 1].DistanceTo(path[i]);
-        }
-        return false;
     }
 }
