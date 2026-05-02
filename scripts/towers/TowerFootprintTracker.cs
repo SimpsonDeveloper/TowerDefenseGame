@@ -25,6 +25,7 @@ public partial class TowerFootprintTracker : Node
     private readonly HashSet<Vector2I> _occupied = new();
     private readonly Dictionary<Node2D, TowerFootprint> _byTower = new();
     private readonly Dictionary<Vector2I, TowerFootprint> _tileToFootprint = new();
+    private readonly Dictionary<Vector2I, Node2D> _tileToTower = new();
 
     public override void _EnterTree()
     {
@@ -62,6 +63,7 @@ public partial class TowerFootprintTracker : Node
         {
             _occupied.Add(footprint[i]);
             _tileToFootprint[footprint[i]] = fp;
+            _tileToTower[footprint[i]] = tower;
         }
         _byTower[tower] = fp;
     }
@@ -74,6 +76,7 @@ public partial class TowerFootprintTracker : Node
         {
             _occupied.Remove(t);
             _tileToFootprint.Remove(t);
+            _tileToTower.Remove(t);
         }
         _byTower.Remove(tower);
     }
@@ -92,4 +95,9 @@ public partial class TowerFootprintTracker : Node
     /// <summary>Returns the footprint that owns <paramref name="tile"/>, if any.</summary>
     public bool TryGetFootprintAt(Vector2I tile, out TowerFootprint footprint)
         => _tileToFootprint.TryGetValue(tile, out footprint);
+
+    /// <summary>Returns the tower whose footprint covers <paramref name="tile"/>,
+    /// if any. Drives the click-to-destroy lookup in destroy mode.</summary>
+    public bool TryGetTowerAt(Vector2I tile, out Node2D tower)
+        => _tileToTower.TryGetValue(tile, out tower);
 }

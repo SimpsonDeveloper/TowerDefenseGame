@@ -9,14 +9,19 @@ namespace towerdefensegame.scripts.towers;
 /// Manages the tower placement state machine inside the pocket dimension.
 ///
 /// States:
-///   Idle     — no tower selected; ghost is null.
-///   Placing  — a tower type is selected; ghost follows the snapped mouse.
+///   Idle        — no mode active; ghost is null.
+///   Placing     — a tower type is selected; ghost follows the snapped mouse,
+///                 left-click commits.
+///   Destroying  — left-click on a placed tower destroys it (routed through
+///                 <see cref="ITowerPlaceable.Destroy"/>).
 ///
 /// Transitions:
-///   BeginPlacement(def)  → Placing  (called by TowerPlacementUI)
-///   Left-click (valid)   → Placing  (commits tower, stays in Placing for chaining)
-///   Right-click / Escape → Idle     (cancel)
-///   DimensionSwapped(false) → Idle  (pocket became mini; placement cancelled)
+///   BeginPlacement(def)     → Placing     (TowerPlacementUI)
+///   BeginDestroying()       → Destroying  (TowerPlacementUI)
+///   Left-click (Placing)    → Placing     (commits, stays for chaining)
+///   Left-click (Destroying) → Destroying  (destroys tower under cursor, stays)
+///   Right-click / Escape    → Idle        (cancel)
+///   DimensionSwapped(false) → Idle        (pocket became mini)
 ///
 /// Input is ignored while the pocket dimension is the mini viewport (_inputEnabled = false).
 /// </summary>
@@ -26,6 +31,9 @@ public partial class TowerPlacementManager : Node2D
     [Export] public TowerFootprintTracker FootprintTracker { get; set; }
     [Export] public Node2D PlacedTowersContainer { get; set; }
 
+    private enum Mode { Idle, Placing, Destroying }
+
+    private Mode     _mode;
     private TowerDef _pending;
     private Node2D   _ghost;
     private bool     _inputEnabled; // true only when pocket dimension is the main viewport
@@ -33,7 +41,8 @@ public partial class TowerPlacementManager : Node2D
     private static readonly Color ValidColor   = new(1.0f, 1.0f, 1.0f, 0.6f);
     private static readonly Color InvalidColor = new(1.0f, 0.25f, 0.25f, 0.6f);
 
-    public bool IsPlacing => _pending != null;
+    public bool IsPlacing    => _mode == Mode.Placing;
+    public bool IsDestroying => _mode == Mode.Destroying;
 
     /// <summary>Fired after a tower is successfully committed. Carries the tile footprint.</summary>
     public event Action<IReadOnlyList<Vector2I>>? TowerPlaced;
@@ -47,8 +56,9 @@ public partial class TowerPlacementManager : Node2D
     public void BeginPlacement(TowerDef def)
     {
         if (def?.TowerScene == null) return;
-        CancelPlacement();
+        Cancel();
 
+        _mode    = Mode.Placing;
         _pending = def;
 
         var ghost = new Node2D { Modulate = ValidColor };
@@ -60,19 +70,41 @@ public partial class TowerPlacementManager : Node2D
         AddChild(_ghost);
     }
 
-    /// <summary>Abort placement and discard the ghost.</summary>
-    public void CancelPlacement()
+    /// <summary>Enter destroying mode. Left-click on a tower destroys it.</summary>
+    public void BeginDestroying()
+    {
+        Cancel();
+        _mode = Mode.Destroying;
+    }
+
+    /// <summary>Return to Idle from any mode. Discards any active ghost.</summary>
+    public void Cancel()
     {
         _ghost?.QueueFree();
         _ghost   = null;
         _pending = null;
+        _mode    = Mode.Idle;
+    }
+
+    /// <summary>Back-compat alias — old call sites and the Cancel button still
+    /// use this name.</summary>
+    public void CancelPlacement() => Cancel();
+
+    /// <summary>Programmatic destruction — UI, scripted events, and (eventually)
+    /// enemy attack code all route through here. Safe to call on any tower that
+    /// implements <see cref="ITowerPlaceable"/>; lifecycle cleanup runs via the
+    /// tower's <c>Destroyed</c> event.</summary>
+    public void DestroyTower(Node2D tower)
+    {
+        if (tower is ITowerPlaceable placeable)
+            placeable.Destroy();
     }
 
     // ── Godot callbacks ─────────────────────────────────────────────────────────
 
     public override void _Process(double delta)
     {
-        if (_ghost == null || _pending == null) return;
+        if (_mode != Mode.Placing || _ghost == null || _pending == null) return;
 
         Vector2 mouseWorld = GetGlobalMousePosition();
         Vector2 snapped    = TowerSnapHelper.SnapCenter(mouseWorld, _pending.SizePixels, Coords);
@@ -85,26 +117,27 @@ public partial class TowerPlacementManager : Node2D
 
     public override void _UnhandledInput(InputEvent @event)
     {
-        if (!_inputEnabled || _pending == null) return;
+        if (!_inputEnabled || _mode == Mode.Idle) return;
 
         if (@event is InputEventMouseButton mb && mb.Pressed)
         {
             switch (mb.ButtonIndex)
             {
                 case MouseButton.Left:
-                    TryCommitPlacement();
+                    if (_mode == Mode.Placing)        TryCommitPlacement();
+                    else if (_mode == Mode.Destroying) TryDestroyAtMouse();
                     GetViewport().SetInputAsHandled();
                     break;
 
                 case MouseButton.Right:
-                    CancelPlacement();
+                    Cancel();
                     GetViewport().SetInputAsHandled();
                     break;
             }
         }
         else if (@event.IsActionPressed("ui_cancel"))
         {
-            CancelPlacement();
+            Cancel();
             GetViewport().SetInputAsHandled();
         }
     }
@@ -123,22 +156,48 @@ public partial class TowerPlacementManager : Node2D
         var tower = _pending.TowerScene.Instantiate<Node2D>();
         tower.GlobalPosition = snapped;
         if (tower is ITowerPlaceable placeable)
+        {
             placeable.Configure(_pending);
+            // Subscribe before AddChild so we don't miss an early Destroy().
+            placeable.Destroyed += OnTowerDestroyed;
+        }
         PlacedTowersContainer.AddChild(tower);
         FootprintTracker.Register(tower, footprint);
         TowerPlaced?.Invoke(footprint);
 
         // Stay in Placing mode so the user can chain placements of the same type.
         var def = _pending;
-        CancelPlacement();
+        Cancel();
         BeginPlacement(def);
+    }
+
+    private void TryDestroyAtMouse()
+    {
+        Vector2 worldPos = GetGlobalMousePosition();
+        Vector2I tile    = CoordHelper.WorldToTile(worldPos, Coords);
+        if (FootprintTracker.TryGetTowerAt(tile, out var tower))
+            DestroyTower(tower);
+    }
+
+    /// <summary>
+    /// Handler for <see cref="ITowerPlaceable.Destroyed"/>. Captures the
+    /// footprint tiles before <c>Unregister</c> wipes them, releases the slot,
+    /// and fans out <see cref="TowerRemoved"/> so navmesh / reachability
+    /// consumers can rebake. Runs regardless of who initiated destruction
+    /// (UI, scripted, or — eventually — enemy attacks).
+    /// </summary>
+    private void OnTowerDestroyed(Node2D tower)
+    {
+        if (!FootprintTracker.TryGetFootprint(tower, out var fp)) return;
+        var tiles = new List<Vector2I>(fp.Tiles);
+        FootprintTracker.Unregister(tower);
+        TowerRemoved?.Invoke(tiles);
     }
 
     private void OnDimensionSwapped(bool pocketIsMain)
     {
         _inputEnabled = pocketIsMain;
-        if (!pocketIsMain)
-            CancelPlacement();
+        if (!pocketIsMain) Cancel();
     }
 
     private static Line2D BuildRadiusIndicator(float radius)

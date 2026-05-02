@@ -1,3 +1,4 @@
+using System;
 using Godot;
 using towerdefensegame.scripts.components;
 
@@ -14,6 +15,8 @@ public partial class TurretTower : StaticBody2D, ITowerPlaceable
 	private float _targetRadius;
 	private TowerFootprintTracker _footprints;
 
+	public event Action<Node2D> Destroyed;
+
 	// Stores radius before entering the tree; TargetingZone resolves in _Ready.
 	public void Configure(TowerDef def) => _targetRadius = def.TargetRadius;
 
@@ -27,8 +30,20 @@ public partial class TurretTower : StaticBody2D, ITowerPlaceable
 		_footprints = TowerFootprintTracker.ForViewport(GetViewport());
 	}
 
+	/// <summary>Public destruction entry point. Fires <see cref="Destroyed"/> so
+	/// <see cref="TowerPlacementManager"/> can release the footprint and fan out
+	/// <c>TowerRemoved</c>, then frees the node.</summary>
+	public void Destroy()
+	{
+		Destroyed?.Invoke(this);
+		QueueFree();
+	}
+
 	public override void _ExitTree()
 	{
+		// Defensive fallback: if the tower is freed without going through
+		// Destroy() (e.g. scene unload), make sure the footprint slot is freed.
+		// Idempotent — Unregister no-ops if we already left.
 		_footprints?.Unregister(this);
 	}
 

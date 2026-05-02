@@ -51,8 +51,12 @@ public partial class TowerPlacementUI : CanvasLayer
             vbox.AddChild(btn);
         }
 
+        var destroyButton = new Button { Text = "Destroy Mode" };
+        destroyButton.Pressed += () => PlacementManager?.BeginDestroying();
+        vbox.AddChild(destroyButton);
+
         _cancelButton = new Button { Text = "Cancel" };
-        _cancelButton.Pressed += () => PlacementManager?.CancelPlacement();
+        _cancelButton.Pressed += () => PlacementManager?.Cancel();
         vbox.AddChild(_cancelButton);
     }
 
