@@ -10,15 +10,21 @@ namespace towerdefensegame.scripts.world.enemies;
 /// Enemy variant that delegates pathfinding to Godot's built-in NavigationAgent2D.
 ///
 /// Targeting strategy (per retarget):
-///   1. Pick the closest candidate tower in TargetGroup.
-///   2. Pre-pick a path destination on the footprint's outward-facing edge
-///      nearest the enemy (geometric, no nav query).
-///   3. Run a single NavigationServer2D.MapGetPath to that destination.
-///   4. Walk the returned path corners; the first corner within
-///      (agentRadius + AttackRange) of the footprint is the stop zone.
-///   5. Refine via bisection on the entering segment so the final point sits
-///      precisely on the standoff boundary, oriented along the approach.
-///   6. If no corner enters the standoff zone, retry with the next candidate.
+///   1. Sort candidates in TargetGroup by Euclidean distance to the enemy.
+///   2. For the next candidate tower, run two MapGetPath queries in parallel:
+///        A. Destination = Euclidean-closest reachable footprint edge
+///           (validated via per-edge MapGetClosestPoint snap).
+///        B. Destination = tower node position; MapGetPath snaps it to the
+///           navmesh, so the path enters the standoff zone via the
+///           path-shortest side (handles winding-maze geometry where A's
+///           Euclidean pick would force a long detour).
+///   3. Score each path: walk corners until one is within
+///      (max(agentRadius, AttackRange)) of the footprint perimeter, then
+///      refine via bisection on the entering segment so the final point sits
+///      precisely on the standoff boundary. Score = polyline length up to
+///      that refined point.
+///   4. Pick the shorter-scored path; that's the approach point.
+///   5. If neither path enters the standoff zone, retry with the next candidate.
 ///
 /// Note: reachability is tested via NavigationServer2D.MapGetPath; NavAgent
 /// then re-queries internally when TargetPosition is set. Accepted duplicate
@@ -187,17 +193,15 @@ public partial class EnemyNavAgentController : CharacterBody2D
     }
 
     /// <summary>
-    /// Resolves an approach point for <paramref name="tower"/>:
-    ///   1. Footprint picks a navmesh-reachable destination near an outward
-    ///      edge — iterates tiles by distance to enemy, snaps each candidate
-    ///      edge point to the navmesh, accepts first whose snap-to-edge
-    ///      distance ≤ max(agentRadius, AttackRange). Rejects unreachable
-    ///      edges (deep in obstacle / disconnected nav island).
-    ///   2. MapGetPath to that destination.
-    ///   3. Walk path corners; first corner whose distance to the footprint
-    ///      is ≤ max(agentRadius, AttackRange) is the stop zone.
-    ///   4. Refine with bisection along the entering segment to land
-    ///      precisely on the standoff boundary.
+    /// Resolves an approach point for <paramref name="tower"/>. Runs two
+    /// candidate path queries and picks the shorter:
+    ///   A. Euclidean-closest reachable footprint edge as destination.
+    ///   B. Tower node position as destination (MapGetPath snaps it to navmesh,
+    ///      so the path naturally enters the standoff zone via the
+    ///      path-shortest side, even when that side isn't Euclidean-closest).
+    /// For each path, walk corners until one is within standoff of the
+    /// footprint, refine that corner via bisection on the entering segment,
+    /// and score by total path length up to the refined point.
     /// </summary>
     private bool TryResolveApproachPoint(Node2D tower, out Vector2 approach)
     {
@@ -212,22 +216,60 @@ public partial class EnemyNavAgentController : CharacterBody2D
         float standoff = Mathf.Max(agentRadius, AttackRange);
         float standoffSq = standoff * standoff;
 
-        if (!footprint.TryFindApproachDestination(GlobalPosition, standoff, navMap, out Vector2 destination))
-            return false;
+        float bestLen = float.MaxValue;
+        bool found = false;
 
-        Vector2[] path = NavigationServer2D.MapGetPath(
-            navMap, GlobalPosition, destination, true);
+        // Query A: path to the Euclidean-closest reachable footprint edge.
+        if (footprint.TryFindApproachDestination(GlobalPosition, standoff, navMap, out Vector2 euclidDest))
+        {
+            Vector2[] euclidPath = NavigationServer2D.MapGetPath(
+                navMap, GlobalPosition, euclidDest, true);
+            if (TryScorePath(euclidPath, footprint, standoffSq, out Vector2 a, out float len)
+                && len < bestLen)
+            {
+                bestLen = len; approach = a; found = true;
+            }
+        }
+
+        // Query B: path to the tower node's center; MapGetPath snaps it to the
+        // navmesh, so the path enters the standoff zone at the path-shortest side.
+        Vector2[] towerPath = NavigationServer2D.MapGetPath(
+            navMap, GlobalPosition, tower.GlobalPosition, true);
+        if (TryScorePath(towerPath, footprint, standoffSq, out Vector2 b, out float lenB)
+            && lenB < bestLen)
+        {
+            approach = b; found = true;
+        }
+
+        return found;
+    }
+
+    /// <summary>
+    /// Walks <paramref name="path"/> corners; on the first corner within standoff
+    /// of <paramref name="footprint"/>, returns the bisection-refined approach
+    /// point and the total path length up to it.
+    /// </summary>
+    private static bool TryScorePath(
+        Vector2[] path, TowerFootprint footprint, float standoffSq,
+        out Vector2 approach, out float length)
+    {
+        approach = default; length = 0f;
         if (path.Length == 0) return false;
 
         for (int i = 0; i < path.Length; i++)
         {
             if (footprint.DistanceSqTo(path[i]) <= standoffSq)
             {
-                approach = i == 0
-                    ? path[0]
-                    : footprint.FindStandoffPoint(path[i - 1], path[i], standoffSq);
+                if (i == 0)
+                {
+                    approach = path[0];
+                    return true;
+                }
+                approach = footprint.FindStandoffPoint(path[i - 1], path[i], standoffSq);
+                length += path[i - 1].DistanceTo(approach);
                 return true;
             }
+            if (i > 0) length += path[i - 1].DistanceTo(path[i]);
         }
         return false;
     }

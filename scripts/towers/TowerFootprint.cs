@@ -14,6 +14,11 @@ public sealed class TowerFootprint
     private readonly HashSet<Vector2I> _set;
     private readonly float _tilePx;
 
+    /// <summary>
+    /// Snapshots the tile list into an array + hash set for fast neighbor
+    /// lookups (used to identify outward-facing edges) and caches the tile
+    /// pixel size from <paramref name="coords"/>.
+    /// </summary>
     public TowerFootprint(IReadOnlyList<Vector2I> tiles, CoordConfig coords)
     {
         _tiles = new Vector2I[tiles.Count];
@@ -80,6 +85,11 @@ public sealed class TowerFootprint
         return false;
     }
 
+    /// <summary>
+    /// Returns tile indices sorted by squared distance from each tile's center
+    /// to <paramref name="enemyPos"/>, ascending. Drives the Euclidean-nearest
+    /// iteration order in <see cref="TryFindApproachDestination"/>.
+    /// </summary>
     private int[] BuildTileOrderByDistance(Vector2 enemyPos)
     {
         int n = _tiles.Length;
@@ -97,6 +107,14 @@ public sealed class TowerFootprint
         return order;
     }
 
+    /// <summary>
+    /// Tests each of <paramref name="tile"/>'s four edges; an edge is
+    /// outward-facing when no neighboring footprint tile sits across it.
+    /// For each outward edge, hands the enemy-nearest edge point to
+    /// <see cref="TrySnapEdge"/> and returns the first navmesh-snapped point
+    /// within standoff. Order (up/down/left/right) is arbitrary — the first
+    /// hit wins.
+    /// </summary>
     private bool TryFindApproachOnTile(
         Vector2I tile, Vector2 enemyPos, Rid navMap, float standoffSq, out Vector2 destination)
     {
@@ -119,6 +137,14 @@ public sealed class TowerFootprint
         return false;
     }
 
+    /// <summary>
+    /// Projects <paramref name="enemyPos"/> onto segment [a,b] (clamped to
+    /// the segment), then snaps that edge point onto the navmesh via
+    /// <c>MapGetClosestPoint</c>. Returns true (and emits the snap point) if
+    /// the snap landed within sqrt(<paramref name="standoffSq"/>) of the
+    /// edge — i.e. there's walkable navmesh adjacent to this edge from which
+    /// the enemy can attack.
+    /// </summary>
     private static bool TrySnapEdge(
         Vector2 a, Vector2 b, Vector2 enemyPos, Rid navMap, float standoffSq, out Vector2 snap)
     {
@@ -130,6 +156,15 @@ public sealed class TowerFootprint
         return snap.DistanceSquaredTo(edgePoint) <= standoffSq;
     }
 
+    /// <summary>
+    /// Brute-force scan over every outward-facing tile edge: returns the
+    /// minimum squared distance from <paramref name="p"/> to the footprint
+    /// perimeter, with the closest-point witness in <paramref name="closest"/>.
+    /// Backs both <see cref="DistanceSqTo"/> and <see cref="NearestEdgePoint"/>;
+    /// also drives the standoff-zone test in <see cref="FindStandoffPoint"/>,
+    /// so it correctly handles concave footprints (the metric is "any edge",
+    /// not "one chosen edge").
+    /// </summary>
     private float NearestEdge(Vector2 p, out Vector2 closest)
     {
         float bestSq = float.MaxValue;
@@ -150,6 +185,11 @@ public sealed class TowerFootprint
         return bestSq;
     }
 
+    /// <summary>
+    /// Inner loop body for <see cref="NearestEdge"/>: projects <paramref name="p"/>
+    /// onto segment [a,b] (clamped) and updates <paramref name="bestSq"/> /
+    /// <paramref name="best"/> if this segment beats the running minimum.
+    /// </summary>
     private static void TryEdge(Vector2 a, Vector2 b, Vector2 p, ref float bestSq, ref Vector2 best)
     {
         Vector2 ab = b - a;
