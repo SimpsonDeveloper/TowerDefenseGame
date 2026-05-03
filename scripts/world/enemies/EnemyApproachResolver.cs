@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using Godot;
 using towerdefensegame.scripts.towers;
-using towerdefensegame.scripts.world;
 
 namespace towerdefensegame.scripts.world.enemies;
 
@@ -47,7 +46,7 @@ public readonly struct ApproachResult
 /// each, runs the dual-query strategy used by <see cref="EnemyTowerTargeter"/>
 /// and short-circuits on the first candidate that yields an approach point.
 ///
-/// When a <see cref="PocketReachabilityIndex.Probe"/> is supplied, candidates
+/// When a <see cref="PocketReachabilityIndex.Snapshot"/> is supplied, candidates
 /// whose outward neighbors are all in a different connected component than
 /// the enemy are fast-rejected without running any nav queries, and individual
 /// snap candidates within the surviving footprint scan are gated on the same
@@ -66,7 +65,7 @@ public static class EnemyApproachResolver
     public static ApproachResult Resolve(
         Vector2 enemyPos, Rid navMap, float standoff,
         IReadOnlyList<ApproachCandidate> candidatesByDistance,
-        PocketReachabilityIndex.Probe? probe = null)
+        PocketReachabilityIndex.Snapshot? probe = null)
     {
         if (!navMap.IsValid) return ApproachResult.Miss;
         float standoffSq = standoff * standoff;
@@ -76,7 +75,7 @@ public static class EnemyApproachResolver
         // the index, no candidate is reachable — return Miss immediately.
         int enemyRoot = 0;
         bool gateOn = false;
-        if (probe is PocketReachabilityIndex.Probe p)
+        if (probe is PocketReachabilityIndex.Snapshot p)
         {
             Vector2I enemyTile = CoordHelper.WorldToTile(enemyPos, p.CoordConfig);
             int? root = p.ComponentRootAt(enemyTile);
@@ -103,7 +102,7 @@ public static class EnemyApproachResolver
     /// candidate is unreachable and the caller can skip the per-edge scan.
     /// </summary>
     private static bool TouchesEnemyComponent(
-        TowerFootprint fp, PocketReachabilityIndex.Probe probe, int enemyRoot)
+        TowerFootprint fp, PocketReachabilityIndex.Snapshot probe, int enemyRoot)
     {
         var neighbors = fp.OutwardNeighborTiles;
         for (int i = 0; i < neighbors.Count; i++)
@@ -124,7 +123,7 @@ public static class EnemyApproachResolver
     private static bool TryResolveForCandidate(
         Vector2 enemyPos, Rid navMap, float standoff, float standoffSq,
         ApproachCandidate cand,
-        PocketReachabilityIndex.Probe? probe, bool gateOn, int enemyRoot,
+        PocketReachabilityIndex.Snapshot? probe, bool gateOn, int enemyRoot,
         out Vector2 approach)
     {
         approach = default;
@@ -165,7 +164,7 @@ public static class EnemyApproachResolver
 
     private static bool TryFindReachableSnap(
         TowerFootprint footprint, Vector2 enemyPos, Rid navMap, float standoff,
-        PocketReachabilityIndex.Probe? probe, bool gateOn, int enemyRoot,
+        PocketReachabilityIndex.Snapshot? probe, bool gateOn, int enemyRoot,
         out Vector2 snap)
     {
         foreach (Vector2 candidate in footprint.EnumerateApproachSnaps(enemyPos, navMap, standoff))
@@ -181,7 +180,7 @@ public static class EnemyApproachResolver
     }
 
     private static bool SnapInEnemyComponent(
-        Vector2 snap, PocketReachabilityIndex.Probe probe, int enemyRoot)
+        Vector2 snap, PocketReachabilityIndex.Snapshot probe, int enemyRoot)
     {
         Vector2I tile = CoordHelper.WorldToTile(snap, probe.CoordConfig);
         int? root = probe.ComponentRootAt(tile);

@@ -63,38 +63,26 @@ public partial class EnemyTowerTargeter : Node
             : float.MaxValue;
 
     private Node2D _owner;
-    private PocketNavGridManager _navGrid;
-    private PocketReachabilityIndex _reach;
+    private PathfindingResourceCoordinator _coordinator;
     private TowerFootprintTracker _footprints;
     private float _retargetTimer;
-
-    // Compound-event tracking: each tower change kicks off both a navmesh
-    // rebake and a reachability rebake. We wait until both have signalled
-    // settled before retargeting, so OnWorldChanged fires once per epoch.
-    private bool _navSettled;
-    private bool _reachSettled;
 
     public override void _Ready()
     {
         _owner = GetParent<Node2D>();
         Viewport viewport = GetViewport();
-        _navGrid    = PocketNavGridManager.ForViewport(viewport);
-        _reach      = PocketReachabilityIndex.ForViewport(viewport);
-        _footprints = TowerFootprintTracker.ForViewport(viewport);
-        if (_navGrid != null)
-            _navGrid.BakingComplete += OnNavSettled;
-        if (_reach != null)
-            _reach.ReachabilityReady += OnReachSettled;
+        _coordinator = PathfindingResourceCoordinator.ForViewport(viewport);
+        _footprints  = TowerFootprintTracker.ForViewport(viewport);
+        if (_coordinator != null)
+            _coordinator.ResourcesReady += OnResourcesReady;
 
         TryRetarget();
     }
 
     public override void _ExitTree()
     {
-        if (_navGrid != null)
-            _navGrid.BakingComplete -= OnNavSettled;
-        if (_reach != null)
-            _reach.ReachabilityReady -= OnReachSettled;
+        if (_coordinator != null)
+            _coordinator.ResourcesReady -= OnResourcesReady;
 
         if (_owner != null)
             EnemyPathfindService.Instance?.Cancel(_owner.GetInstanceId());
@@ -123,63 +111,34 @@ public partial class EnemyTowerTargeter : Node
         TargetCleared?.Invoke();
     }
 
-    private void OnNavSettled()
-    {
-        _navSettled = true;
-        TryFireWorldChanged();
-    }
-
-    private void OnReachSettled()
-    {
-        _reachSettled = true;
-        TryFireWorldChanged();
-    }
-
-    /// <summary>
-    /// Compound-event sink. Both indexes are kicked off by the same upstream
-    /// tower events, so we expect one settled signal from each per epoch.
-    /// Fires <see cref="TryRetarget"/> exactly once when both have arrived,
-    /// then resets the flags for the next epoch. If a manager isn't present
-    /// (single-index scene), its slot is treated as always-settled.
-    /// </summary>
-    private void TryFireWorldChanged()
-    {
-        bool navOk   = _navGrid == null || _navSettled;
-        bool reachOk = _reach   == null || _reachSettled;
-        if (!navOk || !reachOk) return;
-
-        _navSettled = false;
-        _reachSettled = false;
-        TryRetarget();
-    }
+    private void OnResourcesReady(PathfindingResourceCoordinator.Snapshot _) => TryRetarget();
 
     /// <summary>
     /// Single entry point for retargeting. Resets the cadence timer and submits
-    /// only when both the navmesh and the reachability index are settled and no
-    /// prior job is in flight; otherwise the next world-change signal (or next
-    /// <see cref="Tick"/> once the job drains) will retry.
+    /// only when the coordinator has a published snapshot (both nav + reach
+    /// settled at the latest version) and no prior job is in flight; otherwise
+    /// the next ResourcesReady signal (or next <see cref="Tick"/> once the job
+    /// drains) will retry.
     /// </summary>
     private void TryRetarget()
     {
         _retargetTimer = TargetUpdateInterval;
 
-        if (_navGrid != null && _navGrid.IsBaking) return;
-        if (_reach   != null && !_reach.IsReady)   return;
+        if (_coordinator == null || !_coordinator.TryGetSnapshot(out var snapshot)) return;
 
         var service = EnemyPathfindService.Instance;
         if (service == null || _owner == null) return;
         if (service.HasJob(_owner.GetInstanceId())) return;
 
-        SubmitRetarget();
+        SubmitRetarget(snapshot);
     }
 
-    private void SubmitRetarget()
+    private void SubmitRetarget(PathfindingResourceCoordinator.Snapshot snapshot)
     {
         var service = EnemyPathfindService.Instance;
         if (service == null || string.IsNullOrEmpty(TargetGroup)) return;
         if (_footprints == null || _owner == null) return;
 
-        Rid navMap = _owner.GetWorld2D().NavigationMap;
         Viewport viewport = GetViewport();
         List<ApproachCandidate> candidates = new();
         foreach (Node node in GetTree().GetNodesInGroup(TargetGroup))
@@ -194,9 +153,8 @@ public partial class EnemyTowerTargeter : Node
                 .CompareTo(enemyPos.DistanceSquaredTo(b.TowerPosition)));
 
         float standoff = Mathf.Max(EnemyConfig?.AgentRadius ?? 0f, AttackRange);
-        PocketReachabilityIndex.Probe? probe = null;
-        if (_reach != null && _reach.TryAcquireProbe(out var p)) probe = p;
-        service.Submit(_owner.GetInstanceId(), enemyPos, navMap, standoff, candidates, probe);
+        service.Submit(_owner.GetInstanceId(), enemyPos, snapshot.NavMap, standoff,
+            candidates, snapshot.Reach);
     }
 
     private void DrainPendingResult()

@@ -18,7 +18,7 @@ namespace towerdefensegame.scripts.world;
 /// tile rect. Areas smaller than MinAreaTileCount are dropped as slivers.
 ///
 /// Builds run on a <see cref="WorkerThreadPool"/> task into a fresh
-/// <see cref="Snapshot"/>; the volatile <c>_current</c> reference swaps on the
+/// <see cref="Data"/>; the volatile <c>_current</c> reference swaps on the
 /// main thread once the build commits. Queries always read a fully-formed
 /// snapshot — never half-built state. <see cref="ReachabilityReady"/> fires on
 /// each commit so consumers can compound it with the navmesh-ready signal.
@@ -50,12 +50,17 @@ public partial class PocketReachabilityIndex : Node2D
     /// BakingComplete to retarget only once both indexes agree on the world.</summary>
     public event Action ReachabilityReady;
 
+    /// <summary>Fires synchronously on the main thread when a bake job is queued
+    /// to the worker thread. Paired one-to-one with <see cref="ReachabilityReady"/>.
+    /// Coordinators use this to capture the version-tag of the in-flight bake.</summary>
+    public event Action BakeStarted;
+
     /// <summary>True once the first snapshot has committed. Stays true across
     /// rebuilds — the previous snapshot keeps serving queries until the new
     /// one publishes atomically.</summary>
     public bool IsReady => _current != null;
 
-    // ── Snapshot (immutable post-build, swapped atomically) ─────────────────────
+    // ── Data (immutable post-build, swapped atomically) ─────────────────────
 
     internal struct AreaInfo
     {
@@ -64,7 +69,7 @@ public partial class PocketReachabilityIndex : Node2D
         public bool     Alive;
     }
 
-    internal sealed class Snapshot
+    internal sealed class Data
     {
         public Vector2I TileMin, TileMax;
         public int      TilesW, TilesH;
@@ -91,7 +96,7 @@ public partial class PocketReachabilityIndex : Node2D
 
     // Volatile so main-thread reads observe the fully-populated snapshot after
     // the worker's deferred Commit publishes it.
-    private volatile Snapshot _current;
+    private volatile Data _current;
 
     // ── Bake job state (main-thread only) ───────────────────────────────────────
 
@@ -193,11 +198,12 @@ public partial class PocketReachabilityIndex : Node2D
             return;
         }
 
-        BakeInput input = SnapshotInputs();
+        BakeInput input = CaptureInputs();
         _bakeInFlight = true;
+        BakeStarted?.Invoke();
         _bakeTaskId = WorkerThreadPool.AddTask(Callable.From(() =>
         {
-            Snapshot built = BuildSnapshot(input);
+            Data built = BuildData(input);
             Callable.From(() => Commit(built)).CallDeferred();
         }));
     }
@@ -206,7 +212,7 @@ public partial class PocketReachabilityIndex : Node2D
     /// Captures every input the worker needs into immutable POCO state. The
     /// build never touches the live FootprintTracker or scene graph.
     /// </summary>
-    private BakeInput SnapshotInputs()
+    private BakeInput CaptureInputs()
     {
         int cs = CoordConfig.ChunkSizeTiles;
         var tileMin = new Vector2I(
@@ -242,7 +248,7 @@ public partial class PocketReachabilityIndex : Node2D
         };
     }
 
-    private void Commit(Snapshot built)
+    private void Commit(Data built)
     {
         _bakeInFlight = false;
         _bakeTaskId   = 0;
@@ -266,7 +272,7 @@ public partial class PocketReachabilityIndex : Node2D
     /// </summary>
     public bool IsReachable(Vector2 fromWorld, Vector2 toWorld)
     {
-        Snapshot s = _current; if (s == null) return false;
+        Data s = _current; if (s == null) return false;
         Vector2I? a = NearestWalkableTile(s, fromWorld, SnapRadiusPx);
         Vector2I? b = NearestWalkableTile(s, toWorld,   SnapRadiusPx);
         if (a == null || b == null) return false;
@@ -275,11 +281,11 @@ public partial class PocketReachabilityIndex : Node2D
 
     public bool AreTilesReachable(Vector2I a, Vector2I b)
     {
-        Snapshot s = _current;
+        Data s = _current;
         return s != null && AreTilesReachable(s, a, b);
     }
 
-    private static bool AreTilesReachable(Snapshot s, Vector2I a, Vector2I b)
+    private static bool AreTilesReachable(Data s, Vector2I a, Vector2I b)
     {
         int ai = s.AreaIdAtRaw(a);
         int bi = s.AreaIdAtRaw(b);
@@ -289,7 +295,7 @@ public partial class PocketReachabilityIndex : Node2D
 
     public int? AreaIdAt(Vector2I tile)
     {
-        Snapshot s = _current; if (s == null) return null;
+        Data s = _current; if (s == null) return null;
         int id = s.AreaIdAtRaw(tile);
         return id >= 0 ? id : null;
     }
@@ -298,24 +304,24 @@ public partial class PocketReachabilityIndex : Node2D
     /// an enemy approach resolve scanning many candidates) sees a consistent
     /// view of the world even if a rebake commits mid-scan. Returns false until
     /// the first bake commits.</summary>
-    public bool TryAcquireProbe(out Probe probe)
+    public bool TryAcquireSnapshot(out Snapshot snapshot)
     {
-        Snapshot s = _current;
-        if (s == null) { probe = default; return false; }
-        probe = new Probe(s, CoordConfig);
+        Data s = _current;
+        if (s == null) { snapshot = default; return false; }
+        snapshot = new Snapshot(s, CoordConfig);
         return true;
     }
 
-    /// <summary>Read-only handle over a captured <see cref="Snapshot"/>. Safe
+    /// <summary>Read-only handle over a captured <see cref="Data"/>. Safe
     /// to use from any thread — the snapshot is immutable post-build, and the
     /// reference is captured at acquire-time so concurrent rebakes don't affect
     /// the in-flight queries.</summary>
-    public readonly struct Probe
+    public readonly struct Snapshot
     {
-        private readonly Snapshot _s;
+        private readonly Data _s;
         public CoordConfig CoordConfig { get; }
 
-        internal Probe(Snapshot s, CoordConfig coords)
+        internal Snapshot(Data s, CoordConfig coords)
         {
             _s = s;
             CoordConfig = coords;
@@ -346,12 +352,12 @@ public partial class PocketReachabilityIndex : Node2D
         public Dictionary<Vector2I, TowerFootprint> TileToFootprint;
     }
 
-    private static Snapshot BuildSnapshot(BakeInput inp)
+    private static Data BuildData(BakeInput inp)
     {
         int tilesW = inp.TileMax.X - inp.TileMin.X + 1;
         int tilesH = inp.TileMax.Y - inp.TileMin.Y + 1;
 
-        var s = new Snapshot
+        var s = new Data
         {
             TileMin    = inp.TileMin,
             TileMax    = inp.TileMax,
@@ -379,7 +385,7 @@ public partial class PocketReachabilityIndex : Node2D
     }
 
     private static void RecomputeChunk(
-        Snapshot s, BakeInput inp, Vector2I chunk,
+        Data s, BakeInput inp, Vector2I chunk,
         HashSet<TowerFootprint> nearby, Queue<Vector2I> floodQ, List<int> floodTiles,
         Stack<int> freeIds)
     {
@@ -441,7 +447,7 @@ public partial class PocketReachabilityIndex : Node2D
     }
 
     private static int FloodFillCollect(
-        Snapshot s, Vector2I seed, Vector2I tileOrigin, int cs,
+        Data s, Vector2I seed, Vector2I tileOrigin, int cs,
         Queue<Vector2I> q, List<int> outIndices)
     {
         outIndices.Clear();
@@ -467,7 +473,7 @@ public partial class PocketReachabilityIndex : Node2D
     }
 
     private static void TryVisit(
-        Snapshot s, int x, int y, int xMin, int xMax, int yMin, int yMax,
+        Data s, int x, int y, int xMin, int xMax, int yMin, int yMax,
         Queue<Vector2I> q, List<int> outIndices)
     {
         if (x < xMin || x > xMax || y < yMin || y > yMax) return;
@@ -509,7 +515,7 @@ public partial class PocketReachabilityIndex : Node2D
         return false;
     }
 
-    private static int AllocAreaId(Snapshot s, Stack<int> freeIds, Vector2I chunk, int tileCount)
+    private static int AllocAreaId(Data s, Stack<int> freeIds, Vector2I chunk, int tileCount)
     {
         var info = new AreaInfo { Chunk = chunk, TileCount = tileCount, Alive = true };
         if (freeIds.Count > 0)
@@ -522,7 +528,7 @@ public partial class PocketReachabilityIndex : Node2D
         return s.Areas.Count - 1;
     }
 
-    private static UnionFind BuildUnionFind(Snapshot s, BakeInput inp)
+    private static UnionFind BuildUnionFind(Data s, BakeInput inp)
     {
         var uf = new UnionFind(s.Areas.Count);
         for (int cy = inp.BoundsMinChunk.Y; cy <= inp.BoundsMaxChunk.Y; cy++)
@@ -536,7 +542,7 @@ public partial class PocketReachabilityIndex : Node2D
     }
 
     private static void UnionAcrossEdge(
-        Snapshot s, BakeInput inp, UnionFind uf, Vector2I chunkA, bool axisX)
+        Data s, BakeInput inp, UnionFind uf, Vector2I chunkA, bool axisX)
     {
         var chunkB = axisX ? chunkA + new Vector2I(1, 0) : chunkA + new Vector2I(0, 1);
         if (chunkB.X > inp.BoundsMaxChunk.X || chunkB.Y > inp.BoundsMaxChunk.Y) return;
@@ -560,7 +566,7 @@ public partial class PocketReachabilityIndex : Node2D
         }
     }
 
-    private static void UnionTilePair(Snapshot s, UnionFind uf, Vector2I a, Vector2I b)
+    private static void UnionTilePair(Data s, UnionFind uf, Vector2I a, Vector2I b)
     {
         int ai = s.AreaIdAtRaw(a);
         int bi = s.AreaIdAtRaw(b);
@@ -569,7 +575,7 @@ public partial class PocketReachabilityIndex : Node2D
 
     // ── Snap-to-walkable ────────────────────────────────────────────────────────
 
-    private Vector2I? NearestWalkableTile(Snapshot s, Vector2 worldPos, float radiusPx)
+    private Vector2I? NearestWalkableTile(Data s, Vector2 worldPos, float radiusPx)
     {
         var start = CoordHelper.WorldToTile(worldPos, CoordConfig);
         if (s.AreaIdAtRaw(start) >= 0) return start;
@@ -625,13 +631,13 @@ public partial class PocketReachabilityIndex : Node2D
 
         public override void _Draw()
         {
-            Snapshot s = idx._current;
+            Data s = idx._current;
             if (s == null) return;
             if (idx.DebugDrawAreas)    DrawAreas(s);
             if (idx.DebugProbeEnabled) DrawProbe(s);
         }
 
-        private void DrawAreas(Snapshot s)
+        private void DrawAreas(Data s)
         {
             float tp = idx.CoordConfig.TilePixelSize;
             for (int y = 0; y < s.TilesH; y++)
@@ -647,7 +653,7 @@ public partial class PocketReachabilityIndex : Node2D
             }
         }
 
-        private void DrawProbe(Snapshot s)
+        private void DrawProbe(Data s)
         {
             var cursor = GetGlobalMousePosition();
             var cursorSnap = idx.NearestWalkableTile(s, cursor, idx.SnapRadiusPx);
@@ -688,7 +694,7 @@ public partial class PocketReachabilityIndex : Node2D
             DrawLine(worldPos, tileCenter, new Color(ColSnapTarget, 0.6f), width: 1f);
         }
 
-        private string AreaText(Snapshot s, Vector2I? snap)
+        private string AreaText(Data s, Vector2I? snap)
         {
             if (snap is not Vector2I sTile) return "(no walkable tile in snap radius)";
             int id = s.AreaIdAtRaw(sTile);

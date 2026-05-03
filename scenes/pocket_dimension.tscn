@@ -17,6 +17,7 @@
 [ext_resource type="Script" uid="uid://d4my3kkn7sesj" path="res://scripts/world/PocketNavGridManager.cs" id="13_pngm"]
 [ext_resource type="Script" uid="uid://6fcff7tjoj3y" path="res://scripts/towers/TowerDef.cs" id="15_2mfk8"]
 [ext_resource type="Script" uid="uid://dhocbxp6pqng7" path="res://scripts/world/PocketReachabilityIndex.cs" id="16_pri"]
+[ext_resource type="Script" path="res://scripts/world/PathfindingResourceCoordinator.cs" id="17_prc"]
 
 [sub_resource type="Resource" id="Resource_pdgenrange"]
 script = ExtResource("3_grange")
@@ -88,6 +89,12 @@ TowerPlacementManager = NodePath("../TowerPlacementManager")
 FootprintTracker = NodePath("../TowerFootprintTracker")
 DebugDrawAreas = true
 DebugProbeEnabled = true
+
+[node name="PathfindingResourceCoordinator" type="Node" parent="." node_paths=PackedStringArray("NavGrid", "Reach", "TowerPlacement")]
+script = ExtResource("17_prc")
+NavGrid = NodePath("../PocketNavGridManager")
+Reach = NodePath("../PocketReachabilityIndex")
+TowerPlacement = NodePath("../TowerPlacementManager")
 
 [node name="EnemyNavAgent" parent="." instance=ExtResource("13_2mfk8")]
 position = Vector2(512, 512)

@@ -42,6 +42,11 @@ public partial class PocketNavGridManager : Node2D
     /// subscribe to retarget against the freshly committed navmesh.</summary>
     public event Action? BakingComplete;
 
+    /// <summary>Fires synchronously on the main thread when the bake queue
+    /// transitions from empty to non-empty (a fresh batch has been requested).
+    /// Coordinators use this to capture the version-tag of the in-flight batch.</summary>
+    public event Action? BakingStarted;
+
     /// <summary>True while at least one cell is queued for bake or actively
     /// baking. Pathfinding consumers should defer queries until this is false.</summary>
     public bool IsBaking => _baking || _bakePending.Count > 0;
@@ -95,6 +100,7 @@ public partial class PocketNavGridManager : Node2D
         var cellMin = CoordHelper.ChunkToNavCell(ChunkManager.BoundsMin, CoordConfig);
         var cellMax = CoordHelper.ChunkToNavCell(ChunkManager.BoundsMax, CoordConfig);
 
+        bool wasIdle = !IsBaking;
         for (int cellY = cellMin.Y; cellY <= cellMax.Y; cellY++)
         for (int cellX = cellMin.X; cellX <= cellMax.X; cellX++)
         {
@@ -102,6 +108,7 @@ public partial class PocketNavGridManager : Node2D
             _cells[cellCoord] = new NavCell { State = CellState.Queued };
             _bakePending.Add(cellCoord);
         }
+        if (wasIdle && IsBaking) BakingStarted?.Invoke();
 
         _debugDraw = new DebugCellDraw(this);
         AddChild(_debugDraw);
@@ -130,6 +137,7 @@ public partial class PocketNavGridManager : Node2D
     /// </summary>
     public void RebakeFootprint(IEnumerable<Vector2I> tiles)
     {
+        bool wasIdle = !IsBaking;
         foreach (var tile in tiles)
         {
             var chunkCoord = CoordHelper.TileToChunk(tile, CoordConfig);
@@ -140,6 +148,7 @@ public partial class PocketNavGridManager : Node2D
                 cell.State = CellState.Queued;
             _bakePending.Add(cellCoord);
         }
+        if (wasIdle && IsBaking) BakingStarted?.Invoke();
     }
 
     // ── Per-frame update ────────────────────────────────────────────────────────

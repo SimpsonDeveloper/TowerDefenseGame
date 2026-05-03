@@ -38,7 +38,7 @@ public partial class EnemyPathfindService : Node
         public Rid NavMap;
         public float Standoff;
         public List<ApproachCandidate> Candidates;
-        public PocketReachabilityIndex.Probe? Probe;
+        public PocketReachabilityIndex.Snapshot? Probe;
         public ApproachResult Result;
         public long TaskId;
 
@@ -79,7 +79,7 @@ public partial class EnemyPathfindService : Node
     public void Submit(
         ulong enemyId, Vector2 enemyPos, Rid navMap, float standoff,
         List<ApproachCandidate> candidates,
-        PocketReachabilityIndex.Probe? probe = null)
+        PocketReachabilityIndex.Snapshot? probe = null)
     {
         Job job = new()
         {
