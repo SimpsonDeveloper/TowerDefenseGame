@@ -64,17 +64,27 @@ public partial class EnemyTowerTargeter : Node
 
     private Node2D _owner;
     private PocketNavGridManager _navGrid;
+    private PocketReachabilityIndex _reach;
     private TowerFootprintTracker _footprints;
     private float _retargetTimer;
+
+    // Compound-event tracking: each tower change kicks off both a navmesh
+    // rebake and a reachability rebake. We wait until both have signalled
+    // settled before retargeting, so OnWorldChanged fires once per epoch.
+    private bool _navSettled;
+    private bool _reachSettled;
 
     public override void _Ready()
     {
         _owner = GetParent<Node2D>();
         Viewport viewport = GetViewport();
         _navGrid    = PocketNavGridManager.ForViewport(viewport);
+        _reach      = PocketReachabilityIndex.ForViewport(viewport);
         _footprints = TowerFootprintTracker.ForViewport(viewport);
         if (_navGrid != null)
-            _navGrid.BakingComplete += OnBakingComplete;
+            _navGrid.BakingComplete += OnNavSettled;
+        if (_reach != null)
+            _reach.ReachabilityReady += OnReachSettled;
 
         TryRetarget();
     }
@@ -82,7 +92,9 @@ public partial class EnemyTowerTargeter : Node
     public override void _ExitTree()
     {
         if (_navGrid != null)
-            _navGrid.BakingComplete -= OnBakingComplete;
+            _navGrid.BakingComplete -= OnNavSettled;
+        if (_reach != null)
+            _reach.ReachabilityReady -= OnReachSettled;
 
         if (_owner != null)
             EnemyPathfindService.Instance?.Cancel(_owner.GetInstanceId());
@@ -111,24 +123,48 @@ public partial class EnemyTowerTargeter : Node
         TargetCleared?.Invoke();
     }
 
-    private void OnBakingComplete()
+    private void OnNavSettled()
     {
-        // Navmesh just settled — any cached path may now be stale. Force a
-        // fresh resolve against the new geometry.
+        _navSettled = true;
+        TryFireWorldChanged();
+    }
+
+    private void OnReachSettled()
+    {
+        _reachSettled = true;
+        TryFireWorldChanged();
+    }
+
+    /// <summary>
+    /// Compound-event sink. Both indexes are kicked off by the same upstream
+    /// tower events, so we expect one settled signal from each per epoch.
+    /// Fires <see cref="TryRetarget"/> exactly once when both have arrived,
+    /// then resets the flags for the next epoch. If a manager isn't present
+    /// (single-index scene), its slot is treated as always-settled.
+    /// </summary>
+    private void TryFireWorldChanged()
+    {
+        bool navOk   = _navGrid == null || _navSettled;
+        bool reachOk = _reach   == null || _reachSettled;
+        if (!navOk || !reachOk) return;
+
+        _navSettled = false;
+        _reachSettled = false;
         TryRetarget();
     }
 
     /// <summary>
     /// Single entry point for retargeting. Resets the cadence timer and submits
-    /// only when the navmesh is settled and no prior job is in flight; otherwise
-    /// the next <see cref="OnBakingComplete"/> (or next <see cref="Tick"/> once
-    /// the job drains) will retry.
+    /// only when both the navmesh and the reachability index are settled and no
+    /// prior job is in flight; otherwise the next world-change signal (or next
+    /// <see cref="Tick"/> once the job drains) will retry.
     /// </summary>
     private void TryRetarget()
     {
         _retargetTimer = TargetUpdateInterval;
 
         if (_navGrid != null && _navGrid.IsBaking) return;
+        if (_reach   != null && !_reach.IsReady)   return;
 
         var service = EnemyPathfindService.Instance;
         if (service == null || _owner == null) return;
