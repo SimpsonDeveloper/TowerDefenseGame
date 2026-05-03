@@ -38,12 +38,13 @@ public partial class EnemyPathfindService : Node
         public Rid NavMap;
         public float Standoff;
         public List<ApproachCandidate> Candidates;
+        public PocketReachabilityIndex.Probe? Probe;
         public ApproachResult Result;
         public long TaskId;
 
         public void Run()
         {
-            Result = EnemyApproachResolver.Resolve(EnemyPos, NavMap, Standoff, Candidates);
+            Result = EnemyApproachResolver.Resolve(EnemyPos, NavMap, Standoff, Candidates, Probe);
         }
     }
 
@@ -77,7 +78,8 @@ public partial class EnemyPathfindService : Node
     /// </summary>
     public void Submit(
         ulong enemyId, Vector2 enemyPos, Rid navMap, float standoff,
-        List<ApproachCandidate> candidates)
+        List<ApproachCandidate> candidates,
+        PocketReachabilityIndex.Probe? probe = null)
     {
         Job job = new()
         {
@@ -86,6 +88,7 @@ public partial class EnemyPathfindService : Node
             NavMap = navMap,
             Standoff = standoff,
             Candidates = candidates,
+            Probe = probe,
         };
         job.TaskId = WorkerThreadPool.AddTask(Callable.From(job.Run));
         _jobs[enemyId] = job;

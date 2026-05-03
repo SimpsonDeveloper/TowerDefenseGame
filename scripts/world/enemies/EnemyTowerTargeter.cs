@@ -194,7 +194,9 @@ public partial class EnemyTowerTargeter : Node
                 .CompareTo(enemyPos.DistanceSquaredTo(b.TowerPosition)));
 
         float standoff = Mathf.Max(EnemyConfig?.AgentRadius ?? 0f, AttackRange);
-        service.Submit(_owner.GetInstanceId(), enemyPos, navMap, standoff, candidates);
+        PocketReachabilityIndex.Probe? probe = null;
+        if (_reach != null && _reach.TryAcquireProbe(out var p)) probe = p;
+        service.Submit(_owner.GetInstanceId(), enemyPos, navMap, standoff, candidates, probe);
     }
 
     private void DrainPendingResult()

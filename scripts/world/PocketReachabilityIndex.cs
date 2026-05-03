@@ -57,14 +57,14 @@ public partial class PocketReachabilityIndex : Node2D
 
     // ── Snapshot (immutable post-build, swapped atomically) ─────────────────────
 
-    private struct AreaInfo
+    internal struct AreaInfo
     {
         public Vector2I Chunk;
         public int      TileCount;
         public bool     Alive;
     }
 
-    private sealed class Snapshot
+    internal sealed class Snapshot
     {
         public Vector2I TileMin, TileMax;
         public int      TilesW, TilesH;
@@ -292,6 +292,44 @@ public partial class PocketReachabilityIndex : Node2D
         Snapshot s = _current; if (s == null) return null;
         int id = s.AreaIdAtRaw(tile);
         return id >= 0 ? id : null;
+    }
+
+    /// <summary>Captures the current snapshot once so a multi-step caller (e.g.
+    /// an enemy approach resolve scanning many candidates) sees a consistent
+    /// view of the world even if a rebake commits mid-scan. Returns false until
+    /// the first bake commits.</summary>
+    public bool TryAcquireProbe(out Probe probe)
+    {
+        Snapshot s = _current;
+        if (s == null) { probe = default; return false; }
+        probe = new Probe(s, CoordConfig);
+        return true;
+    }
+
+    /// <summary>Read-only handle over a captured <see cref="Snapshot"/>. Safe
+    /// to use from any thread — the snapshot is immutable post-build, and the
+    /// reference is captured at acquire-time so concurrent rebakes don't affect
+    /// the in-flight queries.</summary>
+    public readonly struct Probe
+    {
+        private readonly Snapshot _s;
+        public CoordConfig CoordConfig { get; }
+
+        internal Probe(Snapshot s, CoordConfig coords)
+        {
+            _s = s;
+            CoordConfig = coords;
+        }
+
+        /// <summary>Union-find root of the connected component containing
+        /// <paramref name="tile"/>, or null if the tile is out of bounds /
+        /// unwalkable / a dropped sliver. The integer is opaque — only useful
+        /// for equality comparison ("same component as enemy?").</summary>
+        public int? ComponentRootAt(Vector2I tile)
+        {
+            int id = _s.AreaIdAtRaw(tile);
+            return id >= 0 ? _s.Uf.Find(id) : null;
+        }
     }
 
     // ── Worker-thread build (no scene-graph access) ─────────────────────────────
