@@ -43,7 +43,7 @@ public readonly struct ApproachResult
 /// <summary>
 /// Pure-data approach resolver. Iterates candidates in the supplied order
 /// (caller pre-sorts — typically by Euclidean distance to the enemy); for
-/// each, runs the dual-query strategy used by <see cref="EnemyNavAgentController"/>
+/// each, runs the dual-query strategy used by <see cref="EnemyTowerTargeter"/>
 /// and short-circuits on the first candidate that yields an approach point.
 ///
 /// Thread-safety: takes no scene-graph references — only positions, footprint
