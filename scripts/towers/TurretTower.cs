@@ -9,6 +9,7 @@ public partial class TurretTower : StaticBody2D, ITowerPlaceable
 	[Export] public SpriteComponent TurretSprite;
 	[Export] public DetectionZone TargetingZone;
 	[Export] public CollisionShape2D TargetingZoneCollisionShape;
+	[Export] public HealthComponent Health;
 	[Export] public float RotationSpeed = 8;
 
 	private Node2D _target;
@@ -28,6 +29,12 @@ public partial class TurretTower : StaticBody2D, ITowerPlaceable
 
 		// Cache so _ExitTree doesn't need a viewport lookup during teardown.
 		_footprints = TowerFootprintTracker.ForViewport(GetViewport());
+
+		// Route HP depletion through Destroy so footprint cleanup and
+		// ITowerPlaceable.Destroyed fan-out happen the same way as a UI-driven
+		// tear-down.
+		if (Health != null)
+			Health.Destroyed += Destroy;
 	}
 
 	/// <summary>Public destruction entry point. Fires <see cref="Destroyed"/> so
@@ -35,6 +42,10 @@ public partial class TurretTower : StaticBody2D, ITowerPlaceable
 	/// <c>TowerRemoved</c>, then frees the node.</summary>
 	public void Destroy()
 	{
+		// Leave the Towers group before fan-out so the rebake triggered by
+		// TowerRemoved doesn't see this body's collision as an obstruction
+		// (QueueFree only takes effect at end of frame).
+		RemoveFromGroup("Towers");
 		Destroyed?.Invoke(this);
 		QueueFree();
 	}

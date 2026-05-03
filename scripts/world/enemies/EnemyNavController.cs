@@ -50,6 +50,7 @@ public partial class EnemyNavController : CharacterBody2D
 
     [ExportGroup("Components")]
     [Export] public EnemyTowerTargeter Targeter { get; set; }
+    [Export] public HealthComponent Health { get; set; }
     [Export] SpriteComponent Sprite { get; set; }
 
     // ── Virtual hooks ─────────────────────────────────────────────────────
@@ -95,6 +96,11 @@ public partial class EnemyNavController : CharacterBody2D
         {
             GD.PushWarning($"{Name}: Targeter not assigned — enemy will idle.");
         }
+
+        // Default death behaviour: just leave the scene tree. Drop spawning
+        // can hook the same signal later without changing this controller.
+        if (Health != null)
+            Health.Destroyed += QueueFree;
 
         OnReady();
     }
