@@ -54,6 +54,27 @@ public sealed class TowerFootprint
     /// <summary>Squared distance from <paramref name="p"/> to nearest outward-facing edge.</summary>
     public float DistanceSqTo(Vector2 p) => NearestEdge(p, out _);
 
+    /// <summary>L∞ (Chebyshev) distance from <paramref name="p"/> to the
+    /// footprint. Equals zero when <paramref name="p"/> is inside any tile.
+    /// Models the dilation as a square-agent Minkowski sum: each tile's rect
+    /// expands by `r` along both axes, with outward edges meeting at corners.
+    /// Used by walkability checks where we want a square-agent footprint
+    /// dilation instead of the rounded one Euclidean produces.</summary>
+    public float ChebyshevDistanceTo(Vector2 p)
+    {
+        float best = float.MaxValue;
+        float tp = _tilePx;
+        foreach (var t in _tiles)
+        {
+            Vector2 o = CoordHelper.TileToWorld(t, _coords);
+            float dx = Mathf.Max(0f, Mathf.Max(o.X - p.X, p.X - (o.X + tp)));
+            float dy = Mathf.Max(0f, Mathf.Max(o.Y - p.Y, p.Y - (o.Y + tp)));
+            float d  = Mathf.Max(dx, dy);
+            if (d < best) best = d;
+        }
+        return best;
+    }
+
     /// <summary>Closest point on any outward-facing edge to <paramref name="from"/>.</summary>
     public Vector2 NearestEdgePoint(Vector2 from)
     {

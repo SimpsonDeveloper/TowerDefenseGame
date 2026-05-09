@@ -399,7 +399,6 @@ public partial class PocketReachabilityIndex : Node2D
         Vector2I tileOrigin = CoordHelper.ChunkToFirstTile(chunk, inp.CoordConfig);
 
         float r   = inp.AgentRadius;
-        float rSq = r * r;
         float tp  = inp.TilePixelSize;
         int reach = Mathf.CeilToInt(r / tp) + 1;
 
@@ -419,7 +418,7 @@ public partial class PocketReachabilityIndex : Node2D
             var tile = new Vector2I(tileOrigin.X + lx, tileOrigin.Y + ly);
             if (!s.InBounds(tile)) continue;
             int idx = s.TileIndex(tile);
-            s.Walkable[idx]   = IsTileWalkable(tile, inp, nearby, rSq, tp);
+            s.Walkable[idx]   = IsTileWalkable(tile, inp, nearby, r, tp);
             s.TileToArea[idx] = -1;
         }
 
@@ -487,7 +486,7 @@ public partial class PocketReachabilityIndex : Node2D
     }
 
     private static bool IsTileWalkable(
-        Vector2I tile, BakeInput inp, HashSet<TowerFootprint> nearby, float rSq, float tp)
+        Vector2I tile, BakeInput inp, HashSet<TowerFootprint> nearby, float r, float tp)
     {
         if (inp.TileToFootprint.ContainsKey(tile)) return false;
         if (nearby.Count == 0) return true;
@@ -497,22 +496,39 @@ public partial class PocketReachabilityIndex : Node2D
         float lo = eps, hi = tp - eps, mid = tp * 0.5f;
 
         Span<Vector2> samples = stackalloc Vector2[5];
-        samples[0] = origin + new Vector2(mid, mid);
-        samples[1] = origin + new Vector2(lo,  lo);
-        samples[2] = origin + new Vector2(hi,  lo);
-        samples[3] = origin + new Vector2(lo,  hi);
-        samples[4] = origin + new Vector2(hi,  hi);
+        samples[0] = origin + new Vector2(mid, mid);  // C
+        samples[1] = origin + new Vector2(lo,  lo);   // TL
+        samples[2] = origin + new Vector2(hi,  lo);   // TR
+        samples[3] = origin + new Vector2(lo,  hi);   // BL
+        samples[4] = origin + new Vector2(hi,  hi);   // BR
 
-        foreach (var sample in samples)
+        int uncoveredMask = 0;
+        for (int i = 0; i < samples.Length; i++)
         {
             bool covered = false;
             foreach (var fp in nearby)
             {
-                if (fp.DistanceSqTo(sample) < rSq) { covered = true; break; }
+                if (tile is { X: 8, Y: 8 })
+                {
+                    int k = 0;
+                }
+                if (fp.ChebyshevDistanceTo(samples[i]) < r) { covered = true; break; }
             }
-            if (!covered) return true;
+            if (!covered) uncoveredMask |= 1 << i;
         }
-        return false;
+
+        if (uncoveredMask == 0) return false;       // every sample covered
+        if ((uncoveredMask & 1) != 0) return true;  // center uncovered → one connected blob
+
+        // Center covered: the only false-bridge patterns are the two diagonal
+        // pairs, where the tile splits into two corner blobs that aren't
+        // connected within the tile. Reject those so flood fill doesn't merge
+        // the two halves into a single area.
+        const int tl = 1 << 1, tr = 1 << 2, bl = 1 << 3, br = 1 << 4;
+        if (uncoveredMask == (tl | br)) return false;
+        if (uncoveredMask == (tr | bl)) return false;
+
+        return true;
     }
 
     private static int AllocAreaId(Data s, Stack<int> freeIds, Vector2I chunk, int tileCount)
