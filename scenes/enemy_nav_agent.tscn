@@ -68,4 +68,4 @@ Targets = [NodePath("../EnemySprite")]
 script = ExtResource("10_bar")
 Health = NodePath("../HealthComponent")
 Size = Vector2(16, 2)
-Offset = Vector2(0, -10)
+Offset = Vector2(0, -20)
