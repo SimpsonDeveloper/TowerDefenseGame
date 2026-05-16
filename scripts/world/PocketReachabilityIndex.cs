@@ -508,10 +508,6 @@ public partial class PocketReachabilityIndex : Node2D
             bool covered = false;
             foreach (var fp in nearby)
             {
-                if (tile is { X: 8, Y: 8 })
-                {
-                    int k = 0;
-                }
                 if (fp.ChebyshevDistanceTo(samples[i]) < r) { covered = true; break; }
             }
             if (!covered) uncoveredMask |= 1 << i;
