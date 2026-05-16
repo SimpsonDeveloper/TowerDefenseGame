@@ -1,0 +1,67 @@
+[gd_scene load_steps=12 format=3 uid="uid://2xgnso3nt742"]
+
+[ext_resource type="Script" uid="uid://c5o7bnj2ah8mx" path="res://scripts/towers/TurretTower.cs" id="1_jostb"]
+[ext_resource type="Texture2D" uid="uid://b617im1fwulau" path="res://assets/towers/tower64_top_down_base.png" id="2_4d1c7"]
+[ext_resource type="Texture2D" uid="uid://ci0q6g1612nwm" path="res://assets/towers/tower64_top_down_turret.png" id="3_x1woj"]
+[ext_resource type="Script" uid="uid://ccu4vr8pgyovi" path="res://scripts/components/SpriteComponent.cs" id="4_lx6hp"]
+[ext_resource type="Script" uid="uid://chr0avfu2nwee" path="res://scripts/components/DetectionZone.cs" id="5_8vvfc"]
+[ext_resource type="Script" uid="uid://cojc8ew3rlmqr" path="res://scripts/components/HealthComponent.cs" id="6_n57wg"]
+[ext_resource type="Script" uid="uid://lsgoewnytspv" path="res://scripts/components/DamageFlashComponent.cs" id="7_wexev"]
+[ext_resource type="Script" uid="uid://c4ivmmmnav7xt" path="res://scripts/components/HealthBarComponent.cs" id="8_3pfxq"]
+[ext_resource type="PackedScene" uid="uid://diyscatn43fah" path="res://scenes/laser.tscn" id="9_12pgx"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_1"]
+size = Vector2(64, 64)
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_detect"]
+radius = 256.0
+
+[node name="TurretTower" type="StaticBody2D" node_paths=PackedStringArray("TurretSprite", "TargetingZone", "TargetingZoneCollisionShape", "Health", "Laser", "LaserLine", "ShootParticles", "HitParticles")]
+collision_layer = 16
+collision_mask = 0
+script = ExtResource("1_jostb")
+TurretSprite = NodePath("TurretSprite")
+TargetingZone = NodePath("TargetingZone")
+TargetingZoneCollisionShape = NodePath("TargetingZone/CollisionShape2D")
+Health = NodePath("HealthComponent")
+Laser = NodePath("TurretSprite/Laser")
+LaserLine = NodePath("TurretSprite/Laser/Line2D")
+ShootParticles = NodePath("TurretSprite/Laser/ShootParticles")
+HitParticles = NodePath("TurretSprite/Laser/HitParticles")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_1")
+
+[node name="BaseSprite" type="Sprite2D" parent="."]
+texture = ExtResource("2_4d1c7")
+
+[node name="TurretSprite" type="Sprite2D" parent="."]
+texture = ExtResource("3_x1woj")
+script = ExtResource("4_lx6hp")
+
+[node name="Laser" parent="TurretSprite" instance=ExtResource("9_12pgx")]
+visible = false
+position = Vector2(30, 0)
+
+[node name="TargetingZone" type="Area2D" parent="."]
+collision_layer = 0
+collision_mask = 4
+script = ExtResource("5_8vvfc")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="TargetingZone"]
+shape = SubResource("CircleShape2D_detect")
+
+[node name="HealthComponent" type="Node" parent="."]
+script = ExtResource("6_n57wg")
+MaxHp = 20
+
+[node name="DamageFlash" type="Node" parent="." node_paths=PackedStringArray("Health", "Targets")]
+script = ExtResource("7_wexev")
+Health = NodePath("../HealthComponent")
+Targets = [NodePath("../BaseSprite"), NodePath("../TurretSprite")]
+
+[node name="HealthBar" type="Node2D" parent="." node_paths=PackedStringArray("Health")]
+script = ExtResource("8_3pfxq")
+Health = NodePath("../HealthComponent")
+Size = Vector2(48, 4)
+Offset = Vector2(0, -40)

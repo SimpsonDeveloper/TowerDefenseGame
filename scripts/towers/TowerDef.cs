@@ -29,6 +29,18 @@ public partial class TowerDef : Resource
     /// <summary>World-pixel radius of this tower's targeting zone.</summary>
     [Export] public float TargetRadius { get; set; }
 
+    /// <summary>HP removed from a target per shot.</summary>
+    [Export] public int Damage { get; set; } = 2;
+
+    /// <summary>Seconds between shots once aimed.</summary>
+    [Export] public float FireInterval { get; set; } = 0.5f;
+
+    /// <summary>Maximum angular error (degrees) at which the turret will fire.</summary>
+    [Export] public float AimToleranceDeg { get; set; } = 5f;
+
+    /// <summary>Seconds the laser VFX stays visible per shot.</summary>
+    [Export] public float LaserVisibleDuration { get; set; } = 0.08f;
+
     /// <summary>Resources consumed when the tower is built.</summary>
     [Export] public Array<TowerCost> Cost { get; set; } = new();
 }

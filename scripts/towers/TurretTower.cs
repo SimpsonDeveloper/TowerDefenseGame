@@ -10,22 +10,44 @@ public partial class TurretTower : StaticBody2D, ITowerPlaceable
 	[Export] public DetectionZone TargetingZone;
 	[Export] public CollisionShape2D TargetingZoneCollisionShape;
 	[Export] public HealthComponent Health;
+	[Export] public Node2D Laser;
+	[Export] public Line2D LaserLine;
+	[Export] public GpuParticles2D ShootParticles;
+	[Export] public GpuParticles2D HitParticles;
 	[Export] public float RotationSpeed = 8;
 
 	private Node2D _target;
 	private float _targetRadius;
+	private int _damage;
+	private float _fireInterval;
+	private float _aimToleranceRad;
+	private float _laserVisibleDuration;
+	private float _fireCooldown;
+	private float _laserVisibleTimer;
+	private float _muzzleOffset;
 	private TowerFootprintTracker _footprints;
 
 	public event Action<Node2D> Destroyed;
 
-	// Stores radius before entering the tree; TargetingZone resolves in _Ready.
-	public void Configure(TowerDef def) => _targetRadius = def.TargetRadius;
+	// Stores stats before entering the tree; nodes resolve in _Ready.
+	public void Configure(TowerDef def)
+	{
+		_targetRadius = def.TargetRadius;
+		_damage = def.Damage;
+		_fireInterval = def.FireInterval;
+		_aimToleranceRad = Mathf.DegToRad(def.AimToleranceDeg);
+		_laserVisibleDuration = def.LaserVisibleDuration;
+	}
 
 	public override void _Ready()
 	{
 		AddToGroup("Towers");
 		if (TargetingZoneCollisionShape?.Shape is CircleShape2D circle)
 			circle.Radius = _targetRadius;
+
+		// Laser sits at (muzzleOffset, 0) in TurretSprite-local space; cache the
+		// offset so we can shrink the beam by it when computing length-to-enemy.
+		if (Laser != null) _muzzleOffset = Laser.Position.X;
 
 		// Cache so _ExitTree doesn't need a viewport lookup during teardown.
 		_footprints = TowerFootprintTracker.ForViewport(GetViewport());
@@ -60,6 +82,16 @@ public partial class TurretTower : StaticBody2D, ITowerPlaceable
 
 	public override void _Process(double delta)
 	{
+		float dt = (float)delta;
+		_fireCooldown -= dt;
+
+		if (_laserVisibleTimer > 0f)
+		{
+			_laserVisibleTimer -= dt;
+			if (_laserVisibleTimer <= 0f && Laser != null)
+				Laser.Visible = false;
+		}
+
 		_target = FindClosestInZone();
 		if (_target == null) return;
 
@@ -67,9 +99,42 @@ public partial class TurretTower : StaticBody2D, ITowerPlaceable
 		float targetAngle = directionToTarget.Angle();
 
 		float angleDiff = Mathf.Wrap(targetAngle - TurretSprite.Rotation, -Mathf.Pi, Mathf.Pi);
-		float rotationStep = Mathf.Clamp(angleDiff, -RotationSpeed * (float)delta, RotationSpeed * (float)delta);
-
+		float rotationStep = Mathf.Clamp(angleDiff, -RotationSpeed * dt, RotationSpeed * dt);
 		TurretSprite.Rotation += rotationStep;
+
+		if (_fireCooldown <= 0f && Mathf.Abs(angleDiff) <= _aimToleranceRad)
+			Fire(directionToTarget.Length());
+	}
+
+	private void Fire(float distanceToTarget)
+	{
+		_fireCooldown = _fireInterval;
+
+		foreach (var child in _target.GetChildren())
+		{
+			if (child is HealthComponent { IsDead: false} h)
+			{
+				h.TakeDamage(_damage);
+				break;
+			}
+		}
+
+		if (Laser == null) return;
+
+		// Beam runs from the muzzle (Laser origin) out to the enemy along
+		// TurretSprite's local +X, since aim tolerance keeps the enemy near
+		// that axis. Shorten by the muzzle offset to land at the enemy.
+		float beamLength = Mathf.Max(distanceToTarget - _muzzleOffset, 0f);
+
+		if (LaserLine != null)
+			LaserLine.SetPointPosition(1, new Vector2(beamLength, 0));
+		if (HitParticles != null)
+			HitParticles.Position = new Vector2(beamLength, 0);
+
+		Laser.Visible = true;
+		_laserVisibleTimer = _laserVisibleDuration;
+		if (ShootParticles != null) ShootParticles.Restart();
+		if (HitParticles != null) HitParticles.Restart();
 	}
 
 	// Returns the closest body in the DetectionZone that belongs to the enemies group.

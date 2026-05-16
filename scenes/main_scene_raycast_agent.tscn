@@ -70,13 +70,15 @@ OverworldCamera = NodePath("../OverworldContainer/OverworldViewport/PlayerCamera
 
 [node name="OverworldContainer" type="SubViewportContainer" parent="."]
 texture_filter = 1
+offset_right = 960.0
+offset_bottom = 540.0
 stretch = true
 
 [node name="OverworldViewport" type="SubViewport" parent="OverworldContainer"]
 disable_3d = true
 handle_input_locally = false
 canvas_item_default_texture_filter = 0
-size = Vector2i(2, 2)
+size = Vector2i(960, 540)
 render_target_update_mode = 4
 
 [node name="InventoryUI" type="CanvasLayer" parent="OverworldContainer/OverworldViewport"]
@@ -171,7 +173,7 @@ Camera = NodePath("../../PlayerCamera")
 CoordConfig = ExtResource("33_coordcfg")
 
 [node name="PlayerCamera" type="Camera2D" parent="OverworldContainer/OverworldViewport"]
-position = Vector2(576, 324)
+position = Vector2(480, 270)
 script = ExtResource("10_lhwp2")
 MinZoom = 1.0
 

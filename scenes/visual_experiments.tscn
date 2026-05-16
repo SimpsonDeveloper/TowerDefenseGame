@@ -1,0 +1,64 @@
+[gd_scene load_steps=5 format=3 uid="uid://hnfo5nagklvg"]
+
+[ext_resource type="Texture2D" uid="uid://dgqpjb6qmvano" path="res://assets/towers/tower64_top_down_full.png" id="1_gblc4"]
+[ext_resource type="Texture2D" uid="uid://bfx6t31m74xbx" path="res://assets/world_resources/sprites/vfx/laser_tex_animated.tres" id="1_lbc7t"]
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_lbc7t"]
+particle_flag_disable_z = true
+spread = 70.885
+initial_velocity_min = 182.12
+initial_velocity_max = 258.27
+gravity = Vector3(0, 0, 0)
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_ywdgk"]
+particle_flag_disable_z = true
+spread = 180.0
+initial_velocity_min = 152.31999
+initial_velocity_max = 195.36
+gravity = Vector3(0, 0, 0)
+
+[node name="Node2D" type="Node2D"]
+
+[node name="OverworldContainer" type="SubViewportContainer" parent="."]
+texture_filter = 1
+offset_right = 960.0
+offset_bottom = 540.0
+stretch = true
+
+[node name="OverworldViewport" type="SubViewport" parent="OverworldContainer"]
+disable_3d = true
+handle_input_locally = false
+canvas_item_default_texture_filter = 0
+size = Vector2i(960, 540)
+render_target_update_mode = 4
+
+[node name="Line2D" type="Line2D" parent="OverworldContainer/OverworldViewport"]
+position = Vector2(13.955, 0)
+points = PackedVector2Array(636.045, 279, 746.045, 279)
+texture = ExtResource("1_lbc7t")
+texture_mode = 2
+
+[node name="Tower64TopDownBase" type="Sprite2D" parent="OverworldContainer/OverworldViewport"]
+position = Vector2(620, 279)
+texture = ExtResource("1_gblc4")
+
+[node name="Camera2D" type="Camera2D" parent="OverworldContainer/OverworldViewport"]
+position = Vector2(480, 270)
+
+[node name="ShootParticles" type="GPUParticles2D" parent="OverworldContainer/OverworldViewport"]
+position = Vector2(649, 279)
+emitting = false
+amount = 16
+lifetime = 0.15000000000000002
+one_shot = true
+explosiveness = 0.87
+process_material = SubResource("ParticleProcessMaterial_lbc7t")
+
+[node name="HitParticles" type="GPUParticles2D" parent="OverworldContainer/OverworldViewport"]
+position = Vector2(760.025, 279)
+emitting = false
+amount = 12
+lifetime = 0.27
+one_shot = true
+explosiveness = 0.87
+process_material = SubResource("ParticleProcessMaterial_ywdgk")
