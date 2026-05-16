@@ -1,0 +1,41 @@
+[gd_scene load_steps=4 format=3 uid="uid://diyscatn43fah"]
+
+[ext_resource type="Texture2D" uid="uid://bfx6t31m74xbx" path="res://assets/world_resources/sprites/vfx/laser_tex_animated.tres" id="1_xmihv"]
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_1056b"]
+particle_flag_disable_z = true
+spread = 70.885
+initial_velocity_min = 182.12
+initial_velocity_max = 258.27
+gravity = Vector3(0, 0, 0)
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_galvo"]
+particle_flag_disable_z = true
+spread = 180.0
+initial_velocity_min = 152.31999
+initial_velocity_max = 195.36
+gravity = Vector3(0, 0, 0)
+
+[node name="Laser" type="Node2D"]
+
+[node name="Line2D" type="Line2D" parent="."]
+points = PackedVector2Array(0, 0, 128, 0)
+texture = ExtResource("1_xmihv")
+texture_mode = 2
+
+[node name="ShootParticles" type="GPUParticles2D" parent="."]
+emitting = false
+amount = 16
+lifetime = 0.15000000000000002
+one_shot = true
+explosiveness = 0.87
+process_material = SubResource("ParticleProcessMaterial_1056b")
+
+[node name="HitParticles" type="GPUParticles2D" parent="."]
+position = Vector2(128, 0)
+emitting = false
+amount = 12
+lifetime = 0.27
+one_shot = true
+explosiveness = 0.87
+process_material = SubResource("ParticleProcessMaterial_galvo")

@@ -1,0 +1,11 @@
+[gd_resource type="AnimatedTexture" load_steps=3 format=3 uid="uid://bfx6t31m74xbx"]
+
+[ext_resource type="Texture2D" uid="uid://oombxatcd6b2" path="res://assets/world_resources/sprites/vfx/laser_tex.png" id="1_xse8q"]
+[ext_resource type="Texture2D" uid="uid://btxyuhssrcrku" path="res://assets/world_resources/sprites/vfx/laser_tex_2.png" id="2_w7307"]
+
+[resource]
+frames = 2
+frame_0/texture = ExtResource("1_xse8q")
+frame_0/duration = 0.1
+frame_1/texture = ExtResource("2_w7307")
+frame_1/duration = 0.1
