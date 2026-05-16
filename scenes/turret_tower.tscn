@@ -40,8 +40,10 @@ texture = ExtResource("3_x1woj")
 script = ExtResource("4_lx6hp")
 
 [node name="Laser" parent="TurretSprite" instance=ExtResource("9_12pgx")]
-visible = false
 position = Vector2(30, 0)
+
+[node name="Line2D" parent="TurretSprite/Laser" index="0"]
+visible = false
 
 [node name="TargetingZone" type="Area2D" parent="."]
 collision_layer = 0

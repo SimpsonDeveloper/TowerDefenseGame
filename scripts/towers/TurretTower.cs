@@ -88,8 +88,8 @@ public partial class TurretTower : StaticBody2D, ITowerPlaceable
 		if (_laserVisibleTimer > 0f)
 		{
 			_laserVisibleTimer -= dt;
-			if (_laserVisibleTimer <= 0f && Laser != null)
-				Laser.Visible = false;
+			if (_laserVisibleTimer <= 0f && LaserLine != null)
+				LaserLine.Visible = false;
 		}
 
 		_target = FindClosestInZone();
@@ -131,7 +131,9 @@ public partial class TurretTower : StaticBody2D, ITowerPlaceable
 		if (HitParticles != null)
 			HitParticles.Position = new Vector2(beamLength, 0);
 
-		Laser.Visible = true;
+		// Only the beam is toggled — the Laser node itself stays visible so
+		// in-flight particles continue their natural lifetime after the line hides.
+		if (LaserLine != null) LaserLine.Visible = true;
 		_laserVisibleTimer = _laserVisibleDuration;
 		if (ShootParticles != null) ShootParticles.Restart();
 		if (HitParticles != null) HitParticles.Restart();
