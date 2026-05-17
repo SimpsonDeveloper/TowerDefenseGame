@@ -1,7 +1,7 @@
 [gd_scene load_steps=5 format=3 uid="uid://hnfo5nagklvg"]
 
 [ext_resource type="Texture2D" uid="uid://dgqpjb6qmvano" path="res://assets/towers/tower64_top_down_full.png" id="1_gblc4"]
-[ext_resource type="Texture2D" uid="uid://bfx6t31m74xbx" path="res://assets/world_resources/sprites/vfx/laser_tex_animated.tres" id="1_lbc7t"]
+[ext_resource type="Texture2D" uid="uid://e2k3rmidlcjy" path="res://assets/vfx/laser_tex.png" id="1_lbc7t"]
 
 [sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_lbc7t"]
 particle_flag_disable_z = true

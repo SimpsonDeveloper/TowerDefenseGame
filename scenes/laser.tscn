@@ -1,6 +1,15 @@
-[gd_scene load_steps=4 format=3 uid="uid://diyscatn43fah"]
+[gd_scene load_steps=6 format=3 uid="uid://diyscatn43fah"]
 
-[ext_resource type="Texture2D" uid="uid://bfx6t31m74xbx" path="res://assets/world_resources/sprites/vfx/laser_tex_animated.tres" id="1_xmihv"]
+[ext_resource type="Shader" uid="uid://bf6w1u38whtsn" path="res://shaders/laser_beam.gdshader" id="1_a7dhc"]
+[ext_resource type="Texture2D" uid="uid://e2k3rmidlcjy" path="res://assets/vfx/laser_tex.png" id="2_jjj73"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_412cd"]
+shader = ExtResource("1_a7dhc")
+shader_parameter/intensity = 0.874000041515
+shader_parameter/edge_softness = 0.4770000226575
+shader_parameter/core_softness = 1.0
+shader_parameter/core_threshold = 0.1600000076
+shader_parameter/core_curve = 1.0
 
 [sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_1056b"]
 particle_flag_disable_z = true
@@ -23,9 +32,10 @@ scale_max = 2.0
 [node name="Laser" type="Node2D"]
 
 [node name="Line2D" type="Line2D" parent="."]
+material = SubResource("ShaderMaterial_412cd")
 points = PackedVector2Array(0, 0, 128, 0)
 width = 8.0
-texture = ExtResource("1_xmihv")
+texture = ExtResource("2_jjj73")
 texture_mode = 2
 
 [node name="ShootParticles" type="GPUParticles2D" parent="."]
@@ -44,3 +54,5 @@ lifetime = 0.2
 one_shot = true
 explosiveness = 0.87
 process_material = SubResource("ParticleProcessMaterial_galvo")
+
+[node name="0ToPoint874IntensityAndBack" type="Node2D" parent="."]
