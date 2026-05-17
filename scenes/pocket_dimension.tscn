@@ -87,8 +87,6 @@ CoordConfig = ExtResource("7_ck6mf")
 EnemyConfig = ExtResource("12_kb8u1")
 TowerPlacementManager = NodePath("../TowerPlacementManager")
 FootprintTracker = NodePath("../TowerFootprintTracker")
-DebugDrawAreas = true
-DebugProbeEnabled = true
 
 [node name="PathfindingResourceCoordinator" type="Node" parent="." node_paths=PackedStringArray("NavGrid", "Reach", "TowerPlacement")]
 script = ExtResource("17_prc")

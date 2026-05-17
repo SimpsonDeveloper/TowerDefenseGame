@@ -28,6 +28,7 @@ Laser = NodePath("TurretSprite/Laser")
 LaserLine = NodePath("TurretSprite/Laser/Line2D")
 ShootParticles = NodePath("TurretSprite/Laser/ShootParticles")
 HitParticles = NodePath("TurretSprite/Laser/HitParticles")
+LaserVisibleDuration = 0.12
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("RectangleShape2D_1")

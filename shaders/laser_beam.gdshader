@@ -2,20 +2,20 @@ shader_type canvas_item;
 
 // 0 = beam invisible. 1 = beam at full visible width and whited out.
 // Can be pushed above 1 for an even more blown-out look.
-uniform float intensity : hint_range(0.0, 1.5) = 1.0;
+uniform float intensity : hint_range(0.0, 1.5) = 0.874;
 
 // Softness of the alpha falloff at the beam's outer edge.
-uniform float edge_softness : hint_range(0.001, 1.0) = 0.25;
+uniform float edge_softness : hint_range(0.001, 1.0) = 0.477;
 
 // Softness of the core-to-base transition.
-uniform float core_softness : hint_range(0.001, 1.0) = 0.4;
+uniform float core_softness : hint_range(0.001, 1.0) = 1.0;
 
 // Intensity at which the white-hot core first becomes visible.
-uniform float core_threshold : hint_range(0.0, 1.0) = 0.5;
+uniform float core_threshold : hint_range(0.0, 1.0) = 0.16;
 
 // How sharply the core ramps in past the threshold. Higher = colder ramp-up,
 // more "thermodynamic" feel (long dull glow before any white appears).
-uniform float core_curve : hint_range(1.0, 8.0) = 3.0;
+uniform float core_curve : hint_range(1.0, 8.0) = 1.0;
 
 void fragment() {
     vec4 base = texture(TEXTURE, UV);

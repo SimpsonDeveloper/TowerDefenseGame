@@ -46,10 +46,12 @@ EnemyConfig = ExtResource("2_h66n4")
 
 [node name="HealthComponent" type="Node" parent="."]
 script = ExtResource("6_health")
+MaxHp = 200
 
 [node name="Attacker" type="Node2D" parent="." node_paths=PackedStringArray("HitBox")]
 script = ExtResource("7_atk")
 HitBox = NodePath("HitBox")
+Damage = 10
 
 [node name="HitBox" type="Area2D" parent="Attacker"]
 collision_layer = 0

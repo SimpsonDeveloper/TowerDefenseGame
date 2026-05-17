@@ -12,4 +12,3 @@ TowerScene = ExtResource("3_w86qd")
 SizePixels = Vector2i(64, 64)
 PreviewTexture = ExtResource("3_preview")
 TargetRadius = 256.0
-LaserVisibleDuration = 0.12

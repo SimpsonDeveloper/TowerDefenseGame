@@ -15,16 +15,19 @@ public partial class TurretTower : StaticBody2D, ITowerPlaceable
 	[Export] public GpuParticles2D ShootParticles;
 	[Export] public GpuParticles2D HitParticles;
 	[Export] public float RotationSpeed = 8;
+	[Export] public float AimToleranceDeg = 5f;
+	[Export] public float LaserVisibleDuration = 0.08f;
 
 	private Node2D _target;
 	private float _targetRadius;
 	private int _damage;
 	private float _fireInterval;
 	private float _aimToleranceRad;
-	private float _laserVisibleDuration;
 	private float _fireCooldown;
 	private float _laserVisibleTimer;
 	private float _muzzleOffset;
+	private ShaderMaterial _laserMaterial;
+	private const float LaserStartIntensity = 0.874f;
 	private TowerFootprintTracker _footprints;
 
 	public event Action<Node2D> Destroyed;
@@ -35,19 +38,25 @@ public partial class TurretTower : StaticBody2D, ITowerPlaceable
 		_targetRadius = def.TargetRadius;
 		_damage = def.Damage;
 		_fireInterval = def.FireInterval;
-		_aimToleranceRad = Mathf.DegToRad(def.AimToleranceDeg);
-		_laserVisibleDuration = def.LaserVisibleDuration;
 	}
 
 	public override void _Ready()
 	{
 		AddToGroup("Towers");
+		_aimToleranceRad = Mathf.DegToRad(AimToleranceDeg);
 		if (TargetingZoneCollisionShape?.Shape is CircleShape2D circle)
 			circle.Radius = _targetRadius;
 
 		// Laser sits at (muzzleOffset, 0) in TurretSprite-local space; cache the
 		// offset so we can shrink the beam by it when computing length-to-enemy.
 		if (Laser != null) _muzzleOffset = Laser.Position.X;
+
+		if (LaserLine?.Material is ShaderMaterial mat)
+		{
+			_laserMaterial = (ShaderMaterial)mat.Duplicate();
+			LaserLine.Material = _laserMaterial;
+			_laserMaterial.SetShaderParameter("intensity", 0f);
+		}
 
 		// Cache so _ExitTree doesn't need a viewport lookup during teardown.
 		_footprints = TowerFootprintTracker.ForViewport(GetViewport());
@@ -88,8 +97,17 @@ public partial class TurretTower : StaticBody2D, ITowerPlaceable
 		if (_laserVisibleTimer > 0f)
 		{
 			_laserVisibleTimer -= dt;
-			if (_laserVisibleTimer <= 0f && LaserLine != null)
-				LaserLine.Visible = false;
+			if (_laserVisibleTimer <= 0f)
+			{
+				if (_laserMaterial != null)
+					_laserMaterial.SetShaderParameter("intensity", 0f);
+				if (LaserLine != null) LaserLine.Visible = false;
+			}
+			else if (_laserMaterial != null && LaserVisibleDuration > 0f)
+			{
+				float t = _laserVisibleTimer / LaserVisibleDuration;
+				_laserMaterial.SetShaderParameter("intensity", LaserStartIntensity * t);
+			}
 		}
 
 		_target = FindClosestInZone();
@@ -134,7 +152,9 @@ public partial class TurretTower : StaticBody2D, ITowerPlaceable
 		// Only the beam is toggled — the Laser node itself stays visible so
 		// in-flight particles continue their natural lifetime after the line hides.
 		if (LaserLine != null) LaserLine.Visible = true;
-		_laserVisibleTimer = _laserVisibleDuration;
+		if (_laserMaterial != null)
+			_laserMaterial.SetShaderParameter("intensity", LaserStartIntensity);
+		_laserVisibleTimer = LaserVisibleDuration;
 		if (ShootParticles != null) ShootParticles.Restart();
 		if (HitParticles != null) HitParticles.Restart();
 	}

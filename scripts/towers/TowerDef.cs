@@ -35,12 +35,6 @@ public partial class TowerDef : Resource
     /// <summary>Seconds between shots once aimed.</summary>
     [Export] public float FireInterval { get; set; } = 0.5f;
 
-    /// <summary>Maximum angular error (degrees) at which the turret will fire.</summary>
-    [Export] public float AimToleranceDeg { get; set; } = 5f;
-
-    /// <summary>Seconds the laser VFX stays visible per shot.</summary>
-    [Export] public float LaserVisibleDuration { get; set; } = 0.08f;
-
     /// <summary>Resources consumed when the tower is built.</summary>
     [Export] public Array<TowerCost> Cost { get; set; } = new();
 }
