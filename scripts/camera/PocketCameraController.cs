@@ -20,6 +20,24 @@ public partial class PocketCameraController : Camera2D
 
     public bool InputEnabled { get; set; } = true;
 
+    /// <summary>
+    /// Gates <see cref="ApplyEdgeScroll"/>. When toggled from false → true the
+    /// edge scroll won't actually engage until the mouse has been observed
+    /// outside the margin region at least once — so re-enabling while the
+    /// cursor already sits in an edge zone doesn't immediately fling the camera.
+    /// </summary>
+    public bool EdgeScrollEnabled
+    {
+        get => _edgeScrollEnabled;
+        set
+        {
+            if (value && !_edgeScrollEnabled) _edgeScrollArmed = false;
+            _edgeScrollEnabled = value;
+        }
+    }
+
+    private bool _edgeScrollEnabled;
+    private bool _edgeScrollArmed;
     private float _targetZoom;
     private bool _isDragging;
     private Vector2 _lastMousePos;
@@ -41,7 +59,7 @@ public partial class PocketCameraController : Camera2D
             Zoom = new Vector2(_targetZoom, _targetZoom);
         }
 
-        if (InputEnabled && !_isDragging)
+        if (InputEnabled && EdgeScrollEnabled && !_isDragging)
             ApplyEdgeScroll((float)delta);
     }
 
@@ -60,6 +78,14 @@ public partial class PocketCameraController : Camera2D
         else if (mousePos.X > size.X - EdgeScrollMargin) dir.X =  1f;
         if (mousePos.Y < EdgeScrollMargin)          dir.Y = -1f;
         else if (mousePos.Y > size.Y - EdgeScrollMargin) dir.Y =  1f;
+
+        // Arm gate: require the cursor to be outside the edge zone before the
+        // first scroll fires after EdgeScrollEnabled flips on.
+        if (!_edgeScrollArmed)
+        {
+            if (dir == Vector2.Zero) _edgeScrollArmed = true;
+            return;
+        }
 
         if (dir != Vector2.Zero)
             ApplyPan(dir * EdgeScrollSpeed * delta);

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Godot;
+using towerdefensegame.scripts.camera;
 using towerdefensegame.scripts.world;
 
 namespace towerdefensegame.scripts.towers;
@@ -30,6 +31,7 @@ public partial class TowerPlacementManager : Node2D
     [Export] public CoordConfig Coords { get; set; }
     [Export] public TowerFootprintTracker FootprintTracker { get; set; }
     [Export] public Node2D PlacedTowersContainer { get; set; }
+    [Export] public PocketCameraController Camera { get; set; }
 
     private enum Mode { Idle, Placing, Destroying }
 
@@ -68,6 +70,8 @@ public partial class TowerPlacementManager : Node2D
 
         _ghost = ghost;
         AddChild(_ghost);
+
+        if (Camera != null) Camera.EdgeScrollEnabled = true;
     }
 
     /// <summary>Enter destroying mode. Left-click on a tower destroys it.</summary>
@@ -84,6 +88,8 @@ public partial class TowerPlacementManager : Node2D
         _ghost   = null;
         _pending = null;
         _mode    = Mode.Idle;
+
+        if (Camera != null) Camera.EdgeScrollEnabled = false;
     }
 
     /// <summary>Back-compat alias — old call sites and the Cancel button still

@@ -65,11 +65,12 @@ MinZoom = 1.0
 script = ExtResource("9_tft")
 Coords = ExtResource("7_ck6mf")
 
-[node name="TowerPlacementManager" type="Node2D" parent="." node_paths=PackedStringArray("FootprintTracker", "PlacedTowersContainer")]
+[node name="TowerPlacementManager" type="Node2D" parent="." node_paths=PackedStringArray("FootprintTracker", "PlacedTowersContainer", "Camera")]
 script = ExtResource("10_tpm")
 Coords = ExtResource("7_ck6mf")
 FootprintTracker = NodePath("../TowerFootprintTracker")
 PlacedTowersContainer = NodePath("PlacedTowers")
+Camera = NodePath("../PocketCamera")
 
 [node name="PlacedTowers" type="Node2D" parent="TowerPlacementManager"]
 
