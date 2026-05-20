@@ -14,8 +14,8 @@ shader_parameter/core_curve = 1.0
 [sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_1056b"]
 particle_flag_disable_z = true
 spread = 70.885
-initial_velocity_min = 182.12
-initial_velocity_max = 258.27
+initial_velocity_min = 198.68
+initial_velocity_max = 274.83
 gravity = Vector3(0, 0, 0)
 scale_min = 2.0
 scale_max = 2.0
@@ -23,8 +23,8 @@ scale_max = 2.0
 [sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_galvo"]
 particle_flag_disable_z = true
 spread = 180.0
-initial_velocity_min = 152.31999
-initial_velocity_max = 195.36
+initial_velocity_min = 198.68
+initial_velocity_max = 274.83
 gravity = Vector3(0, 0, 0)
 scale_min = 2.0
 scale_max = 2.0
@@ -40,8 +40,7 @@ texture_mode = 2
 
 [node name="ShootParticles" type="GPUParticles2D" parent="."]
 emitting = false
-amount = 16
-lifetime = 0.2
+lifetime = 0.12
 one_shot = true
 explosiveness = 0.87
 process_material = SubResource("ParticleProcessMaterial_1056b")
@@ -49,8 +48,8 @@ process_material = SubResource("ParticleProcessMaterial_1056b")
 [node name="HitParticles" type="GPUParticles2D" parent="."]
 position = Vector2(128, 0)
 emitting = false
-amount = 12
-lifetime = 0.2
+amount = 10
+lifetime = 0.12
 one_shot = true
 explosiveness = 0.87
 process_material = SubResource("ParticleProcessMaterial_galvo")
