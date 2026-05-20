@@ -11,7 +11,7 @@
 [ext_resource type="Script" uid="uid://c7qj3sbk5vasn" path="res://scripts/towers/TowerFootprintTracker.cs" id="9_tft"]
 [ext_resource type="Script" uid="uid://dqe7kydia2ros" path="res://scripts/towers/TowerPlacementManager.cs" id="10_tpm"]
 [ext_resource type="Script" uid="uid://ch17qk346ti87" path="res://scripts/towers/TowerPlacementUI.cs" id="11_tpui"]
-[ext_resource type="Resource" path="res://assets/enemy_config.tres" id="12_kb8u1"]
+[ext_resource type="Resource" path="res://assets/global_enemy_config.tres" id="12_kb8u1"]
 [ext_resource type="Resource" uid="uid://cty8l0mgobduv" path="res://assets/towers/turret_tower_def.tres" id="12_ttdef"]
 [ext_resource type="PackedScene" uid="uid://ct8oyhx38cldu" path="res://scenes/enemy_nav_agent.tscn" id="13_2mfk8"]
 [ext_resource type="Script" uid="uid://d4my3kkn7sesj" path="res://scripts/world/PocketNavGridManager.cs" id="13_pngm"]
@@ -71,6 +71,7 @@ Coords = ExtResource("7_ck6mf")
 FootprintTracker = NodePath("../TowerFootprintTracker")
 PlacedTowersContainer = NodePath("PlacedTowers")
 Camera = NodePath("../PocketCamera")
+EnemyConfig = ExtResource("12_kb8u1")
 
 [node name="PlacedTowers" type="Node2D" parent="TowerPlacementManager"]
 

@@ -1,7 +1,7 @@
 [gd_scene load_steps=13 format=3 uid="uid://ct8oyhx38cldu"]
 
 [ext_resource type="Script" uid="uid://dxaxgggwt2dpn" path="res://scripts/world/enemies/EnemyNavController.cs" id="1_0mm51"]
-[ext_resource type="Resource" path="res://assets/enemy_config.tres" id="2_h66n4"]
+[ext_resource type="Resource" path="res://assets/global_enemy_config.tres" id="2_h66n4"]
 [ext_resource type="Texture2D" uid="uid://dgdo5kd2rf2li" path="res://assets/world_resources/sprites/enemies/pincer.png" id="3_ofjd3"]
 [ext_resource type="Script" uid="uid://ccu4vr8pgyovi" path="res://scripts/components/SpriteComponent.cs" id="4_4btcy"]
 [ext_resource type="Script" uid="uid://buyqt5e32y6pn" path="res://scripts/world/enemies/EnemyTowerTargeter.cs" id="5_targt"]

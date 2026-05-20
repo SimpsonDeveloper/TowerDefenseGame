@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Godot;
 using towerdefensegame.scripts.camera;
 using towerdefensegame.scripts.world;
+using towerdefensegame.scripts.world.enemies;
 
 namespace towerdefensegame.scripts.towers;
 
@@ -32,6 +33,13 @@ public partial class TowerPlacementManager : Node2D
     [Export] public TowerFootprintTracker FootprintTracker { get; set; }
     [Export] public Node2D PlacedTowersContainer { get; set; }
     [Export] public PocketCameraController Camera { get; set; }
+    [Export] public EnemyConfig EnemyConfig { get; set; }
+
+    /// <summary>Extra cushion (px) added to the enemy's collision radius when
+    /// testing whether an enemy blocks placement. Prevents fast enemies from
+    /// slipping under a freshly placed tower and keeps a small no-place buffer
+    /// around them for game feel.</summary>
+    [Export] public float EnemyClearancePx { get; set; } = 10f;
 
     private enum Mode { Idle, Placing, Destroying }
 
@@ -118,7 +126,8 @@ public partial class TowerPlacementManager : Node2D
         _ghost.GlobalPosition = snapped;
 
         IEnumerable<Vector2I> footprint = TowerSnapHelper.FootprintTiles(snapped, _pending.SizePixels, Coords);
-        _ghost.Modulate = FootprintTracker.CanPlace(footprint) ? ValidColor : InvalidColor;
+        bool valid = FootprintTracker.CanPlace(footprint) && !AnyEnemyInFootprint(snapped, _pending.SizePixels);
+        _ghost.Modulate = valid ? ValidColor : InvalidColor;
     }
 
     public override void _UnhandledInput(InputEvent @event)
@@ -158,6 +167,7 @@ public partial class TowerPlacementManager : Node2D
         var footprint   = new List<Vector2I>(TowerSnapHelper.FootprintTiles(snapped, _pending.SizePixels, Coords));
 
         if (!FootprintTracker.CanPlace(footprint)) return;
+        if (AnyEnemyInFootprint(snapped, _pending.SizePixels)) return;
 
         var tower = _pending.TowerScene.Instantiate<Node2D>();
         tower.GlobalPosition = snapped;
@@ -175,6 +185,31 @@ public partial class TowerPlacementManager : Node2D
         var def = _pending;
         Cancel();
         BeginPlacement(def);
+    }
+
+    /// <summary>True if any enemy's inflated collision circle overlaps the
+    /// world-space AABB of a tower with center <paramref name="snappedCenter"/>
+    /// and size <paramref name="sizePixels"/>. Inflation = AgentRadius + EnemyClearancePx.</summary>
+    private bool AnyEnemyInFootprint(Vector2 snappedCenter, Vector2I sizePixels)
+    {
+        if (EnemyConfig == null) return false;
+
+        Vector2 half = (Vector2)sizePixels * 0.5f;
+        Vector2 min  = snappedCenter - half;
+        Vector2 max  = snappedCenter + half;
+        float   r    = EnemyConfig.AgentRadius + EnemyClearancePx;
+        float   r2   = r * r;
+
+        Viewport vp = GetViewport();
+        foreach (Node node in GetTree().GetNodesInGroup("enemies"))
+        {
+            if (node is not Node2D n2d) continue;
+            if (n2d.GetViewport() != vp) continue;
+            Vector2 p = n2d.GlobalPosition;
+            Vector2 closest = p.Clamp(min, max);
+            if (p.DistanceSquaredTo(closest) <= r2) return true;
+        }
+        return false;
     }
 
     private void TryDestroyAtMouse()
