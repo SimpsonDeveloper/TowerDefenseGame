@@ -116,6 +116,14 @@ public partial class EnemyRaycastController : CharacterBody2D
     [ExportGroup("Target")]
     [Export] public string TargetGroup { get; set; } = "Player";
 
+    /// <summary>
+    /// Enemy variant this attacker represents. When the enemy collides with the
+    /// player, this type is queued on the pocket-dimension spawner so the same
+    /// variant emerges in the defense wave. Required.
+    /// </summary>
+    [ExportGroup("Spawn-on-hit")]
+    [Export] public EnemyType EnemyType { get; set; }
+
     // ── Virtual hooks for subclasses ───────────────────────────────────────
 
     protected virtual void OnReady() { }
@@ -236,6 +244,9 @@ public partial class EnemyRaycastController : CharacterBody2D
         Velocity = Velocity.Lerp(_desiredVelocity, Acceleration * (float)delta);
         MoveAndSlide();
 
+        if (TryConsumeOnPlayerCollision())
+            return;
+
         if (Velocity.X > 0)
             Sprite.FlipH = true;
         else if (Velocity.X < 0)
@@ -243,6 +254,28 @@ public partial class EnemyRaycastController : CharacterBody2D
         if (DebugDraw)
             QueueRedraw();
         OnPhysicsTick(delta, distToTarget);
+    }
+
+    // Inspect this physics tick's MoveAndSlide hits for the player. If found,
+    // queue this enemy's type on the pocket-dim spawner and self-destruct.
+    private bool TryConsumeOnPlayerCollision()
+    {
+        int count = GetSlideCollisionCount();
+        for (int i = 0; i < count; i++)
+        {
+            var collision = GetSlideCollision(i);
+            if (collision?.GetCollider() is not Node node) continue;
+            if (!node.IsInGroup(TargetGroup)) continue;
+
+            if (EnemyType == null)
+                GD.PushWarning($"{Name}: EnemyType not assigned — player hit was not queued.");
+            else if (world.WorldManager.Instance != null)
+                world.WorldManager.Instance.QueueEnemySpawn(EnemyType);
+
+            QueueFree();
+            return true;
+        }
+        return false;
     }
 
     // ── Navigation tick ────────────────────────────────────────────────────

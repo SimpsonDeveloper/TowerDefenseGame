@@ -1,14 +1,16 @@
-[gd_scene load_steps=6 format=3 uid="uid://dkbb3vtt55g4i"]
+[gd_scene load_steps=7 format=3 uid="uid://dkbb3vtt55g4i"]
 
 [ext_resource type="Script" uid="uid://dysrxl15kdjsk" path="res://scripts/world/enemies/EnemyRaycastController.cs" id="1_mj6sp"]
 [ext_resource type="Texture2D" uid="uid://xcgwhqceqswt" path="res://assets/world_resources/sprites/enemies/rocket.png" id="2_8yu0x"]
 [ext_resource type="Script" uid="uid://ccu4vr8pgyovi" path="res://scripts/components/SpriteComponent.cs" id="3_0v8kj"]
+[ext_resource type="Resource" uid="uid://y2qahljinvs4" path="res://assets/enemies/chonky_enemy.tres" id="3_5b7ei"]
 [ext_resource type="Resource" path="res://assets/global_enemy_config.tres" id="4_cfg"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_enemy"]
 
 [node name="EnemyRaycast" type="CharacterBody2D" node_paths=PackedStringArray("Sprite", "Hitbox")]
 collision_layer = 4
+collision_mask = 3
 script = ExtResource("1_mj6sp")
 Sprite = NodePath("EnemySprite")
 MoveSpeed = 110.0
@@ -17,6 +19,7 @@ Hitbox = NodePath("CollisionShape2D")
 EnemyConfig = ExtResource("4_cfg")
 SightRange = 300.0
 DebugDraw = true
+EnemyType = ExtResource("3_5b7ei")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("CircleShape2D_enemy")

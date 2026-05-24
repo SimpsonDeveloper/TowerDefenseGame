@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using Godot;
 using towerdefensegame.scripts.towers;
@@ -16,14 +15,15 @@ namespace towerdefensegame.scripts.world.enemies;
 ///   2. Submit the snapshot to <see cref="EnemyPathfindService"/>, which runs
 ///      <see cref="EnemyApproachResolver"/> on a worker thread.
 ///   3. On a later <see cref="Tick"/>, drain the result, validate the chosen
-///      tower is still alive, and raise <see cref="ApproachResolved"/> with the
-///      destination — or <see cref="TargetCleared"/> if no tower is reachable.
+///      tower is still alive, and raise <see cref="EnemyTargeter.ApproachResolved"/>
+///      with the destination — or <see cref="EnemyTargeter.TargetCleared"/> if no
+///      tower is reachable.
 ///
 /// The targeter never touches movement state; the mover subscribes and decides
 /// what to do with the destination.
 /// </summary>
 [GlobalClass]
-public partial class EnemyTowerTargeter : Node
+public partial class EnemyTowerTargeter : EnemyTargeter
 {
     [Export] public string TargetGroup { get; set; } = "Towers";
     [Export] public EnemyConfig EnemyConfig { get; set; }
@@ -48,19 +48,6 @@ public partial class EnemyTowerTargeter : Node
     /// valid; better to drop it and let the next retarget cycle resubmit.
     /// </summary>
     [Export] public int MaxResultAgeMs { get; set; } = 500;
-
-    /// <summary>Fires when a fresh, navmesh-validated approach point is ready.</summary>
-    public event Action<Vector2> ApproachResolved;
-
-    /// <summary>Fires when the current target became invalid or no tower is reachable.</summary>
-    public event Action TargetCleared;
-
-    public Node2D CurrentTarget { get; private set; }
-
-    public float DistanceToTarget =>
-        CurrentTarget != null && _owner != null
-            ? _owner.GlobalPosition.DistanceTo(CurrentTarget.GlobalPosition)
-            : float.MaxValue;
 
     private Node2D _owner;
     private PathfindingResourceCoordinator _coordinator;
@@ -92,9 +79,9 @@ public partial class EnemyTowerTargeter : Node
     /// Driven by the owning controller in physics order so drain happens before
     /// movement consumes the destination on the same tick.
     /// </summary>
-    public void Tick(double delta)
+    public override void Tick(double delta)
     {
-        DrainPendingResult();
+        DrainPendingPathResult();
 
         _retargetTimer -= (float)delta;
         if (CurrentTarget != null && !IsInstanceValid(CurrentTarget))
@@ -108,7 +95,7 @@ public partial class EnemyTowerTargeter : Node
     {
         if (CurrentTarget == null) return;
         CurrentTarget = null;
-        TargetCleared?.Invoke();
+        EmitTargetCleared();
     }
 
     private void OnResourcesReady(PathfindingResourceCoordinator.Snapshot _) => TryRetarget();
@@ -126,17 +113,17 @@ public partial class EnemyTowerTargeter : Node
 
         if (_coordinator == null || !_coordinator.TryGetSnapshot(out var snapshot)) return;
 
-        var service = EnemyPathfindService.Instance;
-        if (service == null || _owner == null) return;
-        if (service.HasJob(_owner.GetInstanceId())) return;
+        var pathfindService = EnemyPathfindService.Instance;
+        if (pathfindService == null || _owner == null) return;
+        if (pathfindService.HasJob(_owner.GetInstanceId())) return;
 
         SubmitRetarget(snapshot);
     }
 
     private void SubmitRetarget(PathfindingResourceCoordinator.Snapshot snapshot)
     {
-        var service = EnemyPathfindService.Instance;
-        if (service == null || string.IsNullOrEmpty(TargetGroup)) return;
+        var pathfindService = EnemyPathfindService.Instance;
+        if (pathfindService == null || string.IsNullOrEmpty(TargetGroup)) return;
         if (_footprints == null || _owner == null) return;
 
         Viewport viewport = GetViewport();
@@ -153,15 +140,15 @@ public partial class EnemyTowerTargeter : Node
                 .CompareTo(enemyPos.DistanceSquaredTo(b.TowerPosition)));
 
         float standoff = Mathf.Max(EnemyConfig?.AgentRadius ?? 0f, AttackRange);
-        service.Submit(_owner.GetInstanceId(), enemyPos, snapshot.NavMap, standoff,
+        pathfindService.Submit(_owner.GetInstanceId(), enemyPos, snapshot.NavMap, standoff,
             candidates, snapshot.Reach);
     }
 
-    private void DrainPendingResult()
+    private void DrainPendingPathResult()
     {
-        var service = EnemyPathfindService.Instance;
-        if (service == null || _owner == null) return;
-        if (!service.TryConsume(_owner.GetInstanceId(), out ApproachResult result, out ulong ageMs)) return;
+        var pathfindService = EnemyPathfindService.Instance;
+        if (pathfindService == null || _owner == null) return;
+        if (!pathfindService.TryConsume(_owner.GetInstanceId(), out ApproachResult result, out ulong ageMs)) return;
         if (ageMs > (ulong)MaxResultAgeMs) return;
 
         if (!result.Found)
@@ -173,7 +160,7 @@ public partial class EnemyTowerTargeter : Node
         if (InstanceFromId(result.TowerInstanceId) is Node2D tower && IsInstanceValid(tower))
         {
             CurrentTarget = tower;
-            ApproachResolved?.Invoke(result.Approach);
+            EmitApproachResolved(result.Approach);
         }
         else
         {

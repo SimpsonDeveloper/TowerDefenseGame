@@ -1,10 +1,9 @@
-[gd_scene load_steps=13 format=3 uid="uid://ct8oyhx38cldu"]
+[gd_scene load_steps=12 format=3 uid="uid://ct8oyhx38cldu"]
 
 [ext_resource type="Script" uid="uid://dxaxgggwt2dpn" path="res://scripts/world/enemies/EnemyNavController.cs" id="1_0mm51"]
 [ext_resource type="Resource" path="res://assets/global_enemy_config.tres" id="2_h66n4"]
 [ext_resource type="Texture2D" uid="uid://dgdo5kd2rf2li" path="res://assets/world_resources/sprites/enemies/pincer.png" id="3_ofjd3"]
 [ext_resource type="Script" uid="uid://ccu4vr8pgyovi" path="res://scripts/components/SpriteComponent.cs" id="4_4btcy"]
-[ext_resource type="Script" uid="uid://buyqt5e32y6pn" path="res://scripts/world/enemies/EnemyTowerTargeter.cs" id="5_targt"]
 [ext_resource type="Script" uid="uid://cojc8ew3rlmqr" path="res://scripts/components/HealthComponent.cs" id="6_health"]
 [ext_resource type="Script" uid="uid://7ovdty3xboji" path="res://scripts/components/AttackerComponent.cs" id="7_atk"]
 [ext_resource type="Script" uid="uid://chr0avfu2nwee" path="res://scripts/components/DetectionZone.cs" id="8_dz"]
@@ -17,7 +16,7 @@ radius = 5.0
 [sub_resource type="CircleShape2D" id="CircleShape2D_attack"]
 radius = 12.0
 
-[node name="EnemyNavController" type="CharacterBody2D" node_paths=PackedStringArray("NavAgent", "Hitbox", "Targeter", "Health", "Sprite")]
+[node name="EnemyNavController" type="CharacterBody2D" node_paths=PackedStringArray("NavAgent", "Hitbox", "Health", "Attacker", "Sprite")]
 collision_layer = 4
 collision_mask = 17
 script = ExtResource("1_0mm51")
@@ -26,8 +25,8 @@ Acceleration = 5.0
 NavAgent = NodePath("NavigationAgent2D")
 Hitbox = NodePath("CollisionShape2D")
 EnemyConfig = ExtResource("2_h66n4")
-Targeter = NodePath("Targeter")
 Health = NodePath("HealthComponent")
+Attacker = NodePath("Attacker")
 Sprite = NodePath("EnemySprite")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
@@ -39,10 +38,6 @@ debug_enabled = true
 [node name="EnemySprite" type="Sprite2D" parent="."]
 texture = ExtResource("3_ofjd3")
 script = ExtResource("4_4btcy")
-
-[node name="Targeter" type="Node" parent="."]
-script = ExtResource("5_targt")
-EnemyConfig = ExtResource("2_h66n4")
 
 [node name="HealthComponent" type="Node" parent="."]
 script = ExtResource("6_health")

@@ -1,6 +1,7 @@
 using Godot;
 using towerdefensegame.scripts.camera;
 using towerdefensegame.scripts.player;
+using towerdefensegame.scripts.world.enemies;
 
 namespace towerdefensegame.scripts.world;
 
@@ -28,6 +29,20 @@ public partial class WorldManager : Node2D
     [Export] public PocketCameraController PocketDimensionCamera { get; set; }
     [Export] public PlayerCameraController OverworldCamera { get; set; }
 
+    /// <summary>
+    /// Cross-viewport relay target. Overworld enemies hit the player and need to
+    /// reach a spawner that lives in the pocket-dim viewport — this WorldManager
+    /// holds the only reference that spans both viewports.
+    /// </summary>
+    [Export] public PocketDimensionEnemySpawner PocketSpawner { get; set; }
+
+    /// <summary>
+    /// Singleton accessor. WorldManager sits above both SubViewports — nodes
+    /// inside either sub-viewport see a different GetViewport() than the root,
+    /// so a per-viewport registry doesn't help. Set in <see cref="_EnterTree"/>.
+    /// </summary>
+    public static WorldManager Instance { get; private set; }
+
     /// <summary>Fraction of window size used for the mini viewport (each axis).</summary>
     [Export] public float MiniViewportScale { get; set; } = 0.25f;
 
@@ -35,6 +50,13 @@ public partial class WorldManager : Node2D
     private bool _overworldIsMain = true;
     private bool _isDraggingMini;
     private Vector2 _lastDragPos;
+
+    public override void _EnterTree()
+    {
+        if (Instance != null && Instance != this)
+            GD.PushWarning($"{Name}: a WorldManager instance is already registered.");
+        Instance = this;
+    }
 
     public override void _Ready()
     {
@@ -45,6 +67,21 @@ public partial class WorldManager : Node2D
     public override void _ExitTree()
     {
         GetViewport().SizeChanged -= UpdateLayout;
+        if (Instance == this) Instance = null;
+    }
+
+    /// <summary>
+    /// Cross-viewport relay called by overworld enemies on player contact.
+    /// Forwards to the pocket-dim spawner's queue.
+    /// </summary>
+    public void QueueEnemySpawn(EnemyType type)
+    {
+        if (PocketSpawner == null)
+        {
+            GD.PushWarning($"{Name}: PocketSpawner not assigned — drop {type?.ResourceName}.");
+            return;
+        }
+        PocketSpawner.Enqueue(type);
     }
 
     public override void _Input(InputEvent @event)

@@ -49,17 +49,18 @@ public partial class EnemyNavController : CharacterBody2D
     [Export] public float TargetDesiredDistance { get; set; } = 1f;
 
     [ExportGroup("Components")]
-    [Export] public EnemyTowerTargeter Targeter { get; set; }
     [Export] public HealthComponent Health { get; set; }
+    [Export] public AttackerComponent Attacker { get; set; }
     [Export] SpriteComponent Sprite { get; set; }
+
+    /// <summary>The targeting strategy, built and owned at spawn by
+    /// <see cref="ApplyType"/>. Never set in the scene — null until a type with a
+    /// <see cref="EnemyType.Targeting"/> is applied.</summary>
+    public EnemyTargeter Targeter { get; private set; }
 
     // ── Virtual hooks ─────────────────────────────────────────────────────
 
     protected virtual void OnReady() { }
-
-    /// <param name="delta">Physics delta in seconds.</param>
-    /// <param name="distanceToTarget">Straight-line distance to target, or float.MaxValue.</param>
-    protected virtual void OnPhysicsTick(double delta, float distanceToTarget) { }
 
     // ── Internal state ────────────────────────────────────────────────────
 
@@ -94,7 +95,7 @@ public partial class EnemyNavController : CharacterBody2D
         }
         else
         {
-            GD.PushWarning($"{Name}: Targeter not assigned — enemy will idle.");
+            GD.PushWarning($"{Name}: no Targeter — EnemyType.Targeting was unset (or ApplyType not called); enemy will idle.");
         }
 
         // Default death behaviour: just leave the scene tree. Drop spawning
@@ -122,12 +123,9 @@ public partial class EnemyNavController : CharacterBody2D
         // before movement consumes it.
         Targeter?.Tick(delta);
 
-        float distToTarget = Targeter?.DistanceToTarget ?? float.MaxValue;
-
         if (!_hasDestination || NavAgent.IsNavigationFinished())
         {
             Velocity = Vector2.Zero;
-            OnPhysicsTick(delta, distToTarget);
             return;
         }
 
@@ -141,11 +139,37 @@ public partial class EnemyNavController : CharacterBody2D
             if (Velocity.X > 0)      Sprite.FlipH = true;
             else if (Velocity.X < 0) Sprite.FlipH = false;
         }
-
-        OnPhysicsTick(delta, distToTarget);
     }
 
     // ── Public API ────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Applies a variant's data to this enemy's components and builds its
+    /// targeting strategy. This is the ONLY thing that creates a Targeter — the
+    /// scene ships without one. Must be called after Instantiate but BEFORE the
+    /// node enters the tree, so values land before the components' _Ready runs
+    /// (HealthComponent latches MaxHp there) and the targeter is wired by this
+    /// controller's _Ready. If Targeting is null the enemy idles (warned in _Ready).
+    /// </summary>
+    public void ApplyType(EnemyType type)
+    {
+        if (type == null) return;
+
+        MoveSpeed = type.MoveSpeed;
+        if (Health != null) Health.MaxHp = type.MaxHp;
+        if (Sprite != null && type.Sprite != null) Sprite.Texture = type.Sprite;
+        if (Attacker != null)
+        {
+            Attacker.Damage = type.Damage;
+            Attacker.AttackInterval = type.AttackInterval;
+        }
+
+        if (type.Targeting != null)
+        {
+            Targeter = type.Targeting.Build(EnemyConfig);
+            AddChild(Targeter);
+        }
+    }
 
     /// <summary>Current target tower, or null. Sourced from the targeter.</summary>
     public Node2D Target => Targeter?.CurrentTarget;

@@ -1,5 +1,8 @@
-[gd_scene load_steps=20 format=3 uid="uid://d23xmn1ko1rqq"]
+[gd_scene load_steps=23 format=3 uid="uid://d23xmn1ko1rqq"]
 
+[ext_resource type="Script" path="res://scripts/world/PocketDimensionEnemySpawner.cs" id="18_pdes"]
+[ext_resource type="Script" path="res://scripts/world/DebugEnemySpawner.cs" id="19_dbgsp"]
+[ext_resource type="Resource" path="res://assets/enemies/chonky_enemy.tres" id="20_chonky"]
 [ext_resource type="Script" uid="uid://dnb5iegcl3s5r" path="res://scripts/terrain/TerrainGen.cs" id="2_tgen"]
 [ext_resource type="Script" uid="uid://bn66bgttlo0pn" path="res://scripts/terrain/GenRange.cs" id="3_grange"]
 [ext_resource type="Script" uid="uid://d33brm7vp1jgy" path="res://scripts/terrain/SimplexGen.cs" id="4_sgen"]
@@ -96,11 +99,27 @@ NavGrid = NodePath("../PocketNavGridManager")
 Reach = NodePath("../PocketReachabilityIndex")
 TowerPlacement = NodePath("../TowerPlacementManager")
 
-[node name="EnemyNavAgent" parent="." instance=ExtResource("13_2mfk8")]
-position = Vector2(512, 512)
-
 [node name="TowerPlacementUI" type="CanvasLayer" parent="." node_paths=PackedStringArray("PlacementManager")]
 visible = false
 script = ExtResource("11_tpui")
 PlacementManager = NodePath("../TowerPlacementManager")
 AvailableTowers = Array[ExtResource("15_2mfk8")]([ExtResource("12_ttdef")])
+
+[node name="SpawnedEnemies" type="Node2D" parent="."]
+
+[node name="PocketDimensionEnemySpawner" type="Node2D" parent="." node_paths=PackedStringArray("ChunkManager", "EnemiesContainer")]
+script = ExtResource("18_pdes")
+ChunkManager = NodePath("../TerrainGen/ChunkManager")
+CoordConfig = ExtResource("7_ck6mf")
+EnemyScene = ExtResource("13_2mfk8")
+EnemiesContainer = NodePath("../SpawnedEnemies")
+CheckpointsPerWave = 4
+WaveInterval = 15.0
+SpawnInterval = 0.4
+
+[node name="DebugEnemySpawner" type="Node2D" parent="." node_paths=PackedStringArray("EnemiesContainer")]
+position = Vector2(512, 512)
+script = ExtResource("19_dbgsp")
+EnemyScene = ExtResource("13_2mfk8")
+EnemyType = ExtResource("20_chonky")
+EnemiesContainer = NodePath("../SpawnedEnemies")

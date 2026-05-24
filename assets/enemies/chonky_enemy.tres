@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="EnemyType" load_steps=5 format=3 uid="uid://y2qahljinvs4"]
+
+[ext_resource type="Script" uid="uid://b3xvd627mdeke" path="res://scripts/world/enemies/EnemyType.cs" id="1"]
+[ext_resource type="Script" uid="uid://e3c8h4flk6s4" path="res://scripts/world/enemies/TowerTargetingPattern.cs" id="2"]
+[ext_resource type="Texture2D" uid="uid://dgdo5kd2rf2li" path="res://assets/world_resources/sprites/enemies/pincer.png" id="3"]
+
+[sub_resource type="Resource" id="Resource_targeting"]
+script = ExtResource("2")
+metadata/_custom_type_script = "uid://e3c8h4flk6s4"
+
+[resource]
+script = ExtResource("1")
+DisplayName = "Chonky"
+Sprite = ExtResource("3")
+MaxHp = 200
+Targeting = SubResource("Resource_targeting")
+metadata/_custom_type_script = "uid://b3xvd627mdeke"
