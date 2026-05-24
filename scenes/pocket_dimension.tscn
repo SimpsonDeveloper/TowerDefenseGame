@@ -1,6 +1,7 @@
-[gd_scene load_steps=23 format=3 uid="uid://d23xmn1ko1rqq"]
+[gd_scene load_steps=24 format=3 uid="uid://d23xmn1ko1rqq"]
 
 [ext_resource type="Script" path="res://scripts/world/PocketDimensionEnemySpawner.cs" id="18_pdes"]
+[ext_resource type="PackedScene" path="res://scenes/SpawnerPortal.tscn" id="21_portal"]
 [ext_resource type="Script" path="res://scripts/world/DebugEnemySpawner.cs" id="19_dbgsp"]
 [ext_resource type="Resource" path="res://assets/enemies/chonky_enemy.tres" id="20_chonky"]
 [ext_resource type="Script" uid="uid://dnb5iegcl3s5r" path="res://scripts/terrain/TerrainGen.cs" id="2_tgen"]
@@ -112,8 +113,9 @@ script = ExtResource("18_pdes")
 ChunkManager = NodePath("../TerrainGen/ChunkManager")
 CoordConfig = ExtResource("7_ck6mf")
 EnemyScene = ExtResource("13_2mfk8")
+PortalScene = ExtResource("21_portal")
 EnemiesContainer = NodePath("../SpawnedEnemies")
-CheckpointsPerWave = 4
+MaxCheckpointsPerWave = 4
 WaveInterval = 15.0
 SpawnInterval = 0.4
 

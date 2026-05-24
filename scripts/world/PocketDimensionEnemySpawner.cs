@@ -9,12 +9,17 @@ namespace towerdefensegame.scripts.world;
 /// Queues enemies hit-in by the overworld and releases them in timed waves
 /// at random border tiles of the pocket-dimension play area.
 ///
-/// Lifecycle: a queued enemy starts the wave timer. When the timer reaches
-/// zero, the entire queue is partitioned evenly across <see cref="CheckpointsPerWave"/>
-/// randomly chosen border checkpoints; each checkpoint is given its share to
-/// spawn at <see cref="SpawnInterval"/> via a transient sub-spawner that frees
-/// itself when its list is exhausted. The queue then clears and the timer goes
-/// idle until the next enqueue.
+/// Lifecycle: the first queued enemy starts the wave timer and opens a
+/// persistent VFX portal at a random border checkpoint. As more enemies queue
+/// during the countdown, additional portals open so their count tracks the
+/// crowd size (see <see cref="MinEnemiesPerPortal"/>), up to
+/// <see cref="MaxCheckpointsPerWave"/>. Those portals glow for the whole countdown,
+/// telegraphing where the wave will arrive. When the timer reaches zero, the
+/// queue is partitioned evenly across the already-open checkpoints; each is
+/// handed its share to spawn at <see cref="SpawnInterval"/> via a transient
+/// sub-spawner that flares the portal per spawn and closes it when its list is
+/// exhausted. The queue then clears and the timer goes idle until the next
+/// enqueue (which picks fresh checkpoints).
 /// </summary>
 [GlobalClass]
 public partial class PocketDimensionEnemySpawner : Node2D
@@ -32,11 +37,21 @@ public partial class PocketDimensionEnemySpawner : Node2D
     /// <summary>Scene instantiated for every spawn. Configures itself from the EnemyType resource.</summary>
     [Export] public PackedScene EnemyScene { get; set; }
 
+    /// <summary>Optional VFX portal spawned at each checkpoint for the duration of its sub-wave. Leave null to disable.</summary>
+    [Export] public PackedScene PortalScene { get; set; }
+
     /// <summary>Container that spawned enemies are parented under. Typically a Node2D inside the pocket dim.</summary>
     [Export] public Node2D EnemiesContainer { get; set; }
 
-    /// <summary>Number of border checkpoints picked per wave. Queue is split evenly across them.</summary>
-    [Export(PropertyHint.Range, "1,32,1")] public int CheckpointsPerWave { get; set; } = 4;
+    /// <summary>Hard cap on border checkpoints/portals opened per wave. The actual count scales with queue size (see <see cref="MinEnemiesPerPortal"/>).</summary>
+    [Export(PropertyHint.Range, "1,32,1")] public int MaxCheckpointsPerWave { get; set; } = 4;
+
+    /// <summary>
+    /// Target enemies per portal. Portal count = ceil(queueSize / this), clamped to
+    /// [1, <see cref="MaxCheckpointsPerWave"/>]. Lower = more portals for the same crowd.
+    /// As the queue grows during the countdown, extra portals open to keep up.
+    /// </summary>
+    [Export(PropertyHint.Range, "1,32,1")] public int MinEnemiesPerPortal { get; set; } = 3;
 
     /// <summary>Seconds between waves. Counts down only while the queue is non-empty.</summary>
     [Export] public float WaveInterval { get; set; } = 15f;
@@ -44,10 +59,23 @@ public partial class PocketDimensionEnemySpawner : Node2D
     /// <summary>Seconds between consecutive spawns at a single checkpoint.</summary>
     [Export] public float SpawnInterval { get; set; } = 0.4f;
 
-    /// <summary>Safety cap on border-tile re-rolls when looking for a traversable checkpoint.</summary>
+    /// <summary>Safety cap on border-tile re-rolls when looking for a traversable, well-spaced checkpoint.</summary>
     [Export] public int CheckpointMaxRerolls { get; set; } = 32;
 
+    /// <summary>Minimum world-pixel distance between two checkpoints in the same wave. Picks closer than this are re-rolled. 0 disables spacing.</summary>
+    [Export] public float MinCheckpointSpacing { get; set; } = 256f;
+
+    /// <summary>A border spot reserved for the pending wave, plus its open portal (null if PortalScene unset).</summary>
+    private readonly struct ActiveCheckpoint
+    {
+        public readonly Vector2 Position;
+        public readonly SpawnerPortal Portal;
+        public ActiveCheckpoint(Vector2 position, SpawnerPortal portal) { Position = position; Portal = portal; }
+    }
+
     private readonly List<EnemyType> _queue = new();
+    // Checkpoints chosen when the countdown starts; portals stay open until the wave fires.
+    private readonly List<ActiveCheckpoint> _checkpoints = new();
     private float _timer;
     private bool _timerActive;
     private RandomNumberGenerator _rng = new();
@@ -84,42 +112,95 @@ public partial class PocketDimensionEnemySpawner : Node2D
             _timerActive = true;
             EmitSignal(SignalName.TimerStarted);
         }
+
+        EnsurePortals();
+    }
+
+    /// <summary>Portals wanted right now: ceil(queueSize / MinEnemiesPerPortal), clamped to [1, MaxCheckpointsPerWave].</summary>
+    private int DesiredPortalCount()
+    {
+        if (_queue.Count == 0) return 0;
+        int byDensity = Mathf.CeilToInt(_queue.Count / (float)Mathf.Max(1, MinEnemiesPerPortal));
+        return Mathf.Clamp(byDensity, 1, MaxCheckpointsPerWave);
+    }
+
+    /// <summary>
+    /// Open portals until we have as many as the queue now warrants. Only ever
+    /// adds (the queue never shrinks mid-countdown), so existing portals and their
+    /// positions stay put. A failed pick (e.g. bounds not ready) just stops early;
+    /// the next enqueue — or FireWave — retries.
+    /// </summary>
+    private void EnsurePortals()
+    {
+        int desired = DesiredPortalCount();
+        while (_checkpoints.Count < desired && TryOpenOnePortal()) { }
+    }
+
+    private bool TryOpenOnePortal()
+    {
+        var picks = PickBorderCheckpoints(1);
+        if (picks.Count == 0) return false;
+
+        Vector2 pos = picks[0];
+        SpawnerPortal portal = null;
+        if (PortalScene != null && EnemiesContainer != null)
+        {
+            portal = PortalScene.Instantiate<SpawnerPortal>();
+            EnemiesContainer.AddChild(portal);
+            portal.GlobalPosition = pos;
+            portal.Flare();
+        }
+        _checkpoints.Add(new ActiveCheckpoint(pos, portal));
+        return true;
+    }
+
+    private void CloseAndClearPortals()
+    {
+        foreach (ActiveCheckpoint cp in _checkpoints)
+            cp.Portal?.Close();
+        _checkpoints.Clear();
     }
 
     private void FireWave()
     {
         if (_queue.Count == 0)
         {
+            CloseAndClearPortals();
             ResetTimer();
             return;
         }
 
-        int requested = Mathf.Min(CheckpointsPerWave, _queue.Count);
-        var checkpoints = PickBorderCheckpoints(requested);
-
-        if (checkpoints.Count == 0)
+        // Portals open as the queue grows during the countdown; this is a late
+        // catch-up in case earlier picks failed (e.g. bounds not ready then).
+        EnsurePortals();
+        if (_checkpoints.Count == 0)
         {
-            GD.PushWarning($"{Name}: no valid border checkpoints found this wave — keeping queue, will retry next interval.");
+            GD.PushWarning($"{Name}: no valid border checkpoints found — keeping queue, will retry next interval.");
             _timer = WaveInterval;
             return;
         }
 
-        // Random even partition: shuffle the queue, then deal round-robin.
-        var lists = new List<List<EnemyType>>(checkpoints.Count);
-        for (int i = 0; i < checkpoints.Count; i++) lists.Add(new List<EnemyType>());
+        int n = _checkpoints.Count;
+
+        // Random even partition: shuffle the queue, then deal round-robin across
+        // the preselected checkpoints. Checkpoints beyond the queue size get an
+        // empty list — their portal simply closes without spawning.
+        var lists = new List<List<EnemyType>>(n);
+        for (int i = 0; i < n; i++) lists.Add(new List<EnemyType>());
 
         ShuffleQueue();
         for (int i = 0; i < _queue.Count; i++)
-            lists[i % checkpoints.Count].Add(_queue[i]);
+            lists[i % n].Add(_queue[i]);
 
         int totalEnemies = _queue.Count;
         _queue.Clear();
         EmitSignal(SignalName.QueueChanged, 0);
 
-        for (int i = 0; i < checkpoints.Count; i++)
-            SpawnSubSpawner(checkpoints[i], lists[i]);
+        for (int i = 0; i < n; i++)
+            SpawnSubSpawner(_checkpoints[i], lists[i]);
 
-        EmitSignal(SignalName.WaveFired, totalEnemies, checkpoints.Count);
+        EmitSignal(SignalName.WaveFired, totalEnemies, n);
+        _checkpoints.Clear(); // ownership of portals passes to the sub-spawners
         ResetTimer();
     }
 
@@ -140,8 +221,9 @@ public partial class PocketDimensionEnemySpawner : Node2D
     }
 
     // Picks up to `count` random border tiles inside the live ChunkManager bounds
-    // that are traversable. Re-rolls (with a per-pick cap) until each slot fills
-    // or the budget is exhausted.
+    // that are traversable and at least MinCheckpointSpacing from every already-open
+    // checkpoint and from picks made earlier in this call. Re-rolls (with a per-pick
+    // cap) until each slot fills or the budget is exhausted.
     private List<Vector2> PickBorderCheckpoints(int count)
     {
         var picks = new List<Vector2>(count);
@@ -172,7 +254,7 @@ public partial class PocketDimensionEnemySpawner : Node2D
                 Vector2 world = CoordHelper.TileToWorld(tile, CoordConfig)
                                 + new Vector2(CoordConfig.TilePixelSize, CoordConfig.TilePixelSize) * 0.5f;
 
-                if (IsTraversable(world))
+                if (IsTraversable(world) && IsFarEnough(world, picks))
                 {
                     picks.Add(world);
                     break;
@@ -180,6 +262,23 @@ public partial class PocketDimensionEnemySpawner : Node2D
             }
         }
         return picks;
+    }
+
+    // True if `world` clears MinCheckpointSpacing from every open checkpoint and
+    // from each pick accepted earlier in the current call. Distance check is
+    // squared to avoid the per-attempt sqrt.
+    private bool IsFarEnough(Vector2 world, List<Vector2> pendingPicks)
+    {
+        if (MinCheckpointSpacing <= 0f) return true;
+        float minSq = MinCheckpointSpacing * MinCheckpointSpacing;
+
+        foreach (ActiveCheckpoint cp in _checkpoints)
+            if (cp.Position.DistanceSquaredTo(world) < minSq) return false;
+
+        foreach (Vector2 p in pendingPicks)
+            if (p.DistanceSquaredTo(world) < minSq) return false;
+
+        return true;
     }
 
     // Maps a 1D perimeter index to a 2D border tile. Walks the border clockwise:
@@ -204,11 +303,12 @@ public partial class PocketDimensionEnemySpawner : Node2D
         return terrain is { } t && !t.HasCollision();
     }
 
-    private void SpawnSubSpawner(Vector2 worldPos, List<EnemyType> enemies)
+    private void SpawnSubSpawner(ActiveCheckpoint checkpoint, List<EnemyType> enemies)
     {
         if (EnemyScene == null || EnemiesContainer == null)
         {
             GD.PushWarning($"{Name}: EnemyScene or EnemiesContainer not assigned — wave dropped.");
+            checkpoint.Portal?.Close();
             return;
         }
 
@@ -217,8 +317,9 @@ public partial class PocketDimensionEnemySpawner : Node2D
             EnemyScene = EnemyScene,
             EnemiesContainer = EnemiesContainer,
             SpawnInterval = SpawnInterval,
-            SpawnPosition = worldPos,
+            SpawnPosition = checkpoint.Position,
             Enemies = enemies,
+            Portal = checkpoint.Portal,
         };
         AddChild(sub);
     }

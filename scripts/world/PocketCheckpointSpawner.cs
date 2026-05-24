@@ -17,6 +17,9 @@ public partial class PocketCheckpointSpawner : Node
     public Vector2 SpawnPosition { get; set; }
     public List<EnemyType> Enemies { get; set; }
 
+    /// <summary>Optional VFX portal at this checkpoint. Flared per spawn, closed when the queue empties.</summary>
+    public SpawnerPortal Portal { get; set; }
+
     private float _timer;
     private int _index;
 
@@ -27,6 +30,7 @@ public partial class PocketCheckpointSpawner : Node
 
         if (Enemies == null || _index >= Enemies.Count)
         {
+            Portal?.Close();
             QueueFree();
             return;
         }
@@ -38,6 +42,7 @@ public partial class PocketCheckpointSpawner : Node
     private void SpawnNext()
     {
         EnemyFactory.Spawn(EnemyScene, Enemies[_index], SpawnPosition, EnemiesContainer);
+        Portal?.Flare();
         _index++;
     }
 }

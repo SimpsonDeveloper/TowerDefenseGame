@@ -1,0 +1,73 @@
+[gd_scene load_steps=10 format=3 uid="uid://drutvmxnk4bx0"]
+
+[ext_resource type="Shader" uid="uid://bxjvnxxj4sbqp" path="res://shaders/spawn_portal.gdshader" id="1_shader"]
+[ext_resource type="Script" uid="uid://crvv8md344yk7" path="res://scripts/world/SpawnerPortal.cs" id="2_script"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_portal"]
+shader = ExtResource("1_shader")
+shader_parameter/radius = 0.95
+shader_parameter/edge_softness = 0.18
+shader_parameter/core_size = 0.16
+shader_parameter/core_softness = 0.1
+shader_parameter/arm_count = 5.0
+shader_parameter/twist = 5.0
+shader_parameter/swirl_speed = 0.8
+shader_parameter/contrast = 3.5
+shader_parameter/pulse_speed = 1.6
+shader_parameter/pulse_depth = 0.3
+shader_parameter/bright_color = Color(1, 1, 1, 1)
+shader_parameter/dark_color = Color(0, 0, 0, 1)
+shader_parameter/intensity = 1.0
+shader_parameter/time_offset = 0.0
+
+[sub_resource type="QuadMesh" id="QuadMesh_portal"]
+size = Vector2(192, 192)
+
+[sub_resource type="Gradient" id="Gradient_dot"]
+colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 0)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_dot"]
+gradient = SubResource("Gradient_dot")
+width = 16
+height = 16
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(0.5, 0)
+
+[sub_resource type="Gradient" id="Gradient_life"]
+offsets = PackedFloat32Array(0, 0.25, 1)
+colors = PackedColorArray(1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_life"]
+gradient = SubResource("Gradient_life")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_motes"]
+particle_flag_disable_z = true
+emission_shape = 6
+emission_ring_axis = Vector3(0, 0, 1)
+emission_ring_height = 0.0
+emission_ring_radius = 90.0
+emission_ring_inner_radius = 70.0
+emission_ring_cone_angle = 90.0
+spread = 180.0
+orbit_velocity_min = 0.3
+orbit_velocity_max = 0.6
+gravity = Vector3(0, 0, 0)
+radial_accel_min = -90.0
+radial_accel_max = -50.0
+scale_min = 0.4
+color_ramp = SubResource("GradientTexture1D_life")
+
+[node name="SpawnerPortal" type="MeshInstance2D"]
+material = SubResource("ShaderMaterial_portal")
+scale = Vector2(0.5, 0.5)
+mesh = SubResource("QuadMesh_portal")
+script = ExtResource("2_script")
+
+[node name="Motes" type="GPUParticles2D" parent="."]
+amount = 48
+texture = SubResource("GradientTexture2D_dot")
+lifetime = 2.5
+preprocess = 2.0
+local_coords = true
+process_material = SubResource("ParticleProcessMaterial_motes")
