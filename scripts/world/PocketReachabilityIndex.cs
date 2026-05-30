@@ -33,7 +33,7 @@ public partial class PocketReachabilityIndex : Node2D
     [Export] public TowerFootprintTracker FootprintTracker { get; set; }
 
     [Export] public int   MinAreaTileCount  { get; set; } = 2;
-    [Export] public float SnapRadiusPx      { get; set; } = 64f;
+    [Export] public float SnapRadiusPx      { get; set; } = 128f;
     [Export] public bool  DebugDrawAreas    { get; set; }
     [Export] public bool  DebugProbeEnabled { get; set; }
 

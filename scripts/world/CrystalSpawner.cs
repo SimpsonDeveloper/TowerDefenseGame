@@ -19,7 +19,7 @@ public partial class CrystalSpawner : Node2D
     [Export] public int SpawnCount { get; set; } = 8;
 
     /// <summary>Approximate distance from the player in pixels.</summary>
-    [Export] public float SpawnRadius { get; set; } = 300f;
+    [Export] public float SpawnRadius { get; set; } = 600f;
 
     /// <summary>
     /// Available crystal resource variants. Each spawned crystal picks one at random.
@@ -49,7 +49,7 @@ public partial class CrystalSpawner : Node2D
         {
             // Spread evenly around a ring with slight random jitter.
             float angle  = i * Mathf.Tau / SpawnCount + _rng.RandfRange(-0.25f, 0.25f);
-            float radius = SpawnRadius + _rng.RandfRange(-40f, 40f);
+            float radius = SpawnRadius + _rng.RandfRange(-80f, 80f);
             var   pos    = player.GlobalPosition + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * radius;
 
             var crystal = CrystalScene.Instantiate<Node2D>();

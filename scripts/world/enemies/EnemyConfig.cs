@@ -16,5 +16,5 @@ public partial class EnemyConfig : Resource
     /// amount during baking, and each enemy's NavigationAgent2D.Radius is set
     /// from it at runtime so paths match the agent's footprint.
     /// </summary>
-    [Export] public float AgentRadius { get; set; } = 5f;
+    [Export] public float AgentRadius { get; set; } = 10f;
 }

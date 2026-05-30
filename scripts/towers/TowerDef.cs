@@ -21,7 +21,7 @@ public partial class TowerDef : Resource
     /// Pixel footprint of the tower sprite. Each axis must be a non-zero
     /// multiple of CoordConfig.TilePixelSize.
     /// </summary>
-    [Export] public Vector2I SizePixels { get; set; } = new(8, 8);
+    [Export] public Vector2I SizePixels { get; set; } = new(16, 16);
 
     /// <summary>Texture shown as a semi-transparent ghost during placement preview.</summary>
     [Export] public Texture2D PreviewTexture { get; set; }

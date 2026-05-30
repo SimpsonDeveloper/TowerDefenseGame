@@ -18,9 +18,10 @@ Sprite = NodePath("../CrystalSprite")
 CrackShader = ExtResource("6_shdr")
 
 [node name="CrystalSprite" type="Sprite2D" parent="."]
+scale = Vector2(2, 2)
 script = ExtResource("3_sprc")
 
 [node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="."]
-polygon = PackedVector2Array(-27.5, 4.5, -25.5, 13.5, -7.5, 21, -17.5, 33, 25, 32.5, 11, 13, 27, -13, 19, -29.5, 5, -24, -7, -32, -18, -16.5, -9.5, 4, -12, 6)
+polygon = PackedVector2Array(-55, 9, -51, 27, -15, 42, -35, 66, 50, 65, 22, 26, 54, -26, 38, -59, 10, -48, -14, -64, -36, -33, -19, 8, -24, 12)
 
 [connection signal="Broken" from="Breakable" to="DropSpawner" method="OnBreakableBroken"]

@@ -9,6 +9,6 @@
 script = ExtResource("1_def")
 DisplayName = "Turret"
 TowerScene = ExtResource("3_w86qd")
-SizePixels = Vector2i(64, 64)
+SizePixels = Vector2i(128, 128)
 PreviewTexture = ExtResource("3_preview")
-TargetRadius = 256.0
+TargetRadius = 512.0

@@ -39,7 +39,7 @@ public partial class TowerPlacementManager : Node2D
     /// testing whether an enemy blocks placement. Prevents fast enemies from
     /// slipping under a freshly placed tower and keeps a small no-place buffer
     /// around them for game feel.</summary>
-    [Export] public float EnemyClearancePx { get; set; } = 10f;
+    [Export] public float EnemyClearancePx { get; set; } = 20f;
 
     private enum Mode { Idle, Placing, Destroying }
 
@@ -72,7 +72,7 @@ public partial class TowerPlacementManager : Node2D
         _pending = def;
 
         var ghost = new Node2D { Modulate = ValidColor };
-        ghost.AddChild(new Sprite2D { Texture = def.PreviewTexture });
+        ghost.AddChild(new Sprite2D { Texture = def.PreviewTexture, Scale = new Vector2(2, 2) });
         if (def.TargetRadius > 0f)
             ghost.AddChild(BuildRadiusIndicator(def.TargetRadius));
 

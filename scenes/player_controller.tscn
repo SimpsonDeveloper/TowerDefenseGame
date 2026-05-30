@@ -8,10 +8,10 @@
 [ext_resource type="Texture2D" uid="uid://cl3kiv6h4frsf" path="res://assets/32px circle.png" id="7_bqnof"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_player"]
-radius = 14.0
+radius = 28.0
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_harvest"]
-radius = 16.0
+radius = 32.0
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_mo76n"]
 shader = ExtResource("6_1kmjt")
@@ -80,7 +80,7 @@ viewport_path = NodePath("SubViewport")
 [node name="PlayerController" type="CharacterBody2D" groups=["Player"]]
 collision_layer = 2
 script = ExtResource("1_7va2w")
-MoveSpeed = 100.0
+MoveSpeed = 200.0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("CircleShape2D_player")
@@ -130,4 +130,5 @@ trail_lifetime = 0.2
 process_material = SubResource("ParticleProcessMaterial_7ycvg")
 
 [node name="SubViewportSprite" type="Sprite2D" parent="."]
+scale = Vector2(2, 2)
 texture = SubResource("ViewportTexture_671wp")

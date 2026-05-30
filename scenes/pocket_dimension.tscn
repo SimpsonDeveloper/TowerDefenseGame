@@ -61,7 +61,7 @@ BoundsMax = Vector2i(3, 3)
 PreGenerateAll = true
 
 [node name="PocketCamera" type="Camera2D" parent="."]
-position = Vector2(512, 512)
+position = Vector2(1024, 1024)
 script = ExtResource("6_cam")
 MinZoom = 1.0
 
@@ -120,7 +120,7 @@ WaveInterval = 15.0
 SpawnInterval = 0.4
 
 [node name="DebugEnemySpawner" type="Node2D" parent="." node_paths=PackedStringArray("EnemiesContainer")]
-position = Vector2(512, 512)
+position = Vector2(1024, 1024)
 script = ExtResource("19_dbgsp")
 EnemyScene = ExtResource("13_2mfk8")
 EnemyType = ExtResource("20_chonky")

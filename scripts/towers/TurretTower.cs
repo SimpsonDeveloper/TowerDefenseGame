@@ -141,8 +141,12 @@ public partial class TurretTower : StaticBody2D, ITowerPlaceable
 
 		// Beam runs from the muzzle (Laser origin) out to the enemy along
 		// TurretSprite's local +X, since aim tolerance keeps the enemy near
-		// that axis. Shorten by the muzzle offset to land at the enemy.
-		float beamLength = Mathf.Max(distanceToTarget - _muzzleOffset, 0f);
+		// that axis. distanceToTarget is in world units; the Line2D point we
+		// assign lives inside Laser, whose parent TurretSprite is scaled, so
+		// convert to TurretSprite-local units before subtracting the muzzle
+		// offset (also local).
+		float parentScale = TurretSprite.Scale.X;
+		float beamLength = Mathf.Max(distanceToTarget / parentScale - _muzzleOffset, 0f);
 
 		if (LaserLine != null)
 			LaserLine.SetPointPosition(1, new Vector2(beamLength, 0));

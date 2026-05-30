@@ -2,8 +2,8 @@
 
 [ext_resource type="PackedScene" uid="uid://d23xmn1ko1rqq" path="res://scenes/pocket_dimension.tscn" id="0_pd"]
 [ext_resource type="Script" uid="uid://dlf3scmu37ybh" path="res://scripts/world/WorldManager.cs" id="0_wm"]
-[ext_resource type="Script" path="res://scripts/ui/WaveTimerOverlay.cs" id="1_wto"]
 [ext_resource type="Script" uid="uid://dc1qoqdmljdl1" path="res://scripts/ui/SpawnFadeOverlay.cs" id="1_to7gp"]
+[ext_resource type="Script" uid="uid://b5nqdbgtipn07" path="res://scripts/ui/WaveTimerOverlay.cs" id="1_wto"]
 [ext_resource type="Script" uid="uid://elwkft26lg3n" path="res://scripts/inventory/InventoryUI.cs" id="2_u0fll"]
 [ext_resource type="Script" uid="uid://7o0j1gneru7r" path="res://scripts/ui/SimplexGenUI.cs" id="3_6p3nn"]
 [ext_resource type="Script" uid="uid://g5eae7qke6uf" path="res://scripts/camera/PlayerCameraConfig.cs" id="5_k3g67"]
@@ -72,15 +72,15 @@ PocketSpawner = NodePath("../PocketDimensionContainer/PocketDimensionViewport/Po
 
 [node name="OverworldContainer" type="SubViewportContainer" parent="."]
 texture_filter = 1
-offset_right = 960.0
-offset_bottom = 540.0
+offset_right = 1920.0
+offset_bottom = 1080.0
 stretch = true
 
 [node name="OverworldViewport" type="SubViewport" parent="OverworldContainer"]
 disable_3d = true
 handle_input_locally = false
 canvas_item_default_texture_filter = 0
-size = Vector2i(960, 540)
+size = Vector2i(1920, 1080)
 render_target_update_mode = 4
 
 [node name="InventoryUI" type="CanvasLayer" parent="OverworldContainer/OverworldViewport"]
@@ -175,7 +175,7 @@ Camera = NodePath("../../PlayerCamera")
 CoordConfig = ExtResource("33_coordcfg")
 
 [node name="PlayerCamera" type="Camera2D" parent="OverworldContainer/OverworldViewport"]
-position = Vector2(480, 270)
+position = Vector2(960, 540)
 script = ExtResource("10_lhwp2")
 MinZoom = 1.0
 
@@ -189,7 +189,7 @@ script = ExtResource("35_spawner")
 ChunkManager = NodePath("../TerrainGen/ChunkManager")
 CoordConfig = ExtResource("33_coordcfg")
 PlayerScene = ExtResource("25_pndb5")
-SpawnOrigin = Vector2(576, 324)
+SpawnOrigin = Vector2(1152, 648)
 
 [node name="PolygonTerrainManager" type="Node2D" parent="OverworldContainer/OverworldViewport" node_paths=PackedStringArray("ChunkManager")]
 script = ExtResource("34_polytm")
@@ -198,7 +198,7 @@ CoordConfig = ExtResource("33_coordcfg")
 DebugDrawEnabled = true
 
 [node name="EnemyRaycastAgent" parent="OverworldContainer/OverworldViewport" instance=ExtResource("28_7b1ka")]
-position = Vector2(400, 324)
+position = Vector2(800, 648)
 
 [node name="PocketDimensionContainer" type="SubViewportContainer" parent="."]
 texture_filter = 1

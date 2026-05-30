@@ -19,7 +19,7 @@ public partial class EnemyType : Resource
     [Export] public Texture2D Sprite { get; set; }
 
     [Export] public int MaxHp { get; set; } = 100;
-    [Export] public float MoveSpeed { get; set; } = 110f;
+    [Export] public float MoveSpeed { get; set; } = 220f;
 
     [ExportGroup("Attack")]
     /// <summary>HP removed per attack tick (→ AttackerComponent.Damage).</summary>

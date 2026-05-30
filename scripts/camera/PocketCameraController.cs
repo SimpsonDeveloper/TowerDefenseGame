@@ -15,8 +15,8 @@ public partial class PocketCameraController : Camera2D
     [Export] public float MaxZoom { get; set; } = 4.0f;
     [Export] public bool UseSmoothing { get; set; }
     [Export] public bool SnapZoom { get; set; } = true;
-    [Export] public float EdgeScrollMargin { get; set; } = 24f;
-    [Export] public float EdgeScrollSpeed { get; set; } = 600f;
+    [Export] public float EdgeScrollMargin { get; set; } = 48f;
+    [Export] public float EdgeScrollSpeed { get; set; } = 1200f;
 
     public bool InputEnabled { get; set; } = true;
 

@@ -4,7 +4,7 @@ namespace towerdefensegame.scripts.player;
 
 public partial class PlayerController : CharacterBody2D
 {
-	[Export] public float MoveSpeed { get; set; } = 200.0f;
+	[Export] public float MoveSpeed { get; set; } = 400.0f;
 
 	/// <summary>
 	/// When false, player movement input is ignored.

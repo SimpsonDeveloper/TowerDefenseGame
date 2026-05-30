@@ -28,7 +28,7 @@ public partial class EnemyNavController : CharacterBody2D
     // ── Configuration ─────────────────────────────────────────────────────
 
     [ExportGroup("Movement")]
-    [Export] public float MoveSpeed { get; set; } = 80f;
+    [Export] public float MoveSpeed { get; set; } = 160f;
     [Export] public float Acceleration { get; set; } = 10f;
 
     [ExportGroup("Navigation")]
@@ -40,13 +40,13 @@ public partial class EnemyNavController : CharacterBody2D
     /// How close the agent must get to each path waypoint before it advances.
     /// Keep this at roughly half a tile width (4px for 8px tiles).
     /// </summary>
-    [Export] public float PathDesiredDistance { get; set; } = 8f;
+    [Export] public float PathDesiredDistance { get; set; } = 16f;
 
     /// <summary>
     /// How close the agent must get to the final target before navigation is
     /// considered finished.
     /// </summary>
-    [Export] public float TargetDesiredDistance { get; set; } = 1f;
+    [Export] public float TargetDesiredDistance { get; set; } = 2f;
 
     [ExportGroup("Components")]
     [Export] public HealthComponent Health { get; set; }

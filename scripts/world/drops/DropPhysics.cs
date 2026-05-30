@@ -16,10 +16,10 @@ public partial class DropPhysics : Node2D
 {
     [Export] public DetectionZone MagnetZone { get; set; }
 
-    [Export] public float ScatterSpeedMin { get; set; } = 60f;
-    [Export] public float ScatterSpeedMax { get; set; } = 140f;
+    [Export] public float ScatterSpeedMin { get; set; } = 120f;
+    [Export] public float ScatterSpeedMax { get; set; } = 280f;
 
-    [Export] public float MagnetSpeed { get; set; } = 220f;
+    [Export] public float MagnetSpeed { get; set; } = 440f;
 
     private RigidBody2D         _body;
     private Node2D              _player;

@@ -8,13 +8,13 @@
 [ext_resource type="Shader" uid="uid://bwjkkckjygltl" path="res://shaders/sprite_outline.gdshader" id="6_outln"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_body"]
-radius = 6.0
+radius = 12.0
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_pickup"]
-radius = 6.0
+radius = 12.0
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_magnet"]
-radius = 36.0
+radius = 72.0
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_outline"]
 shader = ExtResource("6_outln")
@@ -57,5 +57,6 @@ script = ExtResource("3_dzone")
 shape = SubResource("CircleShape2D_magnet")
 
 [node name="DropSprite" type="Sprite2D" parent="."]
+scale = Vector2(2, 2)
 material = SubResource("ShaderMaterial_outline")
 script = ExtResource("4_sprc")

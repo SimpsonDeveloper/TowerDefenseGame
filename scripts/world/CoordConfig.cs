@@ -18,7 +18,7 @@ namespace towerdefensegame.scripts.world;
 public partial class CoordConfig : Resource
 {
     /// <summary>Pixel side-length of one tile.</summary>
-    [Export] public int TilePixelSize { get; set; } = 8;
+    [Export] public int TilePixelSize { get; set; } = 16;
 
     /// <summary>Side-length of one chunk in tiles (NxN). Replaces ChunkManager.ChunkSize.</summary>
     [Export] public int ChunkSizeTiles { get; set; } = 32;

@@ -42,7 +42,7 @@ public partial class EnemyRaycastController : CharacterBody2D
     // ── Configuration ──────────────────────────────────────────────────────
 
     [ExportGroup("Movement")]
-    [Export] public float MoveSpeed { get; set; } = 80f;
+    [Export] public float MoveSpeed { get; set; } = 160f;
     [Export] public float Acceleration { get; set; } = 10f;
 
     /// <summary>
@@ -54,13 +54,13 @@ public partial class EnemyRaycastController : CharacterBody2D
     [ExportGroup("Navigation")]
     [Export] public CollisionShape2D Hitbox { get; set; }
     [Export] public EnemyConfig EnemyConfig { get; set; }
-    [Export] public float SightRange { get; set; } = 400f;
+    [Export] public float SightRange { get; set; } = 800f;
 
     /// <summary>
     /// How close the enemy must get to a checkpoint position before it is considered reached.
     /// one tile width is a reasonable default.
     /// </summary>
-    [Export] public float CheckpointReachDistance { get; set; } = 8f;
+    [Export] public float CheckpointReachDistance { get; set; } = 16f;
 
     /// <summary>Safety cap on the checkpoint chain length.</summary>
     [Export] public int MaxCheckpoints { get; set; } = 100;
