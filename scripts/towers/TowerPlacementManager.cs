@@ -33,7 +33,6 @@ public partial class TowerPlacementManager : Node2D
     [Export] public TowerFootprintTracker FootprintTracker { get; set; }
     [Export] public Node2D PlacedTowersContainer { get; set; }
     [Export] public PocketCameraController Camera { get; set; }
-    [Export] public GlobalEnemyConfig GlobalEnemyConfig { get; set; }
 
     /// <summary>Extra cushion (px) added to the enemy's collision radius when
     /// testing whether an enemy blocks placement. Prevents fast enemies from
@@ -192,8 +191,6 @@ public partial class TowerPlacementManager : Node2D
     /// and size <paramref name="sizePixels"/>. Inflation = AgentRadius + EnemyClearancePx.</summary>
     private bool AnyEnemyInFootprint(Vector2 snappedCenter, Vector2I sizePixels)
     {
-        if (GlobalEnemyConfig == null) return false;
-
         Vector2 half = (Vector2)sizePixels * 0.5f;
         Vector2 min  = snappedCenter - half;
         Vector2 max  = snappedCenter + half;

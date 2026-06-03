@@ -11,23 +11,8 @@ namespace towerdefensegame.scripts.world.enemies.targeting;
 [GlobalClass]
 public partial class TowerTargetingPattern : TargetingPattern
 {
-    [Export] public string TargetGroup { get; set; } = "Towers";
-
-    /// <summary>Reach of the enemy's attack, added to agent radius for standoff.</summary>
-    [Export] public float AttackRange { get; set; }
-
-    /// <summary>Seconds between retargets. Keep above 0.1s.</summary>
-    [Export] public float TargetUpdateInterval { get; set; } = 0.25f;
-
-    /// <summary>Max age (ms) of a path-resolve result before it's discarded.</summary>
-    [Export] public int MaxResultAgeMs { get; set; } = 500;
-
-    public override EnemyTargeter Build(GlobalEnemyConfig globalEnemyConfig) => new EnemyTowerTargeter
+    public override EnemyTargeter Build(EnemyType enemyType) => new EnemyTowerTargeter
     {
-        TargetGroup = TargetGroup,
-        GlobalEnemyConfig = globalEnemyConfig,
-        AttackRange = AttackRange,
-        TargetUpdateInterval = TargetUpdateInterval,
-        MaxResultAgeMs = MaxResultAgeMs,
+        AttackRange = enemyType.AttackRange,
     };
 }

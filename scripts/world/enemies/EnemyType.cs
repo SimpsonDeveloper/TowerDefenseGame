@@ -27,6 +27,9 @@ public partial class EnemyType : Resource
     [Export] public int Damage { get; set; } = 10;
     /// <summary>Seconds between attack ticks (→ AttackerComponent.AttackInterval).</summary>
     [Export] public float AttackInterval { get; set; } = 0.5f;
+    
+    /// <summary>Reach of the enemy's attack, added to agent radius for standoff.</summary>
+    [Export] public float AttackRange { get; set; }
 
     /// <summary>Which targeting strategy this variant uses. Builds the targeter
     /// node at spawn; null leaves the scene's default targeter in place.</summary>

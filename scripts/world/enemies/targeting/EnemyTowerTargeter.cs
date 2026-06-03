@@ -25,29 +25,14 @@ namespace towerdefensegame.scripts.world.enemies.targeting;
 [GlobalClass]
 public partial class EnemyTowerTargeter : EnemyTargeter
 {
-    [Export] public string TargetGroup { get; set; } = "Towers";
-    [Export] public GlobalEnemyConfig GlobalEnemyConfig { get; set; }
+    private const string TargetGroup = "Towers";
 
     /// <summary>
     /// Reach of the enemy's attack. Added to agentRadius to form the standoff
     /// distance from the tower footprint at which the approach path is cut
     /// short. Set to 0 for strict melee-on-contact.
     /// </summary>
-    [Export] public float AttackRange { get; set; }
-
-    /// <summary>
-    /// Seconds between retargets. Each retarget runs two MapGetPath queries
-    /// (one for reachability, one for the agent path), so keep above 0.1s.
-    /// </summary>
-    [Export] public float TargetUpdateInterval { get; set; } = 0.25f;
-
-    /// <summary>
-    /// Maximum age, in milliseconds, of a path-resolve result before it's
-    /// discarded. If the worker is backlogged and the result lands too late,
-    /// the enemy state has moved enough that the approach point is no longer
-    /// valid; better to drop it and let the next retarget cycle resubmit.
-    /// </summary>
-    [Export] public int MaxResultAgeMs { get; set; } = 500;
+    public float AttackRange { get; set; }
 
     private Node2D _owner;
     private PathfindingResourceCoordinator _coordinator;
@@ -139,7 +124,7 @@ public partial class EnemyTowerTargeter : EnemyTargeter
             enemyPos.DistanceSquaredTo(a.TowerPosition)
                 .CompareTo(enemyPos.DistanceSquaredTo(b.TowerPosition)));
 
-        float standoff = Mathf.Max(GlobalEnemyConfig?.AgentRadius ?? 0f, AttackRange);
+        float standoff = Mathf.Max(GlobalEnemyConfig.AgentRadius, AttackRange);
         pathfindService.Submit(_owner.GetInstanceId(), enemyPos, snapshot.NavMap, standoff,
             candidates, snapshot.Reach);
     }

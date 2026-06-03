@@ -25,6 +25,12 @@ public abstract partial class EnemyTargeter : Node
 
     /// <summary>The thing currently being approached, or null.</summary>
     public Node2D CurrentTarget { get; protected set; }
+    
+    /// <summary>Seconds between retargets. Keep above 0.1s.</summary>
+    protected static float TargetUpdateInterval => 0.25f;
+
+    /// <summary>Max age (ms) of a path-resolve result before it's discarded.</summary>
+    protected static int MaxResultAgeMs => 500;
 
     /// <summary>
     /// Advance the strategy. Driven by the controller in physics order so a

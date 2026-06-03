@@ -21,7 +21,6 @@ public partial class PocketNavGridManager : Node2D
 {
     [Export] public ChunkManager ChunkManager { get; set; }
     [Export] public CoordConfig CoordConfig { get; set; }
-    [Export] public GlobalEnemyConfig GlobalEnemyConfig { get; set; }
     [Export] public TowerPlacementManager TowerPlacementManager { get; set; }
 
     [Export] public bool DebugDrawEnabled { get; set; }
@@ -86,7 +85,6 @@ public partial class PocketNavGridManager : Node2D
     {
         if (ChunkManager == null) { GD.PushWarning($"{Name}: ChunkManager not assigned."); return; }
         if (CoordConfig  == null) { GD.PushWarning($"{Name}: CoordConfig not assigned.");  return; }
-        if (GlobalEnemyConfig  == null) { GD.PushWarning($"{Name}: EnemyConfig not assigned.");  return; }
 
         if (!ChunkManager.BoundsEnabled)
             GD.PushWarning($"{Name}: ChunkManager.BoundsEnabled is false — PocketNavGridManager requires bounded terrain.");

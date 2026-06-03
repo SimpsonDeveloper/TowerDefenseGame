@@ -8,13 +8,12 @@ namespace towerdefensegame.scripts.world.enemies;
 /// Export this resource on any node that needs enemy parameters rather than
 /// duplicating values across scripts.
 /// </summary>
-[GlobalClass]
-public partial class GlobalEnemyConfig : Resource
+public static class GlobalEnemyConfig
 {
     /// <summary>
     /// Collision radius used for navigation. The nav mesh is eroded by this
     /// amount during baking, and each enemy's NavigationAgent2D.Radius is set
     /// from it at runtime so paths match the agent's footprint.
     /// </summary>
-    public float AgentRadius => 10f;
+    public static float AgentRadius => 10f;
 }
