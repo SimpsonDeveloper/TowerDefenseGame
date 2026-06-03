@@ -28,7 +28,7 @@ public partial class PocketReachabilityIndex : Node2D
 {
     [Export] public ChunkManager ChunkManager { get; set; }
     [Export] public CoordConfig CoordConfig { get; set; }
-    [Export] public EnemyConfig EnemyConfig { get; set; }
+    [Export] public GlobalEnemyConfig GlobalEnemyConfig { get; set; }
     [Export] public TowerPlacementManager TowerPlacementManager { get; set; }
     [Export] public TowerFootprintTracker FootprintTracker { get; set; }
 
@@ -125,7 +125,7 @@ public partial class PocketReachabilityIndex : Node2D
 
     public override void _Ready()
     {
-        if (ChunkManager == null || CoordConfig == null || EnemyConfig == null
+        if (ChunkManager == null || CoordConfig == null || GlobalEnemyConfig == null
             || FootprintTracker == null)
         {
             GD.PushWarning($"{Name}: missing required exports.");
@@ -240,7 +240,7 @@ public partial class PocketReachabilityIndex : Node2D
             ChunkSizeTiles    = cs,
             TilePixelSize     = CoordConfig.TilePixelSize,
             CoordConfig       = CoordConfig,
-            AgentRadius       = EnemyConfig.AgentRadius,
+            AgentRadius       = GlobalEnemyConfig.AgentRadius,
             MinAreaTileCount  = MinAreaTileCount,
             TileMin           = tileMin,
             TileMax           = tileMax,

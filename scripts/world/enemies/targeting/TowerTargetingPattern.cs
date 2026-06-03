@@ -22,10 +22,10 @@ public partial class TowerTargetingPattern : TargetingPattern
     /// <summary>Max age (ms) of a path-resolve result before it's discarded.</summary>
     [Export] public int MaxResultAgeMs { get; set; } = 500;
 
-    public override EnemyTargeter Build(EnemyConfig enemyConfig) => new EnemyTowerTargeter
+    public override EnemyTargeter Build(GlobalEnemyConfig globalEnemyConfig) => new EnemyTowerTargeter
     {
         TargetGroup = TargetGroup,
-        EnemyConfig = enemyConfig,
+        GlobalEnemyConfig = globalEnemyConfig,
         AttackRange = AttackRange,
         TargetUpdateInterval = TargetUpdateInterval,
         MaxResultAgeMs = MaxResultAgeMs,

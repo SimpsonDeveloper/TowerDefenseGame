@@ -26,14 +26,14 @@ namespace towerdefensegame.scripts.world.enemies.targeting;
 public partial class EnemyTowerTargeter : EnemyTargeter
 {
     [Export] public string TargetGroup { get; set; } = "Towers";
-    [Export] public EnemyConfig EnemyConfig { get; set; }
+    [Export] public GlobalEnemyConfig GlobalEnemyConfig { get; set; }
 
     /// <summary>
     /// Reach of the enemy's attack. Added to agentRadius to form the standoff
     /// distance from the tower footprint at which the approach path is cut
     /// short. Set to 0 for strict melee-on-contact.
     /// </summary>
-    [Export] public float AttackRange { get; set; } = 0f;
+    [Export] public float AttackRange { get; set; }
 
     /// <summary>
     /// Seconds between retargets. Each retarget runs two MapGetPath queries
@@ -127,7 +127,7 @@ public partial class EnemyTowerTargeter : EnemyTargeter
         if (_footprints == null || _owner == null) return;
 
         Viewport viewport = GetViewport();
-        List<ApproachCandidate> candidates = new();
+        List<ApproachCandidate> candidates = [];
         foreach (Node node in GetTree().GetNodesInGroup(TargetGroup))
         {
             if (node is not Node2D n2d || n2d.GetViewport() != viewport) continue;
@@ -139,7 +139,7 @@ public partial class EnemyTowerTargeter : EnemyTargeter
             enemyPos.DistanceSquaredTo(a.TowerPosition)
                 .CompareTo(enemyPos.DistanceSquaredTo(b.TowerPosition)));
 
-        float standoff = Mathf.Max(EnemyConfig?.AgentRadius ?? 0f, AttackRange);
+        float standoff = Mathf.Max(GlobalEnemyConfig?.AgentRadius ?? 0f, AttackRange);
         pathfindService.Submit(_owner.GetInstanceId(), enemyPos, snapshot.NavMap, standoff,
             candidates, snapshot.Reach);
     }

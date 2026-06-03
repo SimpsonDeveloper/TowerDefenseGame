@@ -35,7 +35,7 @@ public partial class EnemyNavController : CharacterBody2D
     [ExportGroup("Navigation")]
     [Export] public NavigationAgent2D NavAgent;
     [Export] public CollisionShape2D Hitbox { get; set; }
-    [Export] public EnemyConfig EnemyConfig { get; set; }
+    [Export] public GlobalEnemyConfig GlobalEnemyConfig { get; set; }
 
     /// <summary>
     /// How close the agent must get to each path waypoint before it advances.
@@ -74,11 +74,11 @@ public partial class EnemyNavController : CharacterBody2D
         NavAgent.PathDesiredDistance = PathDesiredDistance;
         NavAgent.TargetDesiredDistance = TargetDesiredDistance;
         NavAgent.MaxSpeed = MoveSpeed;
-        if (EnemyConfig != null)
+        if (GlobalEnemyConfig != null)
         {
-            NavAgent.Radius = EnemyConfig.AgentRadius;
+            NavAgent.Radius = GlobalEnemyConfig.AgentRadius;
             if (Hitbox?.Shape is CircleShape2D circle)
-                circle.Radius = EnemyConfig.AgentRadius;
+                circle.Radius = GlobalEnemyConfig.AgentRadius;
             else
                 GD.PushWarning($"{Name}: Hitbox missing or not a CircleShape2D — physical radius won't match nav radius.");
         }
@@ -167,7 +167,7 @@ public partial class EnemyNavController : CharacterBody2D
 
         if (type.Targeting != null)
         {
-            Targeter = type.Targeting.Build(EnemyConfig);
+            Targeter = type.Targeting.Build(GlobalEnemyConfig);
             AddChild(Targeter);
         }
     }

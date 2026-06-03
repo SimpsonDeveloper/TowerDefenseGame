@@ -53,7 +53,7 @@ public partial class EnemyRaycastController : CharacterBody2D
     /// </summary>
     [ExportGroup("Navigation")]
     [Export] public CollisionShape2D Hitbox { get; set; }
-    [Export] public EnemyConfig EnemyConfig { get; set; }
+    [Export] public GlobalEnemyConfig GlobalEnemyConfig { get; set; }
     [Export] public float SightRange { get; set; } = 800f;
 
     /// <summary>
@@ -203,10 +203,10 @@ public partial class EnemyRaycastController : CharacterBody2D
         _steeringTimer = (_globalStaggerCounter % staggerSteps) * PhysicsFrameDuration;
         _globalStaggerCounter++;
 
-        if (EnemyConfig != null)
+        if (GlobalEnemyConfig != null)
         {
             if (Hitbox?.Shape is CircleShape2D circle)
-                circle.Radius = EnemyConfig.AgentRadius;
+                circle.Radius = GlobalEnemyConfig.AgentRadius;
             else
                 GD.PushWarning($"{Name}: Hitbox missing or not a CircleShape2D — physical radius won't match EnemyConfig.");
         }

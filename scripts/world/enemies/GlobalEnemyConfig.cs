@@ -9,12 +9,12 @@ namespace towerdefensegame.scripts.world.enemies;
 /// duplicating values across scripts.
 /// </summary>
 [GlobalClass]
-public partial class EnemyConfig : Resource
+public partial class GlobalEnemyConfig : Resource
 {
     /// <summary>
     /// Collision radius used for navigation. The nav mesh is eroded by this
     /// amount during baking, and each enemy's NavigationAgent2D.Radius is set
     /// from it at runtime so paths match the agent's footprint.
     /// </summary>
-    [Export] public float AgentRadius { get; set; } = 10f;
+    public float AgentRadius => 10f;
 }

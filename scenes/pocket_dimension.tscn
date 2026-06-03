@@ -1,9 +1,5 @@
 [gd_scene load_steps=24 format=3 uid="uid://d23xmn1ko1rqq"]
 
-[ext_resource type="Script" path="res://scripts/world/PocketDimensionEnemySpawner.cs" id="18_pdes"]
-[ext_resource type="PackedScene" path="res://scenes/SpawnerPortal.tscn" id="21_portal"]
-[ext_resource type="Script" path="res://scripts/world/DebugEnemySpawner.cs" id="19_dbgsp"]
-[ext_resource type="Resource" path="res://assets/enemies/chonky_enemy.tres" id="20_chonky"]
 [ext_resource type="Script" uid="uid://dnb5iegcl3s5r" path="res://scripts/terrain/TerrainGen.cs" id="2_tgen"]
 [ext_resource type="Script" uid="uid://bn66bgttlo0pn" path="res://scripts/terrain/GenRange.cs" id="3_grange"]
 [ext_resource type="Script" uid="uid://d33brm7vp1jgy" path="res://scripts/terrain/SimplexGen.cs" id="4_sgen"]
@@ -22,6 +18,10 @@
 [ext_resource type="Script" uid="uid://6fcff7tjoj3y" path="res://scripts/towers/TowerDef.cs" id="15_2mfk8"]
 [ext_resource type="Script" uid="uid://dhocbxp6pqng7" path="res://scripts/world/PocketReachabilityIndex.cs" id="16_pri"]
 [ext_resource type="Script" uid="uid://o172smp500iw" path="res://scripts/world/PathfindingResourceCoordinator.cs" id="17_prc"]
+[ext_resource type="Script" uid="uid://pgvdnd4maxey" path="res://scripts/world/PocketDimensionEnemySpawner.cs" id="18_pdes"]
+[ext_resource type="Script" uid="uid://cnndnd6o714x4" path="res://scripts/world/DebugEnemySpawner.cs" id="19_dbgsp"]
+[ext_resource type="Resource" uid="uid://y2qahljinvs4" path="res://assets/enemies/chonky_enemy.tres" id="20_chonky"]
+[ext_resource type="PackedScene" uid="uid://drutvmxnk4bx0" path="res://scenes/SpawnerPortal.tscn" id="21_portal"]
 
 [sub_resource type="Resource" id="Resource_pdgenrange"]
 script = ExtResource("3_grange")
@@ -75,7 +75,6 @@ Coords = ExtResource("7_ck6mf")
 FootprintTracker = NodePath("../TowerFootprintTracker")
 PlacedTowersContainer = NodePath("PlacedTowers")
 Camera = NodePath("../PocketCamera")
-EnemyConfig = ExtResource("12_kb8u1")
 
 [node name="PlacedTowers" type="Node2D" parent="TowerPlacementManager"]
 
@@ -83,14 +82,14 @@ EnemyConfig = ExtResource("12_kb8u1")
 script = ExtResource("13_pngm")
 ChunkManager = NodePath("../TerrainGen/ChunkManager")
 CoordConfig = ExtResource("7_ck6mf")
-EnemyConfig = ExtResource("12_kb8u1")
+GlobalEnemyConfig = ExtResource("12_kb8u1")
 TowerPlacementManager = NodePath("../TowerPlacementManager")
 
 [node name="PocketReachabilityIndex" type="Node2D" parent="." node_paths=PackedStringArray("ChunkManager", "TowerPlacementManager", "FootprintTracker")]
 script = ExtResource("16_pri")
 ChunkManager = NodePath("../TerrainGen/ChunkManager")
 CoordConfig = ExtResource("7_ck6mf")
-EnemyConfig = ExtResource("12_kb8u1")
+GlobalEnemyConfig = ExtResource("12_kb8u1")
 TowerPlacementManager = NodePath("../TowerPlacementManager")
 FootprintTracker = NodePath("../TowerFootprintTracker")
 
@@ -115,9 +114,6 @@ CoordConfig = ExtResource("7_ck6mf")
 EnemyScene = ExtResource("13_2mfk8")
 PortalScene = ExtResource("21_portal")
 EnemiesContainer = NodePath("../SpawnedEnemies")
-MaxCheckpointsPerWave = 4
-WaveInterval = 15.0
-SpawnInterval = 0.4
 
 [node name="DebugEnemySpawner" type="Node2D" parent="." node_paths=PackedStringArray("EnemiesContainer")]
 position = Vector2(1024, 1024)

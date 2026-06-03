@@ -13,10 +13,10 @@ namespace towerdefensegame.scripts.world.enemies.targeting;
 public abstract partial class TargetingPattern : Resource
 {
     /// <summary>
-    /// Builds a configured targeter node. <paramref name="enemyConfig"/> is the
+    /// Builds a configured targeter node. <paramref name="globalEnemyConfig"/> is the
     /// owner's shared global config (agent radius, etc.); patterns that need it
     /// use it, the rest ignore it. The caller adds the node to the enemy and
     /// subscribes to its events.
     /// </summary>
-    public abstract EnemyTargeter Build(EnemyConfig enemyConfig);
+    public abstract EnemyTargeter Build(GlobalEnemyConfig globalEnemyConfig);
 }

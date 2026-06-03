@@ -11,7 +11,6 @@
 [ext_resource type="Script" uid="uid://c4ivmmmnav7xt" path="res://scripts/components/HealthBarComponent.cs" id="10_bar"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_enemy"]
-radius = 10.0
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_attack"]
 radius = 24.0
@@ -24,7 +23,7 @@ MoveSpeed = 220.0
 Acceleration = 5.0
 NavAgent = NodePath("NavigationAgent2D")
 Hitbox = NodePath("CollisionShape2D")
-EnemyConfig = ExtResource("2_h66n4")
+GlobalEnemyConfig = ExtResource("2_h66n4")
 Health = NodePath("HealthComponent")
 Attacker = NodePath("Attacker")
 Sprite = NodePath("EnemySprite")
