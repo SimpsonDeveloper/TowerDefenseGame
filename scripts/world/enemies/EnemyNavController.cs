@@ -1,5 +1,6 @@
 using Godot;
 using towerdefensegame.scripts.components;
+using towerdefensegame.scripts.world.enemies.targeting;
 
 namespace towerdefensegame.scripts.world.enemies;
 

@@ -1,6 +1,6 @@
 using Godot;
 
-namespace towerdefensegame.scripts.world.enemies;
+namespace towerdefensegame.scripts.world.enemies.targeting;
 
 /// <summary>
 /// Data-driven factory for an <see cref="EnemyTargeter"/>. Each concrete pattern

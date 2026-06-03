@@ -1,6 +1,6 @@
 using Godot;
 
-namespace towerdefensegame.scripts.world.enemies;
+namespace towerdefensegame.scripts.world.enemies.targeting;
 
 /// <summary>
 /// Targeting pattern that walks the enemy toward the nearest reachable tower.

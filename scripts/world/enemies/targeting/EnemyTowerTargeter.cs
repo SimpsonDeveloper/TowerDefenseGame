@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using Godot;
 using towerdefensegame.scripts.towers;
 
-namespace towerdefensegame.scripts.world.enemies;
+namespace towerdefensegame.scripts.world.enemies.targeting;
 
 /// <summary>
 /// Selects which tower the enemy walks toward and emits the navmesh-validated

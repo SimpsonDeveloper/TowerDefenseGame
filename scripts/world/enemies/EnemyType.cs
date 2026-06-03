@@ -1,4 +1,5 @@
 using Godot;
+using towerdefensegame.scripts.world.enemies.targeting;
 
 namespace towerdefensegame.scripts.world.enemies;
 
@@ -21,14 +22,14 @@ public partial class EnemyType : Resource
     [Export] public int MaxHp { get; set; } = 100;
     [Export] public float MoveSpeed { get; set; } = 220f;
 
-    [ExportGroup("Attack")]
     /// <summary>HP removed per attack tick (→ AttackerComponent.Damage).</summary>
+    [ExportGroup("Attack")]
     [Export] public int Damage { get; set; } = 10;
     /// <summary>Seconds between attack ticks (→ AttackerComponent.AttackInterval).</summary>
     [Export] public float AttackInterval { get; set; } = 0.5f;
 
-    [ExportGroup("Targeting")]
     /// <summary>Which targeting strategy this variant uses. Builds the targeter
     /// node at spawn; null leaves the scene's default targeter in place.</summary>
+    [ExportGroup("Targeting")]
     [Export] public TargetingPattern Targeting { get; set; }
 }

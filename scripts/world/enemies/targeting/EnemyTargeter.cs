@@ -1,7 +1,7 @@
 using System;
 using Godot;
 
-namespace towerdefensegame.scripts.world.enemies;
+namespace towerdefensegame.scripts.world.enemies.targeting;
 
 /// <summary>
 /// Base for an enemy's targeting strategy — the pluggable "what do I walk
