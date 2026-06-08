@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Crystal Dataflow — Triangle Lattice Explorer</title>
+<style>
+  :root{
+    --bg:#0d1018; --panel:#161b2b; --panel2:#1d2438; --ink:#e7ecf6; --dim:#8a93ab;
+    --line:#28324d; --accent:#5fd0ff;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);
+    font-family:"Segoe UI",system-ui,sans-serif}
+  .wrap{display:flex;gap:16px;padding:16px;height:100%;align-items:stretch}
+  .left{flex:1;display:flex;flex-direction:column;gap:10px;min-width:0}
+  .right{width:300px;display:flex;flex-direction:column;gap:14px;overflow-y:auto}
+  h1{font-size:18px;margin:0;font-weight:650;letter-spacing:.3px}
+  .sub{color:var(--dim);font-size:12.5px;margin:0}
+  canvas{background:radial-gradient(120% 120% at 50% 0%,#121a2e 0%,#0a0d15 70%);
+    border:1px solid var(--line);border-radius:12px;width:100%;display:block;cursor:crosshair}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px}
+  .card h2{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--dim);
+    margin:0 0 10px}
+  .palette{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .swatch{display:flex;align-items:center;gap:8px;padding:8px;border-radius:9px;
+    border:1px solid var(--line);background:var(--panel2);cursor:pointer;transition:.12s;font-size:13px}
+  .swatch:hover{border-color:var(--accent)}
+  .swatch.sel{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+  .dot{width:16px;height:16px;border-radius:4px;flex:none;box-shadow:0 0 8px currentColor}
+  .swatch small{color:var(--dim);display:block;font-size:10.5px}
+  .btnrow{display:flex;gap:8px;flex-wrap:wrap}
+  button{background:var(--panel2);color:var(--ink);border:1px solid var(--line);
+    border-radius:8px;padding:7px 11px;font-size:12.5px;cursor:pointer}
+  button:hover{border-color:var(--accent)}
+  .stat{display:flex;justify-content:space-between;font-size:13px;padding:3px 0}
+  .stat b{font-variant-numeric:tabular-nums}
+  .bar{height:10px;border-radius:6px;background:#0c1120;overflow:hidden;margin-top:4px;border:1px solid var(--line)}
+  .bar i{display:block;height:100%;background:linear-gradient(90deg,#39d98a,#f1c40f)}
+  .bar.over i{background:linear-gradient(90deg,#f1c40f,#e6394a)}
+  .legend{font-size:12px;color:var(--dim);line-height:1.7}
+  .legend b{color:var(--ink)}
+  textarea#io{width:100%;height:118px;margin-top:8px;background:#0c1120;color:#cfe3ff;
+    border:1px solid var(--line);border-radius:8px;font:11px/1.45 ui-monospace,Consolas,monospace;
+    padding:8px;resize:vertical}
+  #toast{font-size:11px;color:#39d98a;height:14px;margin-top:5px}
+  .tag{display:inline-block;padding:1px 6px;border-radius:5px;font-size:11px;
+    border:1px solid var(--line);background:var(--panel2)}
+  .desc{font-size:12.5px;color:var(--dim);line-height:1.55;min-height:34px}
+  kbd{background:#0c1120;border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;
+    padding:1px 5px;font-size:11px}
+  .trace{display:flex;flex-direction:column;gap:7px;font-size:12.5px;max-height:300px;overflow-y:auto}
+  .trace .hdr{color:var(--dim);font-size:11.5px;line-height:1.55}
+  .trace .hdr b{color:var(--ink)}
+  .step{border:1px solid var(--line);border-radius:9px;padding:7px 9px;background:var(--panel2)}
+  .step .top{display:flex;align-items:center;gap:7px;font-weight:600;margin-bottom:5px}
+  .step .top .nd{color:var(--dim);font-weight:700;min-width:26px}
+  .step .row{font:11.5px/1.6 ui-monospace,Consolas,monospace;color:#cfe3ff}
+  .step .row .k{color:var(--dim);display:inline-block;min-width:48px}
+  .step .row .e{color:#39d98a}
+  .step .row .ar{color:#ff9d4d}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="left">
+    <div>
+      <h1>Crystal Dataflow — Triangle Lattice Explorer</h1>
+      <p class="sub">Click a cell to place a crystal (▲ <b>splits</b> 1→2, ▽ <b>merges</b> 2→1). Flow runs <b>upward</b>.
+        Open edges show a <b>dot</b> — click it to toggle a site: <span style="color:#39d98a">green</span> = a
+        weighted <b>source</b> (core feed), <span style="color:#ff9d4d">orange</span> = a <b>sink</b>.</p>
+    </div>
+    <canvas id="c"></canvas>
+    <div class="card">
+      <h2>How to read it</h2>
+      <div class="legend">
+        <b>Orientation = arity.</b> An up-triangle takes one signal in at its base and emits two up its sides.
+        A down-triangle takes two in and merges to one. Because the lattice forces ▲▽ to alternate, every shape is
+        automatically a rhythm of split → merge → split.<br>
+        <span style="color:#ff9d4d">●</span> sink (output) &nbsp;
+        <span style="color:#39d98a">●</span> source (core feed) &nbsp;
+        <span>○ candidate edge — click to toggle</span> &nbsp;
+        <span style="color:var(--accent)">→</span> internal flow<br>
+        <b>Routing conserves every stat.</b> The base shot (<b>power = core − crystal draw</b>, plus base
+        rate/speed/range) is divided among the sources by their <b>weights</b>, then routed: a ▲ divides each
+        stat among its outputs, a ▽ sums each stat. Each crystal <b>multiplies/modifies on top</b>, and the
+        weapon = the <b>sum of all sinks</b>. So a pure-wire shape fires the base shot unchanged; operators are
+        the only amplifiers. <b>Damage = power × rate.</b>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Flow breakdown</h2>
+      <div class="trace" id="trace"></div>
+    </div>
+  </div>
+
+  <div class="right">
+    <div class="card">
+      <h2>Crystal palette</h2>
+      <div class="palette" id="palette"></div>
+      <div class="desc" id="desc" style="margin-top:10px"></div>
+    </div>
+
+    <div class="card">
+      <h2>Compiled tower</h2>
+      <div class="stat"><span>Crystals</span><b id="nCells">0</b></div>
+      <div class="stat"><span><span style="color:#ff9d4d">Sinks</span></span><b id="nSinks">0</b></div>
+      <div class="stat"><span>Core energy</span><b><input id="ecore" type="number" step="10" min="0"
+        style="width:64px;background:#0c1120;color:var(--ink);border:1px solid var(--line);border-radius:6px;
+        padding:3px 6px;font-size:13px;text-align:right;font-variant-numeric:tabular-nums"></b></div>
+      <div class="stat"><span>− Crystal draw</span><b id="eUsed">0</b></div>
+      <div class="stat"><span>= Flowing energy</span><b id="eflow">0</b></div>
+      <div class="bar" id="ebar"><i style="width:0%"></i></div>
+      <div class="stat" style="margin-top:6px"><span>Total DPS</span><b id="dps">0</b></div>
+      <div id="sinkList" style="margin-top:10px;display:flex;flex-direction:column;gap:5px"></div>
+      <div class="desc" id="verdict" style="margin-top:8px"></div>
+    </div>
+
+    <div class="card">
+      <h2>Source weights</h2>
+      <div id="sourceList" class="legend">Click a green edge dot to add a core source.</div>
+    </div>
+
+    <div class="card">
+      <h2>Tools</h2>
+      <div class="btnrow">
+        <button id="erase">Eraser</button>
+        <button id="clear">Clear</button>
+      </div>
+      <div class="btnrow" style="margin-top:8px">
+        <button data-preset="chain">▸ Chain</button>
+        <button data-preset="fork">▸ Fork</button>
+        <button data-preset="diamond">▸ Diamond</button>
+      </div>
+      <div class="legend" style="margin-top:10px">Tip: hold <kbd>Shift</kbd> and drag to paint crystals.
+        Click an edge <b>dot</b> to toggle a source/sink site.</div>
+    </div>
+
+    <div class="card">
+      <h2>Export / Import</h2>
+      <div class="btnrow">
+        <button id="exportBtn">Export →</button>
+        <button id="importBtn">← Import</button>
+        <button id="pngBtn">Save PNG</button>
+      </div>
+      <textarea id="io" spellcheck="false" placeholder="Export writes your creation here and copies it to the clipboard — paste it into chat to ask about it. To load one, paste it here and click Import."></textarea>
+      <div id="toast"></div>
+    </div>
+  </div>
+</div>
+
+<script src="crystal-core.js"></script>
+<script>
+// CRYSTALS, the operator algebra (applyFacet / BASE / OPS) and
+// the tunable params all live in crystal-core.js, shared with operator-reference.html.
+let ECORE = 100;   // core energy pool; crystal costs draw it down, the remainder = base shot power
+
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+let DPR = window.devicePixelRatio || 1;
+
+const L = 78;                 // triangle side
+const H = L*Math.sqrt(3)/2;   // triangle height
+let cells = [];               // all triangle cells
+let edgeMap = new Map();      // edgeKey -> [cellIndex,...]
+let placed = new Map();       // cellIndex -> crystalKey
+let selected = "ruby";
+let erasing = false;
+let hover = -1;
+let sites = new Set();         // edge keys toggled ON as input/output sites (role from geometry)
+let sourceWeights = new Map(); // input-site edge key -> energy weight (default 1)
+let lastSourceSig = '';        // structural signature so weight sliders don't rebuild mid-drag
+
+function ek(p,q){             // normalized edge key
+  const a=[Math.round(p[0]),Math.round(p[1])], b=[Math.round(q[0]),Math.round(q[1])];
+  return (a[0]<b[0]||(a[0]===b[0]&&a[1]<=b[1])) ? `${a}|${b}` : `${b}|${a}`;
+}
+
+function buildGrid(){
+  cells=[]; edgeMap=new Map();
+  const W = canvas.width/DPR, Hc = canvas.height/DPR;
+  const padX=20, padY=18;
+  const rows = Math.ceil((Hc-2*padY)/H);
+  for(let r=0;r<rows;r++){
+    const y0=padY+r*H, y1=y0+H;
+    const oTop=(r%2)*(L/2), oBot=((r+1)%2)*(L/2);
+    for(let j=-1;j<Math.ceil(W/L)+1;j++){
+      // down-triangle ▽ : base on top line
+      addCell('down',[[oTop+j*L,y0],[oTop+(j+1)*L,y0],[oTop+j*L+L/2,y1]],r,j,W,Hc,padX,padY);
+      // up-triangle ▲ : base on bottom line
+      addCell('up',[[oBot+j*L,y1],[oBot+(j+1)*L,y1],[oBot+j*L+L/2,y0]],r,j,W,Hc,padX,padY);
+    }
+  }
+}
+function addCell(type,verts,r,j,W,Hc,padX,padY){
+  // keep only fully-visible triangles
+  for(const v of verts){ if(v[0]<padX-1||v[0]>W-padX+1||v[1]<padY-1||v[1]>Hc-padY+1) return; }
+  const cx=(verts[0][0]+verts[1][0]+verts[2][0])/3;
+  const cy=(verts[0][1]+verts[1][1]+verts[2][1])/3;
+  const idx=cells.length;
+  const edges=[[verts[0],verts[1]],[verts[1],verts[2]],[verts[2],verts[0]]];
+  cells.push({type,verts,cx,cy,edges,r,j});
+  for(const e of edges){ const k=ek(e[0],e[1]);
+    if(!edgeMap.has(k)) edgeMap.set(k,[]); edgeMap.get(k).push(idx); }
+}
+
+// classify a triangle's edge as 'in' or 'out' given upward flow
+function edgeRole(cell,edge){
+  const horiz = Math.abs(edge[0][1]-edge[1][1])<1;
+  if(cell.type==='up')  return horiz ? 'in' : 'out';   // base=in, sides=out
+  else                  return horiz ? 'out': 'in';    // top=out, sides=in
+}
+
+function neighbor(cellIdx,edge){
+  const k=ek(edge[0],edge[1]); const arr=edgeMap.get(k)||[];
+  for(const i of arr) if(i!==cellIdx) return i;
+  return -1;
+}
+
+function baryIn(px,py,a,b,c){
+  const v0=[c[0]-a[0],c[1]-a[1]], v1=[b[0]-a[0],b[1]-a[1]], v2=[px-a[0],py-a[1]];
+  const d00=v0[0]*v0[0]+v0[1]*v0[1], d01=v0[0]*v1[0]+v0[1]*v1[1];
+  const d11=v1[0]*v1[0]+v1[1]*v1[1], d20=v2[0]*v0[0]+v2[1]*v0[1], d21=v2[0]*v1[0]+v2[1]*v1[1];
+  const den=d00*d11-d01*d01; const u=(d11*d20-d01*d21)/den; const v=(d00*d21-d01*d20)/den;
+  return u>=0&&v>=0&&(u+v)<=1;
+}
+function hitTest(px,py){
+  for(let i=0;i<cells.length;i++){
+    const t=cells[i]; if(Math.abs(px-t.cx)>L||Math.abs(py-t.cy)>H) continue;
+    if(baryIn(px,py,t.verts[0],t.verts[1],t.verts[2])) return i;
+  }
+  return -1;
+}
+
+// ---- the compiler: route a conserved shot through the shape, emit one weapon ----
+// (operator algebra lives in crystal-core.js: applyFacet / BASE / OPS)
+// Sites are EXPLICIT: an open edge does nothing until toggled ON (`sites`). An ON 'in' edge =
+// weighted SOURCE; an ON 'out' edge = SINK. Internal edges always carry flow.
+// MODEL: the whole BASE SHOT (power = E_flow; rate/speed/range at base) is divided among the
+// sources BY WEIGHT, then ROUTED. Routing CONSERVES every stat: a ▲ divides each stat among its
+// productive outputs, a ▽ sums each stat. Each crystal applies its effect (a multiplier/modifier)
+// ON TOP. The final weapon = the SUM of all sinks (sinks are additive parts of one shot).
+// So a pure-wire tower outputs exactly the base shot; operators are the only amplifiers.
+let compiled = {n:0, used:0, dps:0, eCore:0, eFlow:0, over:false, sinks:[], sources:[], handles:[], shot:null};
+function applyMod(key, shot, type){ return applyFacet(key, shot, type==='up'?'split':'merge'); }  // ▲ split facet / ▽ merge facet
+function shotScale(s,f){ return {power:(s.power||0)*f, speed:(s.speed||0)*f, range:(s.range||0)*f,
+  pierce:(s.pierce||0)*f, slow:(s.slow||0)*f, rate:(s.rate||0)*f, type:s.type}; }
+function shotSum(list){ const o={power:0,speed:0,range:0,pierce:0,slow:0,rate:0,type:'kinetic'}; let typed=null;
+  for(const s of list){ o.power+=s.power||0; o.speed+=s.speed||0; o.range+=s.range||0; o.pierce+=s.pierce||0;
+    o.slow+=s.slow||0; o.rate+=s.rate||0; if(s.type&&s.type!=='kinetic'&&!typed) typed=s.type; }
+  if(typed) o.type=typed; return o; }
+function compile(){
+  const order=[...placed.keys()].sort((p,q)=>cells[q].cy-cells[p].cy);  // bottom→top
+  const on = k => sites.has(k);
+  let used=0; for(const idx of placed.keys()) used+=CRYSTALS[placed.get(idx)].cost;
+  const over = used > ECORE;
+  const eFlow = Math.max(0, ECORE - used);              // total base power
+
+  // productivity (top→bottom): an out-edge counts only if it can still reach a sink, so the
+  // shot is never routed into a branch that dead-ends.
+  const nodeProductive=new Map(); const edgeProductive=new Map();
+  for(let qi=order.length-1; qi>=0; qi--){ const idx=order[qi]; const cell=cells[idx]; let prod=false;
+    for(const e of cell.edges){ if(edgeRole(cell,e)!=='out') continue;
+      const k=ek(e[0],e[1]); const nb=neighbor(idx,e); const internal = nb!==-1 && placed.has(nb);
+      const ep = internal ? !!nodeProductive.get(nb) : on(k);
+      edgeProductive.set(k, ep); if(ep) prod=true; }
+    nodeProductive.set(idx, prod);
+  }
+
+  // sources = active input sites; the base shot is divided among them by weight (every stat).
+  const sources=[];
+  for(const idx of placed.keys()){ const cell=cells[idx];
+    for(const e of cell.edges){ if(edgeRole(cell,e)!=='in') continue;
+      const nb=neighbor(idx,e); if(nb!==-1 && placed.has(nb)) continue;
+      const k=ek(e[0],e[1]); if(!on(k)) continue;
+      const mx=(e[0][0]+e[1][0])/2, my=(e[0][1]+e[1][1])/2;
+      sources.push({key:k, idx, x:mx, y:my, weight: sourceWeights.has(k)?sourceWeights.get(k):1}); } }
+  sources.sort((p,q)=> (p.x-q.x)||(p.y-q.y));
+  sources.forEach((it,i)=> it.label='S'+(i+1));
+  const totalW = sources.reduce((s,it)=>s+Math.max(0,it.weight),0);
+  const baseShot = {...BASE(), power: eFlow};
+  const shotByEdge=new Map(); let lostPower=0;
+  for(const it of sources){ const f = totalW>0 ? Math.max(0,it.weight)/totalW : 0;
+    it.shot = shotScale(baseShot, f); it.power = it.shot.power;
+    if(nodeProductive.get(it.idx)) shotByEdge.set(it.key, it.shot);
+    else lostPower += it.shot.power; }            // source on a node that reaches no sink
+
+  // route bottom→top: ▲ divides each stat among productive outs, ▽ sums; crystal modifies on top.
+  const nodeData=new Map();
+  for(const idx of order){
+    const key=placed.get(idx); const cell=cells[idx];
+    const ins=[], outs=[];
+    for(const e of cell.edges){ const k=ek(e[0],e[1]); const role=edgeRole(cell,e);
+      if(role==='in'){ const s=shotByEdge.get(k); if(s) ins.push(s); }
+      else if(edgeProductive.get(k)) outs.push(k); }
+    const baseline = cell.type==='up' ? (ins[0]||shotScale(baseShot,0)) : shotSum(ins);
+    const out = applyMod(key, baseline, cell.type);       // ▲ uses split facet, ▽ uses merge facet
+    const nOut = outs.length;
+    if(nOut===0 && ins.length) lostPower += out.power||0;  // shot dead-ends (no reachable sink)
+    const perOut = nOut>1 ? shotScale(out, 1/nOut) : out;  // every stat divides across outputs
+    for(const k of outs) shotByEdge.set(k,{...perOut});
+    nodeData.set(idx,{ins, baseline, out, perOut, nOut});
+  }
+
+  // sinks = active output sites; the weapon = SUM of all sinks. DAMAGE = power × rate.
+  const sinks=[];
+  for(const idx of placed.keys()){ const cell=cells[idx];
+    for(const e of cell.edges){ if(edgeRole(cell,e)!=='out')continue;
+      const nb=neighbor(idx,e); if(nb!==-1&&placed.has(nb))continue;
+      const k=ek(e[0],e[1]); if(!on(k)) continue;
+      const s=shotByEdge.get(k); if(!s)continue;
+      const mx=(e[0][0]+e[1][0])/2, my=(e[0][1]+e[1][1])/2;
+      sinks.push({shot:s, key:k, x:mx, y:my, cellIdx:idx}); } }
+  sinks.sort((p,q)=> (p.x-q.x) || (p.y-q.y));        // stable left→right order
+  sinks.forEach((b,i)=> b.label = 'T'+(i+1));
+  const shot = sinks.length ? shotSum(sinks.map(b=>b.shot)) : null;   // the combined weapon
+  const dps = shot ? (shot.power||0)*(shot.rate||0) : 0;
+  const injectedPower = sources.reduce((s,it)=>s+(it.power||0),0);
+  // --- handles: every open edge is a clickable site candidate ---
+  const handles=[];
+  for(const idx of placed.keys()){ const cell=cells[idx];
+    for(const e of cell.edges){ const nb=neighbor(idx,e);
+      if(nb!==-1 && placed.has(nb)) continue;            // internal edge, not a site
+      const k=ek(e[0],e[1]); const mx=(e[0][0]+e[1][0])/2, my=(e[0][1]+e[1][1])/2;
+      handles.push({key:k, role:edgeRole(cell,e), x:mx, y:my, cx:cell.cx, cy:cell.cy, active:on(k)}); } }
+  // --- trace: per-crystal full-stat math for the breakdown panel (bottom→top) ---
+  const nodeLabel=new Map(); order.forEach((idx,i)=>nodeLabel.set(idx,'C'+(i+1)));
+  const sinkByKey=new Map(); for(const b of sinks) sinkByKey.set(b.key,b.label);
+  const sourceByKey=new Map(); for(const it of sources) sourceByKey.set(it.key,it.label);
+  const trace=[];
+  for(const idx of order){ const cell=cells[idx]; const key=placed.get(idx); const d=nodeData.get(idx);
+    const slot=cell.type==='up'?'split':'merge';
+    const insrc=[], outdst=[];
+    for(const e of cell.edges){ const k=ek(e[0],e[1]); const role=edgeRole(cell,e);
+      const nb=neighbor(idx,e); const internal = nb!==-1 && placed.has(nb);
+      if(role==='in'){ if(internal) insrc.push(nodeLabel.get(nb)); else if(on(k)) insrc.push(sourceByKey.get(k)); }
+      else { if(internal) outdst.push(nodeLabel.get(nb)); else if(on(k)) outdst.push(sinkByKey.get(k)); }
+    }
+    const inShots = cell.type==='up' ? [{label:'in', shot:d.ins[0]||shotScale(baseShot,0)}]
+                  : d.ins.map((s,i)=>({label:String.fromCharCode(65+i), shot:s}));
+    trace.push({node:nodeLabel.get(idx), type:cell.type, name:CRYSTALS[key].name, color:CRYSTALS[key].color,
+      insrc, outdst, inShots, baseline:d.baseline, outShot:d.out, nOut:d.nOut,
+      shotOp:`${OPS[key][slot].label} — ${OPS[key][slot].formula(params(key,slot))}`});
+  }
+  compiled = {n:placed.size, used, eCore:ECORE, eFlow, over, sources, sinks, handles,
+              injectedPower, lostPower, dps, shot, trace};
+  return compiled;
+}
+// full shot stats as a row; if `base` given, changed fields are highlighted as before→after
+function statHTML(shot, base){
+  const num=[['power','pwr',v=>Math.round(v)],['slow','slw',v=>Math.round(v)+'%'],
+    ['pierce','prc',v=>Math.round(v)],['speed','spd',v=>(+v).toFixed(1)],
+    ['range','rng',v=>(+v).toFixed(1)],['rate','rate',v=>(+v).toFixed(1)]];
+  const hi='color:#0d1018;background:#f1c40f;border-radius:3px;padding:0 3px;font-weight:600';
+  const parts=[];
+  for(const [k,lab,f] of num){ const v=shot[k]||0, bv=base?(base[k]||0):v;
+    const changed = base && Math.abs(bv-v)>0.05;
+    parts.push(changed ? `${lab} <span style="${hi}">${f(bv)}→${f(v)}</span>`
+                       : `<span style="color:var(--dim)">${lab} ${f(v)}</span>`); }
+  const tch = base && base.type!==shot.type;
+  parts.push(tch ? `<span style="${hi}">${shot.type}</span>` : `<span style="color:var(--dim)">${shot.type}</span>`);
+  return parts.join('&nbsp; ');
+}
+// readable per-step math for the Flow breakdown card
+function renderTrace(a){
+  const el=document.getElementById('trace');
+  if(!a.trace || !a.trace.length){
+    el.innerHTML='<div class="hdr">Place crystals to see the per-step math.</div>'; return; }
+  const nI=a.sources.length;
+  const head=`<div class="hdr">The base shot (<b>${Math.round(a.eFlow)}</b> power) is divided among
+    <b>${nI}</b> weighted source${nI===1?'':'s'} (see <b>Source weights</b>), then routed.
+    Routing <b>conserves every stat</b> — a ▲ divides each stat among its outputs, a ▽ sums them; the
+    crystal multiplies on top. <b>Damage = power × rate.</b> Changed stats vs the conserved baseline are
+    <span style="background:#f1c40f;color:#0d1018;border-radius:3px;padding:0 3px">highlighted</span>.</div>`;
+  const steps=a.trace.map(t=>{
+    const arity = t.type==='up' ? '▲ split' : '▽ merge';
+    const route = `${t.insrc.join('&nbsp;+&nbsp;')||'—'} <span class="ar">⇒</span> ${t.outdst.join('&nbsp;,&nbsp;')||'—'}`;
+    const inRows = t.inShots.map(s=>`<div class="row"><span class="k">${s.label}</span>${statHTML(s.shot,null)}</div>`).join('');
+    const outSuffix = t.nOut>1 ? ` <span style="color:var(--dim)">· each stat ÷${t.nOut} per output</span>` : '';
+    return `<div class="step">
+      <div class="top"><span class="nd">${t.node}</span>
+        <span class="dot" style="background:${t.color};color:${t.color};width:12px;height:12px"></span>
+        ${t.name} · ${arity}</div>
+      <div class="row"><span class="k" style="color:#39d98a">route</span>${route}</div>
+      ${inRows}
+      <div class="row"><span class="k" style="color:#ffd9b0">out</span>${statHTML(t.outShot, t.baseline)}${outSuffix}</div>
+      <div class="row"><span class="k" style="color:#bcd2ff">shape</span>${t.shotOp}</div>
+    </div>`;
+  }).join('');
+  el.innerHTML=head+steps;
+}
+
+// input-site weight controls. Updates values in place so a slider isn't rebuilt mid-drag.
+function renderSources(a){
+  const el=document.getElementById('sourceList');
+  const list=a.sources||[];
+  if(!list.length){ lastSourceSig=''; el.style.cssText='';
+    el.innerHTML='Click a <span style="color:#39d98a">green</span> edge dot to add a core source.'; return; }
+  const sig=list.map(it=>it.label+'@'+it.key).join('|');
+  if(sig===lastSourceSig){                               // same sites: just refresh numbers
+    list.forEach(it=>{ const v=document.getElementById('iv-'+it.label);
+      if(v) v.innerHTML=`w ${it.weight} · <span style="color:#39d98a">${Math.round(it.power)} pwr</span>`; });
+    return;
+  }
+  lastSourceSig=sig;
+  el.style.cssText='display:flex;flex-direction:column;gap:8px';
+  el.innerHTML='';
+  list.forEach(it=>{
+    const row=document.createElement('div');
+    row.style.cssText='display:flex;align-items:center;gap:8px;font-size:12px';
+    const rng=document.createElement('input');
+    rng.type='range'; rng.min='0'; rng.max='5'; rng.step='0.5'; rng.value=it.weight; rng.style.flex='1';
+    rng.oninput=()=>{ sourceWeights.set(it.key, parseFloat(rng.value)); refresh(); };
+    const val=document.createElement('span'); val.id='iv-'+it.label;
+    val.style.cssText='min-width:96px;text-align:right;font-variant-numeric:tabular-nums;color:var(--dim)';
+    val.innerHTML=`w ${it.weight} · <span style="color:#39d98a">${Math.round(it.power)} pwr</span>`;
+    row.innerHTML=`<span style="color:#bdf3d4;font-weight:700;min-width:22px">${it.label}</span>`;
+    row.appendChild(rng); row.appendChild(val); el.appendChild(row);
+  });
+}
+
+// sink readout: damage = power × rate.
+function sinkLine(b){
+  const s=b.shot, dmg=s.power||0, rate=s.rate||0;
+  const parts=[`${Math.round(dmg)} dmg`, `${rate.toFixed(1)}/s`, `${Math.round(dmg*rate)} dps`];
+  if(s.type!=='kinetic') parts.push(s.type);
+  if(s.slow>0.5) parts.push('slow '+Math.round(s.slow)+'%');
+  if(s.pierce>0.5) parts.push('pierce '+Math.round(s.pierce));
+  return parts.join(' · ');
+}
+
+function draw(){
+  const W=canvas.width/DPR, Hc=canvas.height/DPR;
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  ctx.clearRect(0,0,W,Hc);
+
+  // empty lattice
+  ctx.lineWidth=1;
+  for(let i=0;i<cells.length;i++){
+    if(placed.has(i)) continue;
+    const t=cells[i];
+    ctx.beginPath(); ctx.moveTo(t.verts[0][0],t.verts[0][1]);
+    ctx.lineTo(t.verts[1][0],t.verts[1][1]); ctx.lineTo(t.verts[2][0],t.verts[2][1]); ctx.closePath();
+    ctx.strokeStyle = i===hover ? "#3d4b73" : "#222c45"; ctx.stroke();
+    if(i===hover){ ctx.fillStyle="rgba(95,208,255,.07)"; ctx.fill(); }
+  }
+
+  // placed crystals
+  for(const [i,key] of placed){
+    const t=cells[i], col=CRYSTALS[key].color;
+    ctx.save(); ctx.shadowColor=col; ctx.shadowBlur=14;
+    ctx.beginPath(); ctx.moveTo(t.verts[0][0],t.verts[0][1]);
+    ctx.lineTo(t.verts[1][0],t.verts[1][1]); ctx.lineTo(t.verts[2][0],t.verts[2][1]); ctx.closePath();
+    const g=ctx.createLinearGradient(t.cx-30,t.cy-30,t.cx+30,t.cy+30);
+    g.addColorStop(0,col); g.addColorStop(1,shade(col,-30));
+    ctx.fillStyle=g; ctx.fill();
+    ctx.shadowBlur=0; ctx.strokeStyle=shade(col,40); ctx.lineWidth=1.5; ctx.stroke();
+    ctx.restore();
+    // arity glyph
+    ctx.fillStyle="rgba(0,0,0,.55)"; ctx.font="bold 13px Segoe UI";
+    ctx.textAlign="center"; ctx.textBaseline="middle";
+    ctx.fillText(t.type==='up'?"⋔":"⋁", t.cx, t.cy + (t.type==='up'?4:-4));
+  }
+
+  // edges: internal flow arrows + site dots (candidate hollow, active filled+label)
+  for(const [i,key] of placed){
+    const cell=cells[i];
+    for(const e of cell.edges){
+      const role=edgeRole(cell,e); const nb=neighbor(i,e);
+      const mx=(e[0][0]+e[1][0])/2, my=(e[0][1]+e[1][1])/2;
+      const open = nb===-1 || !placed.has(nb);
+      if(!open){ if(role==='out'){ const nbc=cells[nb]; arrow(mx,my,nbc.cx,nbc.cy); } continue; }
+      const k=ek(e[0],e[1]); const col = role==='in' ? '#39d98a' : '#ff9d4d';
+      if(sites.has(k)){
+        marker(mx,my,col);
+        if(role==='out'){ const b=compiled.sinks.find(b=>b.key===k); if(b) blabel(mx,my,cell.cx,cell.cy,b.label,col); }
+        else { const it=compiled.sources.find(t=>t.key===k); if(it) blabel(mx,my,cell.cx,cell.cy,it.label,col); }
+      } else {
+        candidateDot(mx,my,col);          // dim ring: click to toggle this site on
+      }
+    }
+  }
+}
+function marker(x,y,c){ ctx.beginPath(); ctx.arc(x,y,4.5,0,7); ctx.fillStyle=c;
+  ctx.shadowColor=c; ctx.shadowBlur=10; ctx.fill(); ctx.shadowBlur=0; }
+function candidateDot(x,y,c){ ctx.save(); ctx.globalAlpha=.45;
+  ctx.beginPath(); ctx.arc(x,y,4,0,7); ctx.fillStyle='#0d1018'; ctx.fill();
+  ctx.lineWidth=1.4; ctx.strokeStyle=c; ctx.stroke(); ctx.restore(); }
+function rr(x,y,w,h,r){ ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+function blabel(x,y,cx,cy,text,color){         // site tag, pushed outward from the cell
+  color=color||'#ff9d4d';
+  const dx=x-cx,dy=y-cy,d=Math.hypot(dx,dy)||1, ox=x+dx/d*14, oy=y+dy/d*14;
+  ctx.font='bold 11px Segoe UI'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  const w=ctx.measureText(text).width+10;
+  rr(ox-w/2,oy-9,w,18,5);
+  ctx.fillStyle='rgba(8,12,22,.9)'; ctx.fill();
+  ctx.lineWidth=1; ctx.strokeStyle=color; ctx.stroke();
+  ctx.fillStyle=shade(color,90); ctx.fillText(text,ox,oy);
+}
+function arrow(x,y,tx,ty){
+  const dx=tx-x,dy=ty-y,d=Math.hypot(dx,dy),ux=dx/d,uy=dy/d,len=9;
+  ctx.strokeStyle="rgba(95,208,255,.85)"; ctx.lineWidth=1.6;
+  ctx.beginPath(); ctx.moveTo(x-ux*len,y-uy*len); ctx.lineTo(x+ux*len,y+uy*len); ctx.stroke();
+  const a=Math.atan2(uy,ux);
+  ctx.beginPath(); ctx.moveTo(x+ux*len,y+uy*len);
+  ctx.lineTo(x+ux*len-6*Math.cos(a-0.5),y+uy*len-6*Math.sin(a-0.5));
+  ctx.lineTo(x+ux*len-6*Math.cos(a+0.5),y+uy*len-6*Math.sin(a+0.5));
+  ctx.closePath(); ctx.fillStyle="rgba(95,208,255,.85)"; ctx.fill();
+}
+function shade(hex,amt){
+  let n=parseInt(hex.slice(1),16); let r=(n>>16)+amt,g=((n>>8)&255)+amt,b=(n&255)+amt;
+  r=Math.max(0,Math.min(255,r)); g=Math.max(0,Math.min(255,g)); b=Math.max(0,Math.min(255,b));
+  return `rgb(${r},${g},${b})`;
+}
+
+function refresh(){
+  const a=compile();        // compile first so draw() can tag sinks
+  draw();
+  document.getElementById('nCells').textContent=a.n;
+  document.getElementById('nSinks').textContent=a.sinks.length;
+  document.getElementById('dps').textContent=Math.round(a.dps);
+  document.getElementById('eUsed').textContent=a.used;
+  document.getElementById('eflow').textContent=Math.round(a.eFlow);
+  const bar=document.getElementById('ebar');
+  bar.classList.toggle('over',a.over);
+  bar.querySelector('i').style.width=Math.min(100,a.eCore? a.used/a.eCore*100 : 0)+'%';
+  const list=document.getElementById('sinkList'); list.innerHTML='';
+  a.sinks.forEach(b=>{ const row=document.createElement('div');
+    row.style.cssText='font-size:12px;display:flex;gap:7px;align-items:center';
+    row.innerHTML=`<span style="color:#ffd9b0;font-weight:700;min-width:20px">${b.label}</span><span>${sinkLine(b)}</span>`;
+    list.appendChild(row); });
+  if(a.shot){ const row=document.createElement('div');
+    row.style.cssText='font-size:12px;display:flex;gap:7px;align-items:center;border-top:1px solid var(--line);margin-top:3px;padding-top:5px';
+    row.innerHTML=`<span style="color:var(--accent);font-weight:700;min-width:20px">∑</span><span>${sinkLine({shot:a.shot})}</span>`;
+    list.appendChild(row); }
+  renderTrace(a);
+  renderSources(a);
+  const v=document.getElementById('verdict');
+  if(a.n===0) v.textContent="Empty. Place crystals, then click edge dots to set source/sink sites.";
+  else if(a.over) v.innerHTML="<span style='color:#e6394a'>Overloaded</span> — crystal draw exceeds the core. Raise core energy or use cheaper crystals; no base power is left.";
+  else if(a.sources.length===0) v.innerHTML="<span style='color:#39d98a'>No sources</span> — click a green dot on an edge to feed power in from the core.";
+  else if(a.sinks.length===0) v.innerHTML="<span style='color:#f1c40f'>No sinks</span> — click an orange dot on an open output edge to fire.";
+  else if(a.lostPower>0.5) v.innerHTML=`<span style='color:#f1c40f'>Power dead-ends</span> — <b>${Math.round(a.lostPower)}</b> base power never reaches a sink. Route it onward or add a sink.`;
+  else v.innerHTML="Routing conserves every stat; crystals multiply on top. The shot = the sum of all sinks, so adding sinks redistributes — it never duplicates.";
+}
+
+// ---- interaction ----
+function place(idx){
+  if(idx<0) return;
+  if(erasing){ placed.delete(idx); }
+  else placed.set(idx,selected);
+  refresh();
+}
+canvas.addEventListener('mousemove',e=>{
+  const r=canvas.getBoundingClientRect();
+  const px=e.clientX-r.left, py=e.clientY-r.top;
+  const h=hitTest(px,py); if(h!==hover){ hover=h; draw(); }
+  if(e.buttons===1 && e.shiftKey) place(h);
+});
+canvas.addEventListener('mousedown',e=>{
+  const r=canvas.getBoundingClientRect();
+  const px=e.clientX-r.left, py=e.clientY-r.top;
+  if(!erasing && toggleSiteAt(px,py)) return;   // edge dot takes priority over placing
+  place(hitTest(px,py));
+});
+canvas.addEventListener('mouseleave',()=>{hover=-1;draw();});
+// click an edge dot to toggle that input/output site on or off
+function toggleSiteAt(px,py){
+  let best=null,bd=10;                            // px hit radius around the dot
+  for(const h of (compiled.handles||[])){ const d=Math.hypot(h.x-px,h.y-py); if(d<bd){bd=d;best=h;} }
+  if(!best) return false;
+  if(sites.has(best.key)) sites.delete(best.key); else sites.add(best.key);
+  refresh(); return true;
+}
+
+// palette
+const pal=document.getElementById('palette');
+for(const [key,c] of Object.entries(CRYSTALS)){
+  const el=document.createElement('div'); el.className='swatch'+(key===selected?' sel':'');
+  el.innerHTML=`<span class="dot" style="background:${c.color};color:${c.color}"></span>
+    <span>${c.name}<small>${c.cost} energy</small></span>`;
+  el.onclick=()=>{ selected=key; erasing=false;
+    document.querySelectorAll('.swatch').forEach(s=>s.classList.remove('sel'));
+    el.classList.add('sel'); document.getElementById('erase').style.borderColor='';
+    showDesc(key); };
+  el.onmouseenter=()=>showDesc(key);
+  pal.appendChild(el);
+}
+function showDesc(key){ const c=CRYSTALS[key];
+  document.getElementById('desc').innerHTML=
+    `<b style="color:${c.color}">${c.name}</b> — ▲ ${c.splitDesc} · ▽ ${c.mergeDesc}. <span style="color:var(--dim)">(draw ${c.cost})</span>`;
+}
+showDesc(selected);
+
+document.getElementById('erase').onclick=function(){ erasing=true;
+  document.querySelectorAll('.swatch').forEach(s=>s.classList.remove('sel'));
+  this.style.borderColor='var(--accent)'; };
+document.getElementById('clear').onclick=()=>{ placed.clear(); sites.clear(); sourceWeights.clear(); lastSourceSig=''; refresh(); };
+
+// core energy — the pool that crystal costs draw from and the remainder flows
+const ecoreInput=document.getElementById('ecore');
+ecoreInput.value=ECORE;
+ecoreInput.oninput=e=>{ const v=parseFloat(e.target.value); if(!isNaN(v)){ ECORE=Math.max(0,v); refresh(); } };
+
+// presets — choose cells near canvas center
+document.querySelectorAll('[data-preset]').forEach(b=>b.onclick=()=>preset(b.dataset.preset));
+// walk the adjacency graph along output edges to build a connected strip
+function grow(start,colors){ let cur=start,i=0; const used=new Set();
+  while(cur>=0&&i<colors.length){ placed.set(cur,colors[i]); used.add(cur); i++;
+    let next=-1; for(const e of cells[cur].edges){ if(edgeRole(cells[cur],e)!=='out')continue;
+      const nb=neighbor(cur,e); if(nb>=0&&!used.has(nb)){next=nb;break;} } cur=next; } }
+function autoSites(){ compile(); for(const h of (compiled.handles||[])) sites.add(h.key); }
+function preset(kind){
+  placed.clear(); sites.clear(); sourceWeights.clear(); lastSourceSig='';
+  const cx=canvas.width/DPR/2, cy=canvas.height/DPR/2;
+  const near=(x,y,type)=>{ let best=-1,bd=1e9; for(let i=0;i<cells.length;i++){
+    if(type&&cells[i].type!==type)continue;
+    const d=Math.hypot(cells[i].cx-x,cells[i].cy-y); if(d<bd){bd=d;best=i;} } return best; };
+  if(kind==='chain'){
+    grow(near(cx,cy+H*1.5,'up'),['emerald','sapphire','ruby','citrine']);
+  } else if(kind==='fork'){
+    const u=near(cx,cy+H*0.6,'up'); placed.set(u,'emerald'); // split feeds two merges
+    const outs=[]; for(const e of cells[u].edges){ if(edgeRole(cells[u],e)==='out'){
+      const nb=neighbor(u,e); if(nb>=0)outs.push(nb); } }
+    if(outs[0]!=null)placed.set(outs[0],'ruby');
+    if(outs[1]!=null)placed.set(outs[1],'sapphire');
+  } else if(kind==='diamond'){
+    // 6 triangles around the nearest interior vertex: split -> two paths -> merge
+    const vcount=new Map();
+    for(let i=0;i<cells.length;i++)for(const v of cells[i].verts){
+      const k=`${Math.round(v[0])},${Math.round(v[1])}`;
+      if(!vcount.has(k))vcount.set(k,[]); vcount.get(k).push(i); }
+    let best=null,bd=1e9; for(const [k,arr] of vcount){ if(arr.length<6)continue;
+      const [x,y]=k.split(',').map(Number); const d=Math.hypot(x-cx,y-cy);
+      if(d<bd){bd=d;best=arr;} }
+    const cols=['emerald','citrine','ruby','sapphire','amethyst','quartz'];
+    if(best) best.slice(0,6).forEach((id,i)=>placed.set(id,cols[i]));
+  }
+  autoSites();            // light up every open edge so the preset fires out of the box
+  refresh();
+}
+
+// ---- export / import: serialize the dataflow graph, not just positions ----
+function exportData(){
+  const a=compile();
+  const blab=new Map();                                   // edge midpoint -> sink label
+  for(const b of a.sinks) blab.set(Math.round(b.x)+','+Math.round(b.y), b.label);
+  const ids=new Map(); let n=0;
+  for(const idx of placed.keys()) ids.set(idx,n++);
+  const arr=[]; const siteArr=[];   // sites keyed by crystal id + edge index (stable round-trip)
+  for(const [idx,key] of placed){
+    const cell=cells[idx]; const inputs=[],outputs=[];
+    cell.edges.forEach((e,ei)=>{
+      const role=edgeRole(cell,e); const nb=neighbor(idx,e);
+      const has = nb!==-1 && placed.has(nb);
+      const k=ek(e[0],e[1]); const active=sites.has(k);
+      if(role==='in'){ inputs.push(has?ids.get(nb):(active?'core':'open'));
+        if(!has && active) siteArr.push({c:ids.get(idx),e:ei,role:'in',w:sourceWeights.has(k)?sourceWeights.get(k):1}); }
+      else if(has){ outputs.push(ids.get(nb)); }
+      else { const mx=(e[0][0]+e[1][0])/2, my=(e[0][1]+e[1][1])/2;
+             outputs.push(active?(blab.get(Math.round(mx)+','+Math.round(my))||'sink'):'open');
+             if(active) siteArr.push({c:ids.get(idx),e:ei,role:'out'}); }
+    });
+    arr.push({id:ids.get(idx),role:cell.type==='up'?'split':'merge',crystal:key,
+      r:cell.r,j:cell.j,o:cell.type,inputs,outputs});
+  }
+  return {format:'crystal-dataflow/v2',lattice:{side:L,core:a.eCore},
+    crystals:arr, sites:siteArr,
+    compiled:{core:a.eCore, draw:a.used, basePower:Math.round(a.eFlow), dps:Math.round(a.dps),
+      shot:a.shot?sinkLine({shot:a.shot}):null,
+      sinks:a.sinks.map(b=>({label:b.label, from:ids.get(b.cellIdx), stats:sinkLine(b)}))}};
+}
+function importData(obj){
+  if(!obj||!Array.isArray(obj.crystals)) throw new Error('no crystals');
+  placed.clear();
+  const core = obj.lattice && obj.lattice.core;
+  if(typeof core==='number'){ ECORE=core; document.getElementById('ecore').value=core; }
+  const map=new Map();
+  for(let i=0;i<cells.length;i++) map.set(cells[i].r+'|'+cells[i].j+'|'+cells[i].type,i);
+  const idToIdx=new Map();
+  for(const c of obj.crystals){
+    const idx=map.get(c.r+'|'+c.j+'|'+(c.o||(c.role==='split'?'up':'down')));
+    if(idx!=null && CRYSTALS[c.crystal]){ placed.set(idx,c.crystal); idToIdx.set(c.id,idx); }
+  }
+  sites.clear(); sourceWeights.clear(); lastSourceSig='';
+  if(Array.isArray(obj.sites)) for(const s of obj.sites){
+    const idx=idToIdx.get(s.c); if(idx==null) continue;
+    const e=cells[idx].edges[s.e]; if(!e) continue;
+    const k=ek(e[0],e[1]); sites.add(k);
+    if(s.role==='in' && typeof s.w==='number') sourceWeights.set(k,s.w);
+  }
+  refresh();
+}
+function toast(m,bad){ const t=document.getElementById('toast');
+  t.style.color=bad?'#e6394a':'#39d98a'; t.textContent=m;
+  setTimeout(()=>{ if(t.textContent===m) t.textContent=''; },2600); }
+document.getElementById('exportBtn').onclick=()=>{
+  if(placed.size===0){ toast('Nothing to export — place some crystals first',true); return; }
+  const ta=document.getElementById('io');
+  ta.value=JSON.stringify(exportData(),null,1);
+  ta.select(); let ok=false; try{ ok=document.execCommand('copy'); }catch(e){}
+  if(navigator.clipboard){ navigator.clipboard.writeText(ta.value).then(()=>{},()=>{}); ok=true; }
+  toast(ok?'Copied to clipboard — paste it into chat':'Exported below — copy it manually');
+};
+document.getElementById('importBtn').onclick=()=>{
+  try{ importData(JSON.parse(document.getElementById('io').value)); toast('Imported'); }
+  catch(e){ toast('Could not parse that JSON',true); }
+};
+document.getElementById('pngBtn').onclick=()=>{
+  const a=document.createElement('a'); a.download='crystal-tower.png';
+  a.href=canvas.toDataURL('image/png'); a.click(); toast('PNG saved');
+};
+// live-apply operator tuning saved by operator-reference.html (other tab)
+window.addEventListener('storage',e=>{ if(e.key===PARAM_KEY){ OVERRIDES=loadOverrides(); refresh(); }});
+
+function resize(){
+  const rect=canvas.getBoundingClientRect();
+  canvas.width=rect.width*DPR; canvas.height=420*DPR;
+  canvas.style.height='420px';
+  buildGrid(); refresh();
+}
+window.addEventListener('resize',resize);
+resize();
+</script>
+</body>
+</html>
