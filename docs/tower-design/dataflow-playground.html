@@ -293,10 +293,15 @@ function compile(){
     for(const e of cell.edges){ const k=ek(e[0],e[1]); const role=edgeRole(cell,e);
       if(role==='in'){ const s=shotByEdge.get(k); if(s) ins.push(s); }
       else if(edgeProductive.get(k)) outs.push(k); }
-    const baseline = cell.type==='up' ? (ins[0]||shotScale(baseShot,0)) : shotSum(ins);
+    if(ins.length===0){                                    // unfed node: no source reaches it → inert
+      const z=shotScale(baseShot,0);                        // emit nothing (no phantom effects leak out)
+      nodeData.set(idx,{ins, baseline:z, out:z, perOut:z, nOut:outs.length});
+      continue;
+    }
+    const baseline = cell.type==='up' ? ins[0] : shotSum(ins);
     const out = applyMod(key, baseline, cell.type);       // ▲ uses split facet, ▽ uses merge facet
     const nOut = outs.length;
-    if(nOut===0 && ins.length) lostPower += out.power||0;  // shot dead-ends (no reachable sink)
+    if(nOut===0) lostPower += out.power||0;                // shot dead-ends (no reachable sink)
     const perOut = nOut>1 ? shotScale(out, 1/nOut) : out;  // every stat divides across outputs
     for(const k of outs) shotByEdge.set(k,{...perOut});
     nodeData.set(idx,{ins, baseline, out, perOut, nOut});
