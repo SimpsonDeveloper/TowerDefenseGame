@@ -81,11 +81,14 @@
         <span style="color:#39d98a">●</span> source (core feed) &nbsp;
         <span>○ candidate edge — click to toggle</span> &nbsp;
         <span style="color:var(--accent)">→</span> internal flow<br>
-        <b>Routing conserves every stat.</b> The base shot (<b>power = core − crystal draw</b>, plus base
-        rate/speed/range) is divided among the sources by their <b>weights</b>, then routed: a ▲ divides each
-        stat among its outputs, a ▽ sums each stat. Each crystal <b>multiplies/modifies on top</b>, and the
-        weapon = the <b>sum of all sinks</b>. So a pure-wire shape fires the base shot unchanged; operators are
-        the only amplifiers. <b>Damage = power × rate.</b>
+        <b>Energy is conserved by local tolls.</b> The full <b>core energy</b> is divided among the sources by
+        their <b>weights</b>, then routed. Each crystal <b>draws its own cost</b> from the flowing energy as the
+        stream passes it; a ▲ divides the remainder among its outputs, a ▽ sums its inputs. The energy
+        <b>arriving</b> at a crystal (floored at 0) is the <b>multiplier for the combo-op</b> it forms with its
+        upstream neighbor — so front crystals fire on more energy than deep ones. Energy below 0 is <b>debt</b>
+        (the op does nothing until a ▽ merge sums it back positive). Adjacent crystals form <b>combo-ops</b>
+        (named in the <a href="effect-vocab/vocab-overview/combo-matrix.md">combo matrix</a>); the weapon
+        energy = the <b>sum of all sinks</b>.
       </div>
     </div>
     <div class="card">
@@ -111,9 +114,17 @@
       <div class="stat"><span>− Crystal draw</span><b id="eUsed">0</b></div>
       <div class="stat"><span>= Flowing energy</span><b id="eflow">0</b></div>
       <div class="bar" id="ebar"><i style="width:0%"></i></div>
-      <div class="stat" style="margin-top:6px"><span>Total DPS</span><b id="dps">0</b></div>
+      <div class="stat" style="margin-top:6px"><span>Weapon energy</span><b id="dps">0</b></div>
       <div id="sinkList" style="margin-top:10px;display:flex;flex-direction:column;gap:5px"></div>
       <div class="desc" id="verdict" style="margin-top:8px"></div>
+    </div>
+
+    <div class="card">
+      <h2>Ops produced</h2>
+      <div class="legend" style="margin-bottom:8px">Each adjacent crystal pair produces a combo-op
+        (<a href="effect-vocab/vocab-overview/combo-matrix.md">matrix</a>), scaled by the energy reaching
+        the downstream crystal. Names are stubs — behavior is authored under <code>effect-vocab/ops/</code>.</div>
+      <div id="opsList" style="display:flex;flex-direction:column;gap:5px"></div>
     </div>
 
     <div class="card">
@@ -151,9 +162,9 @@
 
 <script src="crystal-core.js"></script>
 <script>
-// CRYSTALS, the operator algebra (applyFacet / BASE / OPS) and
-// the tunable params all live in crystal-core.js, shared with operator-reference.html.
-let ECORE = 100;   // core energy pool; crystal costs draw it down, the remainder = base shot power
+// CRYSTALS (roster) and the COMBO matrix + comboOp/nativeOp lookups live in crystal-core.js,
+// shared with operator-reference.html.
+let ECORE = 100;   // core energy: seeded at sources, each crystal draws its cost as the stream passes
 
 const canvas = document.getElementById('c');
 const ctx = canvas.getContext('2d');
@@ -232,23 +243,18 @@ function hitTest(px,py){
   return -1;
 }
 
-// ---- the compiler: route a conserved shot through the shape, emit one weapon ----
-// (operator algebra lives in crystal-core.js: applyFacet / BASE / OPS)
+// ---- the compiler: route energy through the shape, emit ops + weapon energy ----
+// (crystal roster + COMBO matrix live in crystal-core.js)
 // Sites are EXPLICIT: an open edge does nothing until toggled ON (`sites`). An ON 'in' edge =
 // weighted SOURCE; an ON 'out' edge = SINK. Internal edges always carry flow.
-// MODEL: the whole BASE SHOT (power = E_flow; rate/speed/range at base) is divided among the
-// sources BY WEIGHT, then ROUTED. Routing CONSERVES every stat: a ▲ divides each stat among its
-// productive outputs, a ▽ sums each stat. Each crystal applies its effect (a multiplier/modifier)
-// ON TOP. The final weapon = the SUM of all sinks (sinks are additive parts of one shot).
-// So a pure-wire tower outputs exactly the base shot; operators are the only amplifiers.
-let compiled = {n:0, used:0, dps:0, eCore:0, eFlow:0, over:false, sinks:[], sources:[], handles:[], shot:null};
-function applyMod(key, shot, type){ return applyFacet(key, shot, type==='up'?'split':'merge'); }  // ▲ split facet / ▽ merge facet
-function shotScale(s,f){ return {power:(s.power||0)*f, speed:(s.speed||0)*f, range:(s.range||0)*f,
-  pierce:(s.pierce||0)*f, slow:(s.slow||0)*f, rate:(s.rate||0)*f, type:s.type}; }
-function shotSum(list){ const o={power:0,speed:0,range:0,pierce:0,slow:0,rate:0,type:'kinetic'}; let typed=null;
-  for(const s of list){ o.power+=s.power||0; o.speed+=s.speed||0; o.range+=s.range||0; o.pierce+=s.pierce||0;
-    o.slow+=s.slow||0; o.rate+=s.rate||0; if(s.type&&s.type!=='kinetic'&&!typed) typed=s.type; }
-  if(typed) o.type=typed; return o; }
+// MODEL (local-toll conservation): energy is a scalar. The FULL core energy is divided among the
+// sources BY WEIGHT, then ROUTED. As the stream passes each crystal, that crystal DRAWS ITS OWN
+// COST from the flowing energy (a local toll); a ▲ divides the remainder among its productive
+// outputs, a ▽ sums its inputs. EFFECTS come from COMBOS: two crystals adjacent in the flow
+// produce the op named in COMBO[a][b], scaled by the energy arriving at the downstream crystal
+// (floored at 0). Energy below 0 is DEBT: the op is inert, but the debt keeps flowing so a later ▽
+// can overcome it. The weapon energy = the SUM of all sinks (floored). See energy-conservation.md.
+let compiled = {n:0, used:0, eCore:0, eFlow:0, over:false, sinks:[], sources:[], handles:[], weaponEnergy:0, edgeOps:[], trace:[]};
 function compile(){
   const order=[...placed.keys()].sort((p,q)=>cells[q].cy-cells[p].cy);  // bottom→top
   const on = k => sites.has(k);
@@ -267,7 +273,7 @@ function compile(){
     nodeProductive.set(idx, prod);
   }
 
-  // sources = active input sites; the base shot is divided among them by weight (every stat).
+  // sources = active input sites; the full core energy is divided among them by weight.
   const sources=[];
   for(const idx of placed.keys()){ const cell=cells[idx];
     for(const e of cell.edges){ if(edgeRole(cell,e)!=='in') continue;
@@ -278,49 +284,51 @@ function compile(){
   sources.sort((p,q)=> (p.x-q.x)||(p.y-q.y));
   sources.forEach((it,i)=> it.label='S'+(i+1));
   const totalW = sources.reduce((s,it)=>s+Math.max(0,it.weight),0);
-  const baseShot = {...BASE(), power: eFlow};
-  const shotByEdge=new Map(); let lostPower=0;
+  // Energy is a scalar number per edge (no stat facets). Sources are seeded the FULL core
+  // energy, divided among them by weight; each crystal draws its own cost as the stream passes.
+  const energyByEdge=new Map(); let lostEnergy=0;
   for(const it of sources){ const f = totalW>0 ? Math.max(0,it.weight)/totalW : 0;
-    it.shot = shotScale(baseShot, f); it.power = it.shot.power;
-    if(nodeProductive.get(it.idx)) shotByEdge.set(it.key, it.shot);
-    else lostPower += it.shot.power; }            // source on a node that reaches no sink
+    it.energy = ECORE * f;
+    if(nodeProductive.get(it.idx)) energyByEdge.set(it.key, it.energy);
+    else lostEnergy += Math.max(0, it.energy); }   // source on a node that reaches no sink
 
-  // route bottom→top: ▲ divides each stat among productive outs, ▽ sums; crystal modifies on top.
+  // route bottom→top: ▲ passes its single input, ▽ sums its inputs; each crystal tolls its cost,
+  // then a ▲ divides the post-toll energy among its outputs. Debt (negative) keeps flowing.
   const nodeData=new Map();
   for(const idx of order){
     const key=placed.get(idx); const cell=cells[idx];
-    const ins=[], outs=[];
+    const inEdges=[], outs=[];
     for(const e of cell.edges){ const k=ek(e[0],e[1]); const role=edgeRole(cell,e);
-      if(role==='in'){ const s=shotByEdge.get(k); if(s) ins.push(s); }
+      if(role==='in'){ if(energyByEdge.has(k)) inEdges.push(k); }
       else if(edgeProductive.get(k)) outs.push(k); }
-    if(ins.length===0){                                    // unfed node: no source reaches it → inert
-      const z=shotScale(baseShot,0);                        // emit nothing (no phantom effects leak out)
-      nodeData.set(idx,{ins, baseline:z, out:z, perOut:z, nOut:outs.length});
+    const cost=CRYSTALS[key].cost;
+    if(inEdges.length===0){                                 // unfed node: no source reaches it → inert
+      nodeData.set(idx,{inEdges:[], inSum:0, outE:0, perOut:0, nOut:outs.length, cost});
       continue;
     }
-    const baseline = cell.type==='up' ? ins[0] : shotSum(ins);
-    const out = applyMod(key, baseline, cell.type);       // ▲ uses split facet, ▽ uses merge facet
+    // ▲ takes the one input; ▽ sums all inputs (debts included, so a merge can cancel debt).
+    const inSum = cell.type==='up' ? energyByEdge.get(inEdges[0])
+                                   : inEdges.reduce((s,k)=>s+energyByEdge.get(k),0);
+    const outE = inSum - cost;                              // local toll (may go negative = debt)
     const nOut = outs.length;
-    if(nOut===0) lostPower += out.power||0;                // shot dead-ends (no reachable sink)
-    const perOut = nOut>1 ? shotScale(out, 1/nOut) : out;  // every stat divides across outputs
-    for(const k of outs) shotByEdge.set(k,{...perOut});
-    nodeData.set(idx,{ins, baseline, out, perOut, nOut});
+    if(nOut===0) lostEnergy += Math.max(0, outE);           // usable energy dead-ends (no sink)
+    const perOut = nOut>1 ? outE/nOut : outE;               // post-toll energy divides across outputs
+    for(const k of outs) energyByEdge.set(k, perOut);
+    nodeData.set(idx,{inEdges, inSum, outE, perOut, nOut, cost});
   }
 
-  // sinks = active output sites; the weapon = SUM of all sinks. DAMAGE = power × rate.
+  // sinks = active output sites; weapon energy = sum of sink energies (floored — debt delivers nothing).
   const sinks=[];
   for(const idx of placed.keys()){ const cell=cells[idx];
     for(const e of cell.edges){ if(edgeRole(cell,e)!=='out')continue;
       const nb=neighbor(idx,e); if(nb!==-1&&placed.has(nb))continue;
       const k=ek(e[0],e[1]); if(!on(k)) continue;
-      const s=shotByEdge.get(k); if(!s)continue;
+      if(!energyByEdge.has(k)) continue;
       const mx=(e[0][0]+e[1][0])/2, my=(e[0][1]+e[1][1])/2;
-      sinks.push({shot:s, key:k, x:mx, y:my, cellIdx:idx}); } }
+      sinks.push({energy:Math.max(0, energyByEdge.get(k)), key:k, x:mx, y:my, cellIdx:idx}); } }
   sinks.sort((p,q)=> (p.x-q.x) || (p.y-q.y));        // stable left→right order
   sinks.forEach((b,i)=> b.label = 'T'+(i+1));
-  const shot = sinks.length ? shotSum(sinks.map(b=>b.shot)) : null;   // the combined weapon
-  const dps = shot ? (shot.power||0)*(shot.rate||0) : 0;
-  const injectedPower = sources.reduce((s,it)=>s+(it.power||0),0);
+  const weaponEnergy = sinks.reduce((s,b)=>s+b.energy,0);
   // --- handles: every open edge is a clickable site candidate ---
   const handles=[];
   for(const idx of placed.keys()){ const cell=cells[idx];
@@ -328,43 +336,41 @@ function compile(){
       if(nb!==-1 && placed.has(nb)) continue;            // internal edge, not a site
       const k=ek(e[0],e[1]); const mx=(e[0][0]+e[1][0])/2, my=(e[0][1]+e[1][1])/2;
       handles.push({key:k, role:edgeRole(cell,e), x:mx, y:my, cx:cell.cx, cy:cell.cy, active:on(k)}); } }
-  // --- trace: per-crystal full-stat math for the breakdown panel (bottom→top) ---
+  // --- labels ---
   const nodeLabel=new Map(); order.forEach((idx,i)=>nodeLabel.set(idx,'C'+(i+1)));
   const sinkByKey=new Map(); for(const b of sinks) sinkByKey.set(b.key,b.label);
   const sourceByKey=new Map(); for(const it of sources) sourceByKey.set(it.key,it.label);
+  // --- combo ops: every internal edge (adjacent placed pair) produces one op, scaled by the
+  //     energy arriving at the downstream crystal across that edge (floored at 0). ---
+  const edgeOps=[];
+  for(const idx of order){ const cell=cells[idx]; const downKey=placed.get(idx);
+    for(const e of cell.edges){ if(edgeRole(cell,e)!=='in') continue;
+      const nb=neighbor(idx,e); if(nb===-1 || !placed.has(nb)) continue;   // internal edges only
+      const k=ek(e[0],e[1]); if(!energyByEdge.has(k)) continue;            // must be fed
+      const upKey=placed.get(nb); const ev=energyByEdge.get(k);
+      edgeOps.push({ up:nodeLabel.get(nb), down:nodeLabel.get(idx), upKey, downKey,
+        op:comboOp(upKey, downKey), energy:Math.max(0,ev), debt: ev<0 }); }
+  }
+  // --- trace: per-crystal energy math + the combo op it forms with each upstream neighbor ---
   const trace=[];
   for(const idx of order){ const cell=cells[idx]; const key=placed.get(idx); const d=nodeData.get(idx);
-    const slot=cell.type==='up'?'split':'merge';
-    const insrc=[], outdst=[];
+    const insrc=[], outdst=[], combos=[];
     for(const e of cell.edges){ const k=ek(e[0],e[1]); const role=edgeRole(cell,e);
       const nb=neighbor(idx,e); const internal = nb!==-1 && placed.has(nb);
-      if(role==='in'){ if(internal) insrc.push(nodeLabel.get(nb)); else if(on(k)) insrc.push(sourceByKey.get(k)); }
-      else { if(internal) outdst.push(nodeLabel.get(nb)); else if(on(k)) outdst.push(sinkByKey.get(k)); }
+      if(role==='in'){
+        if(internal){ insrc.push(nodeLabel.get(nb));
+          if(energyByEdge.has(k)){ const ev=energyByEdge.get(k);
+            combos.push({ partner:nodeLabel.get(nb), op:comboOp(placed.get(nb), key),
+              energy:Math.max(0,ev), debt: ev<0 }); } }
+        else if(on(k)) insrc.push(sourceByKey.get(k));
+      } else { if(internal) outdst.push(nodeLabel.get(nb)); else if(on(k)) outdst.push(sinkByKey.get(k)); }
     }
-    const inShots = cell.type==='up' ? [{label:'in', shot:d.ins[0]||shotScale(baseShot,0)}]
-                  : d.ins.map((s,i)=>({label:String.fromCharCode(65+i), shot:s}));
     trace.push({node:nodeLabel.get(idx), type:cell.type, name:CRYSTALS[key].name, color:CRYSTALS[key].color,
-      insrc, outdst, inShots, baseline:d.baseline, outShot:d.out, nOut:d.nOut,
-      shotOp:`${OPS[key][slot].label} — ${OPS[key][slot].formula(params(key,slot))}`});
+      insrc, outdst, inSum:d.inSum, outE:d.outE, nOut:d.nOut, cost:d.cost, combos});
   }
   compiled = {n:placed.size, used, eCore:ECORE, eFlow, over, sources, sinks, handles,
-              injectedPower, lostPower, dps, shot, trace};
+              lostEnergy, weaponEnergy, edgeOps, trace};
   return compiled;
-}
-// full shot stats as a row; if `base` given, changed fields are highlighted as before→after
-function statHTML(shot, base){
-  const num=[['power','pwr',v=>Math.round(v)],['slow','slw',v=>Math.round(v)+'%'],
-    ['pierce','prc',v=>Math.round(v)],['speed','spd',v=>(+v).toFixed(1)],
-    ['range','rng',v=>(+v).toFixed(1)],['rate','rate',v=>(+v).toFixed(1)]];
-  const hi='color:#0d1018;background:#f1c40f;border-radius:3px;padding:0 3px;font-weight:600';
-  const parts=[];
-  for(const [k,lab,f] of num){ const v=shot[k]||0, bv=base?(base[k]||0):v;
-    const changed = base && Math.abs(bv-v)>0.05;
-    parts.push(changed ? `${lab} <span style="${hi}">${f(bv)}→${f(v)}</span>`
-                       : `<span style="color:var(--dim)">${lab} ${f(v)}</span>`); }
-  const tch = base && base.type!==shot.type;
-  parts.push(tch ? `<span style="${hi}">${shot.type}</span>` : `<span style="color:var(--dim)">${shot.type}</span>`);
-  return parts.join('&nbsp; ');
 }
 // readable per-step math for the Flow breakdown card
 function renderTrace(a){
@@ -372,24 +378,33 @@ function renderTrace(a){
   if(!a.trace || !a.trace.length){
     el.innerHTML='<div class="hdr">Place crystals to see the per-step math.</div>'; return; }
   const nI=a.sources.length;
-  const head=`<div class="hdr">The base shot (<b>${Math.round(a.eFlow)}</b> power) is divided among
+  const head=`<div class="hdr"><b>Energy = ${Math.round(a.eCore)}</b> (core) is divided among
     <b>${nI}</b> weighted source${nI===1?'':'s'} (see <b>Source weights</b>), then routed.
-    Routing <b>conserves every stat</b> — a ▲ divides each stat among its outputs, a ▽ sums them; the
-    crystal multiplies on top. <b>Damage = power × rate.</b> Changed stats vs the conserved baseline are
-    <span style="background:#f1c40f;color:#0d1018;border-radius:3px;padding:0 3px">highlighted</span>.</div>`;
+    Each crystal <b>draws its own cost</b> from the flowing energy (local toll), then a ▲ divides the
+    remainder among its outputs, a ▽ sums its inputs. Two crystals adjacent in the flow form a
+    <b>combo-op</b>, scaled by the energy <b>arriving</b> at the downstream crystal (floored at 0).
+    Negative = energy <b>debt</b> (op does nothing until a ▽ merge overcomes it). Net after all tolls:
+    <b>${Math.round(a.eFlow)}</b>.</div>`;
+  const eNum = v => (v<0 ? `<span style="color:#ff6b6b">${Math.round(v)}</span>` : `${Math.round(v)}`);
   const steps=a.trace.map(t=>{
     const arity = t.type==='up' ? '▲ split' : '▽ merge';
     const route = `${t.insrc.join('&nbsp;+&nbsp;')||'—'} <span class="ar">⇒</span> ${t.outdst.join('&nbsp;,&nbsp;')||'—'}`;
-    const inRows = t.inShots.map(s=>`<div class="row"><span class="k">${s.label}</span>${statHTML(s.shot,null)}</div>`).join('');
-    const outSuffix = t.nOut>1 ? ` <span style="color:var(--dim)">· each stat ÷${t.nOut} per output</span>` : '';
+    const inRow = `<div class="row"><span class="k">in</span>${eNum(t.inSum)} energy` +
+      ` <span style="color:var(--dim)">−toll ${Math.round(t.cost)}</span></div>`;
+    const comboRows = t.combos.map(c=>
+      `<div class="row"><span class="k" style="color:#ffd36b">op</span>` +
+      `<b>${c.op}</b> <span style="color:var(--dim)">= combo(${c.partner}·${t.node})</span> ` +
+      (c.debt ? `<span style="color:#ff6b6b">× 0 (debt)</span>` : `× <b>${Math.round(c.energy)}</b>`) +
+      `</div>`).join('');
+    const outSuffix = t.nOut>1 ? ` <span style="color:var(--dim)">· ÷${t.nOut} per output</span>` : '';
     return `<div class="step">
       <div class="top"><span class="nd">${t.node}</span>
         <span class="dot" style="background:${t.color};color:${t.color};width:12px;height:12px"></span>
         ${t.name} · ${arity}</div>
       <div class="row"><span class="k" style="color:#39d98a">route</span>${route}</div>
-      ${inRows}
-      <div class="row"><span class="k" style="color:#ffd9b0">out</span>${statHTML(t.outShot, t.baseline)}${outSuffix}</div>
-      <div class="row"><span class="k" style="color:#bcd2ff">shape</span>${t.shotOp}</div>
+      ${inRow}
+      ${comboRows||''}
+      <div class="row"><span class="k" style="color:#ffd9b0">out</span>${eNum(t.outE)} energy${outSuffix}</div>
     </div>`;
   }).join('');
   el.innerHTML=head+steps;
@@ -404,7 +419,7 @@ function renderSources(a){
   const sig=list.map(it=>it.label+'@'+it.key).join('|');
   if(sig===lastSourceSig){                               // same sites: just refresh numbers
     list.forEach(it=>{ const v=document.getElementById('iv-'+it.label);
-      if(v) v.innerHTML=`w ${it.weight} · <span style="color:#39d98a">${Math.round(it.power)} pwr</span>`; });
+      if(v) v.innerHTML=`w ${it.weight} · <span style="color:#39d98a">${Math.round(it.energy)} energy</span>`; });
     return;
   }
   lastSourceSig=sig;
@@ -418,21 +433,14 @@ function renderSources(a){
     rng.oninput=()=>{ sourceWeights.set(it.key, parseFloat(rng.value)); refresh(); };
     const val=document.createElement('span'); val.id='iv-'+it.label;
     val.style.cssText='min-width:96px;text-align:right;font-variant-numeric:tabular-nums;color:var(--dim)';
-    val.innerHTML=`w ${it.weight} · <span style="color:#39d98a">${Math.round(it.power)} pwr</span>`;
+    val.innerHTML=`w ${it.weight} · <span style="color:#39d98a">${Math.round(it.energy)} energy</span>`;
     row.innerHTML=`<span style="color:#bdf3d4;font-weight:700;min-width:22px">${it.label}</span>`;
     row.appendChild(rng); row.appendChild(val); el.appendChild(row);
   });
 }
 
-// sink readout: damage = power × rate.
-function sinkLine(b){
-  const s=b.shot, dmg=s.power||0, rate=s.rate||0;
-  const parts=[`${Math.round(dmg)} dmg`, `${rate.toFixed(1)}/s`, `${Math.round(dmg*rate)} dps`];
-  if(s.type!=='kinetic') parts.push(s.type);
-  if(s.slow>0.5) parts.push('slow '+Math.round(s.slow)+'%');
-  if(s.pierce>0.5) parts.push('pierce '+Math.round(s.pierce));
-  return parts.join(' · ');
-}
+// sink readout: energy delivered at this sink.
+function sinkLine(b){ return `${Math.round(b.energy||0)} energy`; }
 
 function draw(){
   const W=canvas.width/DPR, Hc=canvas.height/DPR;
@@ -525,7 +533,7 @@ function refresh(){
   draw();
   document.getElementById('nCells').textContent=a.n;
   document.getElementById('nSinks').textContent=a.sinks.length;
-  document.getElementById('dps').textContent=Math.round(a.dps);
+  document.getElementById('dps').textContent=Math.round(a.weaponEnergy);
   document.getElementById('eUsed').textContent=a.used;
   document.getElementById('eflow').textContent=Math.round(a.eFlow);
   const bar=document.getElementById('ebar');
@@ -536,19 +544,27 @@ function refresh(){
     row.style.cssText='font-size:12px;display:flex;gap:7px;align-items:center';
     row.innerHTML=`<span style="color:#ffd9b0;font-weight:700;min-width:20px">${b.label}</span><span>${sinkLine(b)}</span>`;
     list.appendChild(row); });
-  if(a.shot){ const row=document.createElement('div');
+  if(a.sinks.length>1){ const row=document.createElement('div');
     row.style.cssText='font-size:12px;display:flex;gap:7px;align-items:center;border-top:1px solid var(--line);margin-top:3px;padding-top:5px';
-    row.innerHTML=`<span style="color:var(--accent);font-weight:700;min-width:20px">∑</span><span>${sinkLine({shot:a.shot})}</span>`;
+    row.innerHTML=`<span style="color:var(--accent);font-weight:700;min-width:20px">∑</span><span>${Math.round(a.weaponEnergy)} energy</span>`;
     list.appendChild(row); }
+  // ops produced (combo per adjacent pair)
+  const ops=document.getElementById('opsList'); ops.innerHTML='';
+  if(!a.edgeOps.length){ ops.innerHTML='<span style="color:var(--dim)">No adjacent pairs yet — place crystals side by side to form combos.</span>'; }
+  else a.edgeOps.forEach(o=>{ const row=document.createElement('div');
+    row.style.cssText='font-size:12px;display:flex;gap:7px;align-items:baseline;justify-content:space-between';
+    row.innerHTML=`<span><b>${o.op}</b> <span style="color:var(--dim)">${o.up}·${o.down}</span></span>`+
+      (o.debt ? `<span style="color:#ff6b6b">× 0 (debt)</span>` : `<span style="color:#39d98a">× ${Math.round(o.energy)}</span>`);
+    ops.appendChild(row); });
   renderTrace(a);
   renderSources(a);
   const v=document.getElementById('verdict');
   if(a.n===0) v.textContent="Empty. Place crystals, then click edge dots to set source/sink sites.";
-  else if(a.over) v.innerHTML="<span style='color:#e6394a'>Overloaded</span> — crystal draw exceeds the core. Raise core energy or use cheaper crystals; no base power is left.";
-  else if(a.sources.length===0) v.innerHTML="<span style='color:#39d98a'>No sources</span> — click a green dot on an edge to feed power in from the core.";
+  else if(a.over) v.innerHTML="<span style='color:#e6394a'>In debt</span> — total crystal draw exceeds the core, so the stream falls below 0 somewhere downstream. Front crystals still fire; deep ones go inert until a ▽ merge overcomes the debt.";
+  else if(a.sources.length===0) v.innerHTML="<span style='color:#39d98a'>No sources</span> — click a green dot on an edge to feed energy in from the core.";
   else if(a.sinks.length===0) v.innerHTML="<span style='color:#f1c40f'>No sinks</span> — click an orange dot on an open output edge to fire.";
-  else if(a.lostPower>0.5) v.innerHTML=`<span style='color:#f1c40f'>Power dead-ends</span> — <b>${Math.round(a.lostPower)}</b> base power never reaches a sink. Route it onward or add a sink.`;
-  else v.innerHTML="Routing conserves every stat; crystals multiply on top. The shot = the sum of all sinks, so adding sinks redistributes — it never duplicates.";
+  else if(a.lostEnergy>0.5) v.innerHTML=`<span style='color:#f1c40f'>Energy dead-ends</span> — <b>${Math.round(a.lostEnergy)}</b> energy never reaches a sink. Route it onward or add a sink.`;
+  else v.innerHTML="Energy flows by local tolls; combos come from adjacent crystals. The weapon energy = the sum of all sinks.";
 }
 
 // ---- interaction ----
@@ -595,7 +611,7 @@ for(const [key,c] of Object.entries(CRYSTALS)){
 }
 function showDesc(key){ const c=CRYSTALS[key];
   document.getElementById('desc').innerHTML=
-    `<b style="color:${c.color}">${c.name}</b> — ▲ ${c.splitDesc} · ▽ ${c.mergeDesc}. <span style="color:var(--dim)">(draw ${c.cost})</span>`;
+    `<b style="color:${c.color}">${c.name}</b> <span style="color:var(--dim)">· ${c.element}</span> — native op <b>${nativeOp(key)}</b>. <span style="color:var(--dim)">(draw ${c.cost})</span>`;
 }
 showDesc(selected);
 
@@ -673,9 +689,9 @@ function exportData(){
   }
   return {format:'crystal-dataflow/v2',lattice:{side:L,core:a.eCore},
     crystals:arr, sites:siteArr,
-    compiled:{core:a.eCore, draw:a.used, basePower:Math.round(a.eFlow), dps:Math.round(a.dps),
-      shot:a.shot?sinkLine({shot:a.shot}):null,
-      sinks:a.sinks.map(b=>({label:b.label, from:ids.get(b.cellIdx), stats:sinkLine(b)}))}};
+    compiled:{core:a.eCore, draw:a.used, netEnergy:Math.round(a.eFlow), weaponEnergy:Math.round(a.weaponEnergy),
+      ops:a.edgeOps.map(o=>({op:o.op, pair:o.up+'·'+o.down, energy:Math.round(o.energy), debt:o.debt})),
+      sinks:a.sinks.map(b=>({label:b.label, from:ids.get(b.cellIdx), energy:Math.round(b.energy)}))}};
 }
 function importData(obj){
   if(!obj||!Array.isArray(obj.crystals)) throw new Error('no crystals');

@@ -3,137 +3,82 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Crystal Operator Reference — tune the 12 facets</title>
+<title>Crystal Combo Reference</title>
 <style>
   :root{ --bg:#0d1018; --panel:#161b2b; --panel2:#1d2438; --ink:#e7ecf6; --dim:#8a93ab;
     --line:#28324d; --accent:#5fd0ff; }
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--ink);font-family:"Segoe UI",system-ui,sans-serif;padding:18px}
   h1{font-size:19px;margin:0 0 2px}
+  h2{font-size:14px;margin:20px 0 8px;color:var(--dim);text-transform:uppercase;letter-spacing:1px}
   .sub{color:var(--dim);font-size:13px;margin:0 0 14px;max-width:900px;line-height:1.55}
-  a{color:var(--accent)}
-  .topbar{display:flex;gap:18px;align-items:flex-end;flex-wrap:wrap;margin-bottom:14px}
-  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px}
-  .base{display:flex;gap:14px;align-items:center}
-  .base label{font-size:12px;color:var(--dim);display:flex;flex-direction:column;gap:3px}
-  input[type=number]{width:64px;background:#0c1120;color:var(--ink);border:1px solid var(--line);
-    border-radius:6px;padding:5px 6px;font-size:13px;font-variant-numeric:tabular-nums}
-  button{background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:8px;
-    padding:8px 13px;font-size:13px;cursor:pointer}
-  button:hover{border-color:var(--accent)}
-  .note{font-size:12.5px;color:var(--dim);line-height:1.6;max-width:900px}
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;max-width:1000px}
+  table{border-collapse:collapse;font-size:13px}
+  .matrix td,.matrix th{border:1px solid var(--line);padding:7px 9px;text-align:center;white-space:nowrap}
+  .matrix th{color:var(--ink);font-weight:650}
+  .matrix .rowhead{text-align:right}
+  .dot{display:inline-block;width:11px;height:11px;border-radius:3px;box-shadow:0 0 8px currentColor;vertical-align:middle;margin-right:5px}
+  .matrix td.diag{background:#1d2438;font-weight:650}
+  .matrix a{color:#cfe3ff}
+  .roster td,.roster th{border-bottom:1px solid var(--line);padding:6px 12px;text-align:left;font-size:13px}
+  .roster th{color:var(--dim);font-weight:600;text-transform:uppercase;letter-spacing:.5px;font-size:11px}
+  .note{font-size:12.5px;color:var(--dim);line-height:1.6;max-width:1000px;margin-top:12px}
   .note b{color:var(--ink)}
-  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-top:14px}
-  .col{display:flex;flex-direction:column;gap:10px}
-  .colhead{display:flex;align-items:center;gap:9px;font-weight:650;font-size:15px;padding:2px 2px 0}
-  .dot{width:18px;height:18px;border-radius:5px;box-shadow:0 0 10px currentColor}
-  .op{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:11px}
-  .op .role{font-size:10.5px;letter-spacing:1px;text-transform:uppercase;color:var(--dim)}
-  .op .lbl{font-size:14px;font-weight:600;margin:1px 0 6px}
-  .op .formula{font:12px/1.4 ui-monospace,Consolas,monospace;color:#bcd2ff;background:#0c1120;
-    border:1px solid var(--line);border-radius:7px;padding:6px 8px;margin-bottom:8px;min-height:30px;display:flex;align-items:center}
-  .op .params{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px}
-  .op .params label{font-size:11px;color:var(--dim);display:flex;flex-direction:column;gap:2px}
-  .op .params .none{font-size:11px;color:var(--dim);font-style:italic}
-  .ex{font:11.5px/1.5 ui-monospace,Consolas,monospace;color:#cfe3ff;background:#0a1426;
-    border:1px dashed var(--line);border-radius:7px;padding:7px 8px;white-space:pre-wrap}
-  .ex .arrow{color:#ff9d4d}
 </style>
 </head>
 <body>
-<h1>Crystal Operator Reference</h1>
-<p class="sub">Every crystal has two facets — a ▲ <b>split</b> (the lighter, spread version) and a ▽ <b>merge</b>
-  (the heavier "focus" version, acting on the summed stream). Orientation is set by where the crystal sits on
-  the lattice, so the shape decides which facet you get. Edit a number and the formula + example update live;
-  values are saved and shared with the <a href="dataflow-playground.html">playground</a>.</p>
+<h1>Crystal Combo Reference</h1>
+<p class="sub">Two crystals adjacent in a tower's dataflow produce a <b>combo-op</b>, scaled by the energy
+  reaching the downstream crystal. This is a read-only mirror of
+  <a href="effect-vocab/vocab-overview/combo-matrix.md">combo-matrix.md</a> (the source of truth). Op names
+  are stubs — each op's behavior is authored one-per-file under <code>effect-vocab/ops/</code> and implemented
+  later in the Godot / C# port. Used as the lookup by the
+  <a href="dataflow-playground.html">dataflow playground</a>.</p>
 
-<div class="topbar">
-  <div class="card base">
-    <strong style="font-size:12px;color:var(--dim);text-transform:uppercase;letter-spacing:1px">Sample shot</strong>
-    <label>power <input type="number" id="bp" step="1"></label>
-    <label>rate <input type="number" id="br" step="0.1"></label>
-  </div>
-  <button id="reset">Reset all to defaults</button>
+<div class="card">
+  <h2 style="margin-top:2px">Combo matrix</h2>
+  <table class="matrix" id="matrix"></table>
+  <div class="note"><b>Diagonal</b> (shaded) = a crystal's single-crystal native op, produced when two of
+    that crystal sit adjacent. <b>Off-diagonal</b> = a two-crystal op. The grid is symmetric — order does not
+    matter. Click any op to open its stub doc.</div>
+
+  <h2>Roster</h2>
+  <table class="roster" id="roster"></table>
 </div>
-
-<div class="card note">
-  <b>How facets fit the model:</b> the base shot is divided among the sources by weight, then routed —
-  routing <b>conserves every stat</b> (▲ divides each stat among outputs, ▽ sums them). A crystal then applies
-  its facet ON TOP: a ▲ uses its <b>split</b> effect, a ▽ uses its <b>merge</b> effect. Because a ▽ acts on the
-  already-summed (concentrated) stream and usually carries the stronger numbers, <b>where power converges</b>
-  is the core puzzle. <b>Damage = power × rate.</b> <b>Quartz</b> is identity in both forms — a free wire.
-</div>
-
-<div class="grid" id="grid"></div>
 
 <script src="crystal-core.js"></script>
 <script>
-const fmtArrow = '  →  ';
-function sIn(){ return BASE(); }     // sample shot each facet is demonstrated on
-
-function setOverride(key,slot,param,val){
-  OVERRIDES.ops = OVERRIDES.ops || {};
-  OVERRIDES.ops[key] = OVERRIDES.ops[key] || {};
-  OVERRIDES.ops[key][slot] = OVERRIDES.ops[key][slot] || {};
-  OVERRIDES.ops[key][slot][param] = val;
-  saveOverrides(OVERRIDES);
+function opCell(a, b){
+  const op = comboOp(a, b);
+  const file = OP_FILES[op];
+  const inner = file ? `<a href="${file}">${op}</a>` : op;
+  return `<td class="${a===b?'diag':''}">${inner}</td>`;
 }
-function setBase(param,val){ OVERRIDES.base = OVERRIDES.base || {}; OVERRIDES.base[param]=val; saveOverrides(OVERRIDES); }
-
-function exampleHTML(key,slot){
-  const i=sIn(), o=OPS[key][slot].fn(i, params(key,slot));
-  return `in  ${fmtShot(i)}<span class="arrow">${fmtArrow}</span>out ${fmtShot(o)}`;
+function crystalTh(key){
+  const c = CRYSTALS[key];
+  return `<span class="dot" style="background:${c.color};color:${c.color}"></span>${c.name}`;
 }
-function step(param){ return ['power','rate','speed','range'].includes(param)?0.1:1; }
-
-function buildOp(key,slot){
-  const op=OPS[key][slot];
-  const wrap=document.createElement('div'); wrap.className='op';
-  wrap.dataset.key=key; wrap.dataset.slot=slot;
-  const pnames=Object.keys(op.params);
-  wrap.innerHTML=
-    `<div class="role">${slot==='split'?'▲ Split (spread)':'▽ Merge (focus)'}</div>
-     <div class="lbl">${op.label}</div>
-     <div class="formula" data-f></div>
-     <div class="params">${ pnames.length? '' : '<span class="none">no tunable parameters</span>' }</div>
-     <div class="ex" data-ex></div>`;
-  const prow=wrap.querySelector('.params');
-  pnames.forEach(pn=>{
-    const lab=document.createElement('label'); lab.innerHTML=`${pn}`;
-    const inp=document.createElement('input');
-    inp.type='number'; inp.step=step(pn); inp.value=params(key,slot)[pn];
-    inp.oninput=()=>{ const v=parseFloat(inp.value); if(!isNaN(v)){ setOverride(key,slot,pn,v); updateOp(wrap,key,slot); } };
-    lab.appendChild(inp); prow.appendChild(lab);
-  });
-  updateOp(wrap,key,slot);
-  return wrap;
+function renderMatrix(){
+  const t = document.getElementById('matrix');
+  let head = '<tr><th></th>' + CRYSTAL_ORDER.map(k=>`<th>${crystalTh(k)}</th>`).join('') + '</tr>';
+  let rows = CRYSTAL_ORDER.map(a =>
+    `<tr><th class="rowhead">${crystalTh(a)}</th>` +
+    CRYSTAL_ORDER.map(b => opCell(a, b)).join('') + '</tr>').join('');
+  t.innerHTML = head + rows;
 }
-function updateOp(wrap,key,slot){
-  wrap.querySelector('[data-f]').textContent = OPS[key][slot].formula(params(key,slot));
-  wrap.querySelector('[data-ex]').innerHTML = exampleHTML(key,slot);
+function renderRoster(){
+  const t = document.getElementById('roster');
+  const head = '<tr><th>Crystal</th><th>Element</th><th>Draw</th><th>Native op</th></tr>';
+  const rows = CRYSTAL_ORDER.map(k=>{ const c=CRYSTALS[k];
+    return `<tr><td>${crystalTh(k)}</td><td>${c.element}</td><td>${c.cost}</td>`+
+      `<td>${OP_FILES[nativeOp(k)]?`<a href="${OP_FILES[nativeOp(k)]}">${nativeOp(k)}</a>`:nativeOp(k)}</td></tr>`;
+  }).join('');
+  t.innerHTML = head + rows;
 }
-function updateAllExamples(){ document.querySelectorAll('.op').forEach(w=>updateOp(w,w.dataset.key,w.dataset.slot)); }
-
-function render(){
-  const grid=document.getElementById('grid'); grid.innerHTML='';
-  for(const key in OPS){
-    const col=document.createElement('div'); col.className='col';
-    const head=document.createElement('div'); head.className='colhead';
-    head.innerHTML=`<span class="dot" style="background:${OPS[key].color};color:${OPS[key].color}"></span>${OPS[key].name}
-      <span style="color:var(--dim);font-weight:400;font-size:12px">· ${OPS[key].cost} draw</span>`;
-    col.appendChild(head);
-    col.appendChild(buildOp(key,'split'));
-    col.appendChild(buildOp(key,'merge'));
-    grid.appendChild(col);
-  }
-  document.getElementById('bp').value=BASE().power;
-  document.getElementById('br').value=BASE().rate;
-}
-document.getElementById('bp').oninput=e=>{ const v=parseFloat(e.target.value); if(!isNaN(v)){ setBase('power',v); updateAllExamples(); } };
-document.getElementById('br').oninput=e=>{ const v=parseFloat(e.target.value); if(!isNaN(v)){ setBase('rate',v); updateAllExamples(); } };
-document.getElementById('reset').onclick=()=>{ OVERRIDES={}; saveOverrides(OVERRIDES); render(); };
-
-render();
+renderMatrix();
+renderRoster();
 </script>
 </body>
 </html>
