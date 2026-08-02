@@ -30,30 +30,35 @@ Status: planning. Nothing built.
 
 | # | Track | Item | Doc | Depends | Size |
 |---|---|---|---|---|---|
-| 1 | upgrades | Compiler core + **op-flow** (ops + payloads at leaf outs) | `upgrades/op-flow.md` · `upgrades/compiler-core.md` | — | M |
-| 2 | upgrades | Lattice UI + template editor | `upgrades/lattice-ui.md` | 1 | L |
-| 3 | combat | First primitive op behaviors | `combat/primitives.md` | 1 | M |
-| 4 | combat | Enemy R + paths / roads / deviation | `combat/enemy-r.md` | 3 | XL |
-| 5 | — | Delivery shapes · impact cap · investment axes | *(later)* | 3 | — |
+| 1 | upgrades | Compiler core (structure · energy · terminals · ops; payload stubbed) | `upgrades/compiler-core.md` | — | M |
+| 2 | upgrades | Op-flow (payload pass — port on top of the core) | `upgrades/op-flow.md` | 1 | S–M |
+| 3 | upgrades | Lattice UI + template editor | `upgrades/lattice-ui.md` | 2 | L |
+| 4 | combat | First primitive op behaviors | `combat/primitives.md` | 2 | M |
+| 5 | combat | Enemy R + paths / roads / deviation | `combat/enemy-r.md` | 4 | XL |
+| 6 | — | Delivery shapes · impact cap · investment axes | *(later)* | 4 | — |
 
-Size: S/M/L/XL rough effort. **Op-flow leads item 1** — the first deliverable is a
-compiler that emits the correct ops with correct energy multipliers at each leaf output
-(names + producer/consumer wiring only, 1-to-1 conversion; no op *behavior* yet).
+Size: S/M/L/XL rough effort. **Compiler core is item 1** — the engine (structural passes,
+local-toll energy routing, crystal terminals, combo-op naming at leaf outs), payload
+**stubbed**. **Op-flow is item 2** — port the payload pass (produce / consume / propagate,
+1-to-1 conversion) on top. Both already validated in the playground, which is the reference.
 
 ---
 
 ## Ordering rationale
 
-- **1 first (op-flow + compiler).** Op-flow is deliberately thin — names, producer/consumer
-  wiring, 1-to-1 conversion — but it can't produce multipliers without the energy engine, so
-  it and the compiler core are **one milestone**. This is the foundation everything downstream
-  reads: it fixes what each shot *carries*.
-- **1 before 2.** The UI's live preview *is* the core compiler — build and test the engine
-  headless first, then render it. UI without a trustworthy compiler is guesswork.
-- **Then combat, 3 → 4.**
-  - **3 (primitives)** is where compilation first *does something* visible in-game — it wires
-    the op names already flowing out of item 1 to real enemy effects.
-  - **4 (enemy R)** is the largest scope: it needs the R meter **and** preset enemy paths
+- **1 (compiler core) first.** The engine — structural passes, local-toll energy routing,
+  crystal terminals, combo-op naming — is the foundation everything reads. Build and test it
+  headless with payload stubbed. Op-flow can't produce multipliers without this energy engine.
+- **2 (op-flow) next.** Layer the payload pass (produce / consume / propagate, 1-to-1
+  conversion) onto the core. Thin and low-risk: the playground `compile()` is the reference to
+  match. This fixes what each shot *carries*. (It was validated in the playground first — that
+  is why it exists there ahead of the C# core; the C# build reverses the order.)
+- **3 (UI) after the compiler is trustworthy.** The UI's live preview *is* the core compiler
+  (+ payload) — render it only once headless tests pass.
+- **Then combat, 4 → 5.**
+  - **4 (primitives)** is where compilation first *does something* visible in-game — it wires
+    the op names flowing out of items 1–2 to real enemy effects.
+  - **5 (enemy R)** is the largest scope: it needs the R meter **and** preset enemy paths
     **and** player-placed roads **and** deviation, integrated with tower placement. Last.
 
 ---

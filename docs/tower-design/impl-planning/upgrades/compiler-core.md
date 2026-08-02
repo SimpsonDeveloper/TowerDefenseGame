@@ -5,8 +5,9 @@ of `../../playground/dataflow-playground.html` `compile()`. No `using Godot`. Go
 call in; it never calls back. Testable in isolation and portable.
 
 Reference rules: `../../compilation-system.md`, `../../energy-conservation.md`.
-Roadmap item **1**, together with **op-flow** (`op-flow.md`) — the compiler emits op
-payloads at leaf outs as part of this milestone. Depends on nothing.
+Roadmap item **1** — the engine (structure, energy, terminals, combo-op naming) with the op
+**payload stubbed**. The payload pass is **item 2** (`op-flow.md`), layered on top. Depends
+on nothing. The playground `compile()` already does both — port the engine here first.
 
 ---
 
@@ -61,10 +62,9 @@ Structural first, then values, then effects.
    recover it.
 5. **Op production**: on each active edge, `(upKind, downKind) → ComboOp`, scaled by
    `max(0, energyAtDownstream)`. Emit `EdgeOp { op, energy, debt }`.
-6. **Payload flow** (part of this milestone — `op-flow.md`): op quantities propagate along
-   the same routing (▲ divides, ▽ sums); interactive ops consume the primitive they react to
-   (vocabulary lookup) and emit their product **1-to-1**. Op *behavior* is not implemented —
-   only names + quantities.
+6. **Payload flow** — **stubbed in item 1**; the produce / consume / propagate pass is
+   **item 2** (`op-flow.md`). The core exposes the seam (a `Payload` per edge, parallel to
+   `energyByEdge`) but leaves it empty until then.
 7. **Collect**: `weaponEnergy = Σ max(0, sinkEnergy)`; usable energy dead-ending in a
    sinkless branch = `lostEnergy`.
 
@@ -80,10 +80,12 @@ Encode the `../../energy-conservation.md` worked example as xUnit:
   in transit; a downstream merge recovers it.
 - Legality: a cell feeding one crystal **and** a sink → `legal = false` (leaf-output); a
   source cell also fed by an upstream crystal → `legal = false` (leaf-input).
-- Payload (`op-flow.md`): split **10 burn** → `5 / 5`; one branch consumed by Frostburn →
-  `5 frostburn`; merge → leaf out payload `{ burn: 5, frostburn: 5 }` (1-to-1 driver).
+- Payload (**item 2**, `op-flow.md`): split **10 burn** → `5 / 5`; one branch consumed by
+  Frostburn → `5 frostburn`; merge → leaf out payload `{ burn: 5, frostburn: 5 }` (1-to-1
+  driver). This test lands with op-flow, not the core.
 
-The core is "done" when these pass and outputs match the playground for shared inputs.
+The core (item 1) is "done" when the energy/structure/legality tests pass and its outputs
+match the playground for shared inputs (payload aside).
 
 ---
 

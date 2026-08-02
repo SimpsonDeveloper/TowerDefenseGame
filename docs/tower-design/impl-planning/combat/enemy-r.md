@@ -1,6 +1,6 @@
 # Enemy R System + Paths
 
-Roadmap item **4** — the largest scope. Depends on primitive ops (`primitives.md`). Stub;
+Roadmap item **5** — the largest scope. Depends on primitive ops (`primitives.md`). Stub;
 flesh out when starting the phase. Design source: `../../effect-vocab/vocab-overview/illusion.md`.
 
 The R (illusion-resistance) mechanic is not just a second health bar — it changes **pathing**,

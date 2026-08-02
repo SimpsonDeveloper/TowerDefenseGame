@@ -1,7 +1,7 @@
 # First Primitive Op Behaviors
 
-Roadmap item **3** — where compilation first *does something* visible in-game. Depends on
-op-metadata flow (`../upgrades/op-flow.md`). Stub; flesh out when starting the phase.
+Roadmap item **4** — where compilation first *does something* visible in-game. Depends on
+op-metadata flow (item 2, `../upgrades/op-flow.md`). Stub; flesh out when starting the phase.
 
 Wire the seven primitives to an `EnemyStateComponent` the ops read/write:
 

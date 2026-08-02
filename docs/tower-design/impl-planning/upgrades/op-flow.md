@@ -1,9 +1,10 @@
 # Op-Metadata Flow
 
-How op results move through the lattice after a combo produces them. **Roadmap item 1**
-(with the compiler core — `compiler-core.md`). This is a **compilation-system** concern,
-not combat: the payload is part of what the compiler *emits*. Nothing here makes an op
-*do* anything to an enemy — that is the combat track (`../combat/primitives.md`).
+How op results move through the lattice after a combo produces them. **Roadmap item 2** —
+the payload pass, layered on the compiler core (**item 1**, `compiler-core.md`), which
+stubs it. This is a **compilation-system** concern, not combat: the payload is part of what
+the compiler *emits*. Nothing here makes an op *do* anything to an enemy — that is the
+combat track (`../combat/primitives.md`). Already validated in the playground — port that.
 
 Design goal: **keep it simple.** Op payloads ride the same routing energy already uses.
 
@@ -12,21 +13,23 @@ Two rules first stated here — flagged for back-port to `../../compilation-syst
 
 ---
 
-## 1. Scope of item 1 (deliberately thin)
+## 1. Scope (deliberately thin)
 
-The first milestone does **not** implement any op. It only computes, for each leaf-node
-output, the **correct set of ops with the correct energy multipliers** — including the
-effect of consumption. Concretely:
+This item does **not** implement any op. It only computes, for each leaf-node output, the
+**correct set of ops with the correct energy multipliers** — including the effect of
+consumption. Concretely:
 
 - **Op names only.** An op is an `OpId` + a float quantity. No behavior, no damage, no
   states written on an enemy.
 - **Producers / consumers come from the effect vocabulary**, not from new tables here:
   - which combo produces which op → `../../effect-vocab/vocab-overview/combo-matrix.md`;
-  - which interactive op **consumes** which primitive → the *Reacts to* column of
-    `../../effect-vocab/ops/README.md` (each interactive's own file states it too).
+  - which interactive op **consumes** which primitive → the op file's **`Consumes:`** header
+    (`../../effect-vocab/ops/interactives/`). Only genuine charge-and-spend consumers count —
+    ops that merely *read* enemy metadata at runtime (Focus, the Arcs, Accelerant, Numb, …)
+    are **not** payload consumers. (README's *Reacts to* column conflates the two.)
 - **1-to-1 conversion driver.** When a consumer eats a primitive it emits its product at
   the **same quantity** (1 unit in → 1 unit out). No per-op conversion constants yet —
-  those are authored later with the ops (`../combat/primitives.md` / item 3).
+  those are authored later with the ops (`../combat/primitives.md` / item 4).
 
 Done when: a lattice compiles to a leaf-out payload whose `(OpId → quantity)` entries match
 the hand-worked example below.
@@ -100,7 +103,7 @@ per-edge site is gone: a terminal binds to the whole crystal.
 - Unconsumed primitives simply arrive at the output as-is.
 
 Exact consume math (partial consumption? ratios? multiplier scaling?) replaces the 1-to-1
-driver per interactive op when those ops are authored (item 3), in
+driver per interactive op when those ops are authored (item 4), in
 `../../effect-vocab/ops/interactives/`.
 
 ---

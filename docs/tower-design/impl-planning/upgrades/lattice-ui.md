@@ -1,8 +1,8 @@
 # Lattice UI + Template Editor
 
 The player-facing (and dev-facing) surface for **building and examining** a crystal
-lattice — the in-game successor to `../../playground/dataflow-playground.html`. Roadmap item **2**.
-Depends on the compiler core (its live preview *is* the core compiler).
+lattice — the in-game successor to `../../playground/dataflow-playground.html`. Roadmap item **3**.
+Depends on the compiler core + op-flow (items 1–2 — its live preview *is* the compiler, payload included).
 
 Two surfaces share one renderer and one compiler:
 
