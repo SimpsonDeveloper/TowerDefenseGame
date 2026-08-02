@@ -11,8 +11,9 @@ Prototyped in `playground/dataflow-playground.html` (`compile()`). Supersedes th
 Energy is a **conserved, consumable multiplier**. It is not a pool taxed once up
 front — it is spent **locally**, one crystal at a time, as the stream flows.
 
-1. **Seed.** Each source is fed the full **core energy** `E_core`, divided among
-   the sources by their **weights**.
+1. **Seed.** The **core energy** `E_core` is divided **equally** among the sources
+   (no weights): each of `n` sources is seeded `E_core / n`. Sources are automatic —
+   every leaf-input crystal is one (`compilation-system.md` §2).
 2. **Local toll.** As the stream passes a crystal, that crystal **draws its own
    cost** from the flowing energy: `out = in − cost`.
 3. **Split (▲)** divides the **post-toll** energy among its outputs.

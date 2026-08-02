@@ -25,11 +25,10 @@ layer they belong to: the **lattice** (shape), the **flow** (routing), the **ene
 
 | Symbol | Name | Meaning |
 |---|---|---|
-| — | terminal | A **crystal** (not an edge) marked as a boundary: a source or a sink. Interior crystals are pure crystal↔crystal. |
-| **S#** | source | A **source crystal** (green): seeded core energy directly (input arity ignored); carries a **weight**. |
-| **T#** | sink | A **sink crystal** (orange): drains its post-toll energy to the weapon. Weapon energy = **sum of all sinks**. |
-| — | **leaf-input / leaf-output** | Terminal rule: a crystal's inputs are all-crystal **or** one source; its outputs are all-crystal **or** one sink (never mixed). A lone crystal may be both. |
-| — | candidate | A dim hint on a crystal's free side — a terminal you *could* set (`impl-planning/upgrades/op-flow.md`). |
+| — | terminal | A **crystal** (not an edge) that is a boundary: a source or a sink. **Automatic and always on** — derived from geometry, never user-set. Interior crystals are pure crystal↔crystal. |
+| **S#** | source | A **source crystal** (green): a **leaf on its input side**, seeded core energy directly (input arity ignored). The core is split **equally** among sources — **no weights**. |
+| **T#** | sink | A **sink crystal** (orange): a **leaf on its output side**, drains its post-toll energy to the weapon. Weapon energy = **sum of all sinks**. |
+| — | **leaf-input / leaf-output** | Because terminals are auto-derived at leaf sides, this rule holds **by construction**: a crystal's inputs are all-crystal **or** one source; its outputs are all-crystal **or** one sink. A lone crystal is both. |
 | **C#** | node label | A crystal's tag in the breakdown/trace panel (bottom→top order). |
 | — | **productive** | An edge/node that can still **reach a sink** (downward check). |
 | — | **fed** | A node **reachable from a source** through productive edges (upward check). |

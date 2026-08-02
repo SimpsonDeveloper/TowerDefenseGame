@@ -43,10 +43,10 @@ filled block. The playground's algorithm ports; its grid assumptions do not.
 - Place / remove a crystal in a **usable, empty** cell; blocked cells reject placement.
 - Set a cell's role by geometry (▲ up = split, ▽ down = merge) — orientation is the slot's,
   not a toggle.
-- Set a crystal's **terminal** role (source with weight / sink). Terminals are crystal-level,
-  not edge sites: enforce the **leaf-input / leaf-output** rules structurally — only offer a
-  source where no crystal feeds the input side, a sink where no crystal sits on the output
-  side, and prune a terminal when a newly placed crystal removes that freedom (`op-flow.md` §3).
+- **Terminals are automatic** — the builder does **not** set them. Sources (leaf-input
+  crystals) and sinks (leaf-output crystals) are derived from geometry on every edit and always
+  on; the UI only *displays* them (green/orange, S#/T#). No weights — the core splits equally
+  across sources (`op-flow.md` §3–§4, `compiler-core.md`).
 - Show what the current build fires before committing; block or warn on illegal / over-budget
   builds (impact-count cap is a later axis).
 

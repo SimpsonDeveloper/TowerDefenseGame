@@ -93,28 +93,35 @@ tiebreak; the C# port should sort on lattice `(row, col)`, not pixels.
 
 ---
 
-## 4. Terminal rules (leaf-input / leaf-output)
+## 4. Terminal rules (leaf-input / leaf-output) — automatic, no weights
 
-**Sources and sinks are crystal-level *terminals*, not edge sites.** A boundary crystal is
-either seeded by the core (a **source**) or drains to the weapon (a **sink**); interior
-crystals are pure crystal↔crystal. Two symmetric constraints (reading A):
+**Sources and sinks are crystal-level *terminals*, not edge sites, and AUTOMATIC.** The user
+never sets them (a requirement for the C# impl too — `compiler-core.md`). The compiler derives
+them from geometry on every compile:
+
+- A crystal is a **source iff it is a leaf on its input side** (no crystal feeds it) — seeded
+  by the core.
+- A crystal is a **sink iff it is a leaf on its output side** (no crystal sits above it) —
+  drains to the weapon.
+- A **lone** crystal is both — the minimal tower.
+
+Because terminals are *derived* at leaf sides, the two symmetric constraints hold **by
+construction** (they cannot be violated):
 
 - **Leaf-output.** A crystal's outputs are **all-crystal** or **one sink** — never mixed.
-  Forbidden: a crystal feeding a downstream crystal *and* a sink.
 - **Leaf-input.** A crystal's inputs are **all-crystal** or **one source** — never mixed,
-  never two sources. Forbidden: a crystal fed by a source *and* an upstream crystal, or by
-  two sources.
-- A **lone** crystal (no neighbours) may be both a source and a sink — the minimal tower.
+  never two.
 
-Under this model a **source crystal is seeded `E_core` directly** (its input arity is
-ignored) and a **sink crystal delivers its post-toll energy to the weapon**. A terminal binds
-to the whole crystal, not an edge.
+**Energy: equal split, no weights** (also a C# requirement). The core energy is divided
+**equally** among the sources: each of `n` sources is seeded `E_core / n` directly (input arity
+ignored). A sink crystal delivers its post-toll energy to the weapon. A terminal binds to the
+whole crystal, not an edge.
 
-- Rationale: a terminal is a *terminus/origin*. Forcing terminals to leaves keeps each
-  stream's fate singular at both ends and the energy accounting unambiguous.
-- Enforcement: **compiler legality pass** (`compiler-core.md` §3) — a source with any crystal
-  input, or a sink with any crystal output, ⇒ `legal = false`. The UI can also enforce it
-  *structurally* (`lattice-ui.md` §3). The playground already does this.
+- Rationale: a terminal is a *terminus/origin*. Deriving them at leaves keeps each stream's
+  fate singular at both ends and the energy accounting unambiguous; an equal split keeps the
+  model simple (no per-source tuning to reason about).
+- Enforcement: **none needed** — auto-derivation makes the leaf rules structural. The UI just
+  *displays* the derived terminals (`lattice-ui.md` §3). The playground already does this.
 
 ---
 

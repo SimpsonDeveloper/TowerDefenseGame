@@ -32,11 +32,13 @@ type (`effect-vocab/vocab-overview/delivery.md`), a separate axis.
 - The lattice is **bipartite**: ▲ only ever shares an edge with ▽. No two
   same-orientation cells are adjacent.
 - Flow runs strictly **upward** ⇒ the build is a **DAG** (no cycles).
-- **Sources** (S#) and **sinks** (T#) are **crystal-level terminals**, not edge sites: a
-  source crystal is seeded `E_core` directly; a sink crystal drains its post-toll energy to
-  the weapon. The weapon = sum of all sinks. **Terminal rule (leaf-input / leaf-output):** a
-  crystal's inputs are all-crystal **or** one source (never mixed, never two); its outputs are
-  all-crystal **or** one sink. A lone crystal may be both. Details in
+- **Sources** (S#) and **sinks** (T#) are **crystal-level terminals**, not edge sites, and
+  **automatic** — the user never sets them. A crystal is a **source iff it is a leaf on its
+  input side**, a **sink iff it is a leaf on its output side** (a lone crystal is both). A
+  source crystal is seeded core energy directly; a sink crystal drains its post-toll energy to
+  the weapon. The weapon = sum of all sinks. Because terminals are derived at leaf sides, the
+  **leaf-input / leaf-output rule** holds by construction: a crystal's inputs are all-crystal
+  **or** one source, its outputs are all-crystal **or** one sink. Details in
   `impl-planning/upgrades/op-flow.md` §3.
 
 ### Conservation routing
@@ -44,10 +46,10 @@ type (`effect-vocab/vocab-overview/delivery.md`), a separate axis.
 Routing **conserves every stat**: ▲ divides each stat among its outputs, ▽ sums its
 inputs. Splitting trades magnitude for breadth.
 
-**Energy** adds a **local toll**: each source seeded full `E_core`, each crystal draws
-its own cost as the stream passes, ▲/▽ route the remainder. Combo-op multiplier = energy
-reaching the crystal; below 0 = **debt** (inert until a ▽ merge recovers it). Method +
-example in `energy-conservation.md`.
+**Energy** adds a **local toll**: `E_core` is split **equally** among the sources (no
+weights), each crystal draws its own cost as the stream passes, ▲/▽ route the remainder.
+Combo-op multiplier = energy reaching the crystal; below 0 = **debt** (inert until a ▽ merge
+recovers it). Method + example in `energy-conservation.md`.
 
 ### Active edges
 
@@ -65,8 +67,8 @@ survives. Effects fire only on active edges; *nothing happens on inactive routes
 Two things ride the routing, both split by ▲ and summed by ▽:
 
 - **Energy** — one scalar magnitude, the shared multiplier every op scales by. It carries
-  the **local toll**: sources share `E_core` and divide it among themselves; each crystal
-  draws its own cost as the stream passes; a ▲ divides the remainder, a ▽ sums
+  the **local toll**: sources split `E_core` **equally** among themselves (no weights); each
+  crystal draws its own cost as the stream passes; a ▲ divides the remainder, a ▽ sums
   (`energy-conservation.md`).
 - **Ops** — the shot's **ordered list** of `(op, quantity)`. Each active combo produces its
   op once, at quantity = the energy reaching the downstream crystal. The list does **not**
@@ -104,20 +106,22 @@ ladder (e.g. Quartz + Sapphire = Shatter, consuming Freeze).
 
 ## 5. Compilation pipeline
 
-Conceptual passes (order matters; first two are structural, then values, then effects):
+Conceptual passes (order matters; structural first, then values, then effects):
 
-1. **Productivity pass** (top → bottom): mark nodes/edges that can reach a sink.
-2. **Fed pass** (bottom → top): mark nodes reachable from a source. Active = both.
-3. **Energy routing** (bottom → top): seed sources with `E_core` split by weight; each
-   crystal draws its cost (local toll); ▲ divides the remainder, ▽ sums inputs; accumulate
-   at sinks.
-4. **Op production**: on **active edges**, each adjacent crystal pair produces the op named
+1. **Terminals** (auto): source = leaf-input crystal, sink = leaf-output crystal (a lone
+   crystal is both). Derived from geometry, always on, never user-set.
+2. **Productivity pass** (top → bottom): mark nodes/edges that can reach a sink.
+3. **Fed pass** (bottom → top): mark nodes reachable from a source. Active = both.
+4. **Energy routing** (bottom → top): seed each source with `E_core / nSources` (equal, no
+   weights); each crystal draws its cost (local toll); ▲ divides the remainder, ▽ sums inputs;
+   accumulate at sinks.
+5. **Op production**: on **active edges**, each adjacent crystal pair produces the op named
    in the combo matrix (`effect-vocab/vocab-overview/combo-matrix.md`), scaled by the energy
    arriving at the downstream crystal.
-5. **Weapon energy = sum of sinks.** Output: the delivered energy + the ops written.
+6. **Weapon energy = sum of sinks.** Output: the delivered energy + the ordered op list.
 
-Energy: each source is seeded `E_core` split by weight; every crystal draws its cost locally as the
-stream passes (`energy-conservation.md`). Net after all tolls = `E_core − Σ cost`.
+Energy: each source is seeded `E_core / nSources` (equal split); every crystal draws its cost
+locally as the stream passes (`energy-conservation.md`). Net after all tolls = `E_core − Σ cost`.
 Energy dead-ending in a sinkless branch is `lostEnergy` (wasted).
 
 ---
