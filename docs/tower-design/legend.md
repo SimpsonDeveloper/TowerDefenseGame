@@ -70,7 +70,7 @@ A crystal has no stat "facet". Orientation on the lattice only sets its **routin
 
 - **Native op** = the crystal's diagonal cell (produced when two of that crystal sit adjacent).
 - **Quartz** — pure routing wire; its combos spend a neighbor's ladder (catalyst).
-- Roster + combo lookups live in `crystal-core.js`; pairs → ops in
+- Roster + combo lookups live in `playground/crystal-core.js`; pairs → ops in
   `effect-vocab/vocab-overview/combo-matrix.md`.
 
 ---

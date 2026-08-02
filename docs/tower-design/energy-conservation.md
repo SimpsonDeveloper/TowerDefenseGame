@@ -1,7 +1,7 @@
 # Crystal Tower — Energy Conservation
 
 How energy flows through a crystal lattice and powers each crystal's combo-op.
-Prototyped in `dataflow-playground.html` (`compile()`). Supersedes the earlier
+Prototyped in `playground/dataflow-playground.html` (`compile()`). Supersedes the earlier
 "global draw" model.
 
 ---
