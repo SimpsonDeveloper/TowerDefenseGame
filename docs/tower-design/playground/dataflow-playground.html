@@ -66,9 +66,10 @@
   <div class="left">
     <div>
       <h1>Crystal Dataflow — Triangle Lattice Explorer</h1>
-      <p class="sub">Click a cell to place a crystal (▲ <b>splits</b> 1→2, ▽ <b>merges</b> 2→1). Flow runs <b>upward</b>.
-        Open edges show a <b>dot</b> — click it to toggle a site: <span style="color:#39d98a">green</span> = a
-        weighted <b>source</b> (core feed), <span style="color:#ff9d4d">orange</span> = a <b>sink</b>.</p>
+      <p class="sub"><b>Left-click</b> a cell to place a crystal (▲ <b>splits</b> 1→2, ▽ <b>merges</b> 2→1). Flow runs <b>upward</b>.
+        <b>Right-click</b> a boundary crystal to cycle its role: <span style="color:#39d98a">green</span> = a
+        weighted <b>source</b> (core seeds this crystal), <span style="color:#ff9d4d">orange</span> = a <b>sink</b>
+        (drains to the weapon). A crystal fed by another crystal can't be a source; one feeding another can't be a sink.</p>
     </div>
     <canvas id="c"></canvas>
     <div class="card">
@@ -77,10 +78,13 @@
         <b>Orientation = arity.</b> An up-triangle takes one signal in at its base and emits two up its sides.
         A down-triangle takes two in and merges to one. Because the lattice forces ▲▽ to alternate, every shape is
         automatically a rhythm of split → merge → split.<br>
-        <span style="color:#ff9d4d">●</span> sink (output) &nbsp;
-        <span style="color:#39d98a">●</span> source (core feed) &nbsp;
-        <span>○ candidate edge — click to toggle</span> &nbsp;
+        <span style="color:#39d98a">▣</span> source crystal (core seeds it) &nbsp;
+        <span style="color:#ff9d4d">▣</span> sink crystal (drains to weapon) &nbsp;
+        <span>○ candidate — right-click to set role</span> &nbsp;
         <span style="color:var(--accent)">→</span> internal flow<br>
+        <b>Sources &amp; sinks live on boundary crystals, not edges.</b>
+        A source seeds the whole crystal (its input arity is ignored); a sink collects the crystal's output.
+        Terminals only sit where the crystal has a free side — leaf-input / leaf-output.<br>
         <b>Energy is conserved by local tolls.</b> The full <b>core energy</b> is divided among the sources by
         their <b>weights</b>, then routed. Each crystal <b>draws its own cost</b> from the flowing energy as the
         stream passes it; a ▲ divides the remainder among its outputs, a ▽ sums its inputs. The energy
@@ -155,7 +159,7 @@
         <button data-preset="opflow">▸ Op-flow</button>
       </div>
       <div class="legend" style="margin-top:10px">Tip: hold <kbd>Shift</kbd> and drag to paint crystals.
-        Click an edge <b>dot</b> to toggle a source/sink site.</div>
+        <b>Right-click</b> a boundary crystal to cycle source / sink / (both) / none.</div>
     </div>
 
     <div class="card">
@@ -189,8 +193,13 @@ let placed = new Map();       // cellIndex -> crystalKey
 let selected = "ruby";
 let erasing = false;
 let hover = -1;
-let sites = new Set();         // edge keys toggled ON as input/output sites (role from geometry)
-let sourceWeights = new Map(); // input-site edge key -> energy weight (default 1)
+// Reading A: sources/sinks are CRYSTAL-level terminals, not edge sites. A boundary crystal
+// is either seeded by the core (source) or drains to the weapon (sink); interior crystals are
+// pure crystal↔crystal. A source is legal only where NO crystal feeds the input side; a sink
+// only where NO crystal is on the output side (leaf-input / leaf-output constraints).
+let sourceCells = new Set();   // crystal indices seeded by the core (input terminals)
+let sinkCells = new Set();     // crystal indices draining to the weapon (output terminals)
+let sourceWeights = new Map(); // source cell idx -> energy weight (default 1)
 let lastSourceSig = '';        // structural signature so weight sliders don't rebuild mid-drag
 
 function ek(p,q){             // normalized edge key
@@ -239,6 +248,16 @@ function neighbor(cellIdx,edge){
   return -1;
 }
 
+// can this crystal host a terminal? source-legal = no crystal feeds its input side (leaf input);
+// sink-legal = no crystal on its output side (leaf output). Both need an actual open side.
+function cellCan(idx){
+  const cell=cells[idx]; let inInt=false,outInt=false,inOpen=false,outOpen=false;
+  for(const e of cell.edges){ const role=edgeRole(cell,e); const nb=neighbor(idx,e);
+    const internal = nb!==-1 && placed.has(nb);
+    if(role==='in'){ internal?inInt=true:inOpen=true; } else { internal?outInt=true:outOpen=true; } }
+  return { canSource: !inInt && inOpen, canSink: !outInt && outOpen };
+}
+
 function baryIn(px,py,a,b,c){
   const v0=[c[0]-a[0],c[1]-a[1]], v1=[b[0]-a[0],b[1]-a[1]], v2=[px-a[0],py-a[1]];
   const d00=v0[0]*v0[0]+v0[1]*v0[1], d01=v0[0]*v1[0]+v0[1]*v1[1];
@@ -256,101 +275,97 @@ function hitTest(px,py){
 
 // ---- the compiler: route energy through the shape, emit ops + weapon energy ----
 // (crystal roster + COMBO matrix live in crystal-core.js)
-// Sites are EXPLICIT: an open edge does nothing until toggled ON (`sites`). An ON 'in' edge =
-// weighted SOURCE; an ON 'out' edge = SINK. Internal edges always carry flow.
+// TERMINALS (reading A): sources/sinks are CRYSTAL-level, not edge sites. A SOURCE crystal is
+// seeded the core energy directly (its input arity is ignored); a SINK crystal delivers its
+// post-toll energy to the weapon. Legality: a source only where no crystal feeds the input side
+// (leaf input); a sink only where no crystal sits on the output side (leaf output). A lone
+// crystal may be both. Interior crystals are pure crystal↔crystal.
 // MODEL (local-toll conservation): energy is a scalar. The FULL core energy is divided among the
-// sources BY WEIGHT, then ROUTED. As the stream passes each crystal, that crystal DRAWS ITS OWN
-// COST from the flowing energy (a local toll); a ▲ divides the remainder among its productive
-// outputs, a ▽ sums its inputs. EFFECTS come from COMBOS: two crystals adjacent in the flow
-// produce the op named in COMBO[a][b], scaled by the energy arriving at the downstream crystal
-// (floored at 0). Energy below 0 is DEBT: the op is inert, but the debt keeps flowing so a later ▽
-// can overcome it. The weapon energy = the SUM of all sinks (floored). See energy-conservation.md.
-let compiled = {n:0, used:0, eCore:0, eFlow:0, over:false, sinks:[], sources:[], handles:[], weaponEnergy:0, edgeOps:[], trace:[]};
+// source crystals BY WEIGHT, then ROUTED. As the stream passes each crystal it DRAWS ITS OWN
+// COST (a local toll); a ▲ divides the remainder among its productive outputs, a ▽ sums its
+// inputs. EFFECTS come from COMBOS: two crystals adjacent in the flow produce COMBO[a][b], scaled
+// by the energy arriving at the downstream crystal (floored at 0). Energy below 0 is DEBT (op
+// inert, debt keeps flowing so a later ▽ can overcome it). Weapon energy = SUM of sink crystals.
+let compiled = {n:0, used:0, eCore:0, eFlow:0, over:false, sinks:[], sources:[], terminals:[], weaponEnergy:0, edgeOps:[], trace:[], consumeLog:[], payloadTotal:{}};
 function compile(){
   const order=[...placed.keys()].sort((p,q)=>cells[q].cy-cells[p].cy);  // bottom→top
-  const on = k => sites.has(k);
   let used=0; for(const idx of placed.keys()) used+=CRYSTALS[placed.get(idx)].cost;
   const over = used > ECORE;
   const eFlow = Math.max(0, ECORE - used);              // total base power
 
-  // productivity (top→bottom): an out-edge counts only if it can still reach a sink, so the
-  // shot is never routed into a branch that dead-ends.
+  // per-cell boundary info: can this crystal host a source / a sink, and where are its open sides?
+  const info=new Map();
+  for(const idx of placed.keys()){ const cell=cells[idx]; const can=cellCan(idx);
+    let inMid=null, outMid=null;
+    for(const e of cell.edges){ const nb=neighbor(idx,e); if(nb!==-1&&placed.has(nb)) continue;
+      const role=edgeRole(cell,e); const m=[(e[0][0]+e[1][0])/2,(e[0][1]+e[1][1])/2];
+      if(role==='in'&&!inMid) inMid=m; if(role==='out'&&!outMid) outMid=m; }
+    info.set(idx,{canSource:can.canSource, canSink:can.canSink, inMid, outMid}); }
+  // prune terminals the graph no longer allows (a crystal placed next to one removes its openness)
+  for(const idx of [...sourceCells]) if(!placed.has(idx)||!info.get(idx).canSource) sourceCells.delete(idx);
+  for(const idx of [...sinkCells])   if(!placed.has(idx)||!info.get(idx).canSink)   sinkCells.delete(idx);
+
+  // productivity (top→bottom): a crystal reaches a sink if it IS a sink or an internal out-edge does.
   const nodeProductive=new Map(); const edgeProductive=new Map();
-  for(let qi=order.length-1; qi>=0; qi--){ const idx=order[qi]; const cell=cells[idx]; let prod=false;
+  for(let qi=order.length-1; qi>=0; qi--){ const idx=order[qi]; const cell=cells[idx];
+    let prod=sinkCells.has(idx);
     for(const e of cell.edges){ if(edgeRole(cell,e)!=='out') continue;
-      const k=ek(e[0],e[1]); const nb=neighbor(idx,e); const internal = nb!==-1 && placed.has(nb);
-      const ep = internal ? !!nodeProductive.get(nb) : on(k);
-      edgeProductive.set(k, ep); if(ep) prod=true; }
+      const nb=neighbor(idx,e); if(nb===-1 || !placed.has(nb)) continue;
+      const k=ek(e[0],e[1]); const ep=!!nodeProductive.get(nb); edgeProductive.set(k,ep); if(ep) prod=true; }
     nodeProductive.set(idx, prod);
   }
 
-  // sources = active input sites; the full core energy is divided among them by weight.
-  const sources=[];
-  for(const idx of placed.keys()){ const cell=cells[idx];
-    for(const e of cell.edges){ if(edgeRole(cell,e)!=='in') continue;
-      const nb=neighbor(idx,e); if(nb!==-1 && placed.has(nb)) continue;
-      const k=ek(e[0],e[1]); if(!on(k)) continue;
-      const mx=(e[0][0]+e[1][0])/2, my=(e[0][1]+e[1][1])/2;
-      sources.push({key:k, idx, x:mx, y:my, weight: sourceWeights.has(k)?sourceWeights.get(k):1}); } }
+  // source crystals: the full core energy is divided among them by weight and SEEDED directly.
+  const sources=[...sourceCells].map(idx=>({idx, x:cells[idx].cx, y:cells[idx].cy,
+      weight: sourceWeights.has(idx)?sourceWeights.get(idx):1}));
   sources.sort((p,q)=> (p.x-q.x)||(p.y-q.y));
   sources.forEach((it,i)=> it.label='S'+(i+1));
   const totalW = sources.reduce((s,it)=>s+Math.max(0,it.weight),0);
-  // Energy is a scalar number per edge (no stat facets). Sources are seeded the FULL core
-  // energy, divided among them by weight; each crystal draws its own cost as the stream passes.
-  const energyByEdge=new Map(); let lostEnergy=0;
+  const seeded=new Map(); let lostEnergy=0;
   for(const it of sources){ const f = totalW>0 ? Math.max(0,it.weight)/totalW : 0;
     it.energy = ECORE * f;
-    if(nodeProductive.get(it.idx)) energyByEdge.set(it.key, it.energy);
-    else lostEnergy += Math.max(0, it.energy); }   // source on a node that reaches no sink
+    if(nodeProductive.get(it.idx)) seeded.set(it.idx, it.energy);
+    else lostEnergy += Math.max(0, it.energy); }   // source crystal that reaches no sink
 
-  // route bottom→top: ▲ passes its single input, ▽ sums its inputs; each crystal tolls its cost,
-  // then a ▲ divides the post-toll energy among its outputs. Debt (negative) keeps flowing.
-  const nodeData=new Map();
+  // route bottom→top: a source crystal starts from its seed; others gather internal inputs.
+  // each crystal tolls its cost; a ▲ divides the post-toll energy among outputs, a ▽ sums inputs.
+  const energyByEdge=new Map(); const nodeData=new Map();
   for(const idx of order){
     const key=placed.get(idx); const cell=cells[idx];
+    const isSrc=sourceCells.has(idx), isSink=sinkCells.has(idx);
     const inEdges=[], outs=[];
     for(const e of cell.edges){ const k=ek(e[0],e[1]); const role=edgeRole(cell,e);
-      if(role==='in'){ if(energyByEdge.has(k)) inEdges.push(k); }
-      else if(edgeProductive.get(k)) outs.push(k); }
-    const cost=CRYSTALS[key].cost;
-    if(inEdges.length===0){                                 // unfed node: no source reaches it → inert
-      nodeData.set(idx,{inEdges:[], inSum:0, outE:0, perOut:0, nOut:outs.length, cost});
-      continue;
+      const nb=neighbor(idx,e); const internal = nb!==-1 && placed.has(nb);
+      if(role==='in'){ if(internal && energyByEdge.has(k)) inEdges.push(k); }
+      else if(internal && edgeProductive.get(k)) outs.push(k); }
+    const cost=CRYSTALS[key].cost; const nOut=outs.length;
+    let inSum;
+    if(isSrc){ inSum = seeded.has(idx) ? seeded.get(idx) : 0; }   // seeded by the core (reading A)
+    else if(inEdges.length===0){                                  // unfed interior node → inert
+      nodeData.set(idx,{inEdges:[], inSum:0, outE:0, perOut:0, nOut, cost, isSrc, isSink}); continue;
+    } else {
+      inSum = cell.type==='up' ? energyByEdge.get(inEdges[0])     // ▲ one input; ▽ sums (debts included)
+                               : inEdges.reduce((s,k)=>s+energyByEdge.get(k),0);
     }
-    // ▲ takes the one input; ▽ sums all inputs (debts included, so a merge can cancel debt).
-    const inSum = cell.type==='up' ? energyByEdge.get(inEdges[0])
-                                   : inEdges.reduce((s,k)=>s+energyByEdge.get(k),0);
-    const outE = inSum - cost;                              // local toll (may go negative = debt)
-    const nOut = outs.length;
-    if(nOut===0) lostEnergy += Math.max(0, outE);           // usable energy dead-ends (no sink)
-    const perOut = nOut>1 ? outE/nOut : outE;               // post-toll energy divides across outputs
-    for(const k of outs) energyByEdge.set(k, perOut);
-    nodeData.set(idx,{inEdges, inSum, outE, perOut, nOut, cost});
+    const outE = inSum - cost;                                    // local toll (may go negative = debt)
+    if(!isSink && nOut===0) lostEnergy += Math.max(0, outE);      // usable energy dead-ends (no sink)
+    const perOut = nOut>1 ? outE/nOut : outE;
+    if(!isSink) for(const k of outs) energyByEdge.set(k, perOut); // sink crystals don't route onward
+    nodeData.set(idx,{inEdges, inSum, outE, perOut, nOut, cost, isSrc, isSink});
   }
 
-  // sinks = active output sites; weapon energy = sum of sink energies (floored — debt delivers nothing).
-  const sinks=[];
-  for(const idx of placed.keys()){ const cell=cells[idx];
-    for(const e of cell.edges){ if(edgeRole(cell,e)!=='out')continue;
-      const nb=neighbor(idx,e); if(nb!==-1&&placed.has(nb))continue;
-      const k=ek(e[0],e[1]); if(!on(k)) continue;
-      if(!energyByEdge.has(k)) continue;
-      const mx=(e[0][0]+e[1][0])/2, my=(e[0][1]+e[1][1])/2;
-      sinks.push({energy:Math.max(0, energyByEdge.get(k)), key:k, x:mx, y:my, cellIdx:idx}); } }
-  sinks.sort((p,q)=> (p.x-q.x) || (p.y-q.y));        // stable left→right order
+  // sink crystals: each delivers its post-toll energy (floored) to the weapon.
+  const sinks=[...sinkCells].map(idx=>({idx, x:cells[idx].cx, y:cells[idx].cy,
+      energy: Math.max(0, (nodeData.get(idx)?nodeData.get(idx).outE:0))}));
+  sinks.sort((p,q)=> (p.x-q.x) || (p.y-q.y));
   sinks.forEach((b,i)=> b.label = 'T'+(i+1));
   const weaponEnergy = sinks.reduce((s,b)=>s+b.energy,0);
-  // --- handles: every open edge is a clickable site candidate ---
-  const handles=[];
-  for(const idx of placed.keys()){ const cell=cells[idx];
-    for(const e of cell.edges){ const nb=neighbor(idx,e);
-      if(nb!==-1 && placed.has(nb)) continue;            // internal edge, not a site
-      const k=ek(e[0],e[1]); const mx=(e[0][0]+e[1][0])/2, my=(e[0][1]+e[1][1])/2;
-      handles.push({key:k, role:edgeRole(cell,e), x:mx, y:my, cx:cell.cx, cy:cell.cy, active:on(k)}); } }
+
   // --- labels ---
   const nodeLabel=new Map(); order.forEach((idx,i)=>nodeLabel.set(idx,'C'+(i+1)));
-  const sinkByKey=new Map(); for(const b of sinks) sinkByKey.set(b.key,b.label);
-  const sourceByKey=new Map(); for(const it of sources) sourceByKey.set(it.key,it.label);
+  const srcByCell=new Map(); for(const it of sources) srcByCell.set(it.idx,it.label);
+  const sinkByCell=new Map(); for(const b of sinks) sinkByCell.set(b.idx,b.label);
+
   // --- combo ops: every internal edge (adjacent placed pair) produces one op, scaled by the
   //     energy arriving at the downstream crystal across that edge (floored at 0). ---
   const edgeOps=[];
@@ -365,16 +380,15 @@ function compile(){
   // --- op-flow: a payload of (op -> quantity) rides the same routing as energy ---
   //   produce  : each internal in-edge's combo adds its op at qty = energy arriving (floored);
   //   consume  : an interactive op removes the primitive it `Consumes` (1-to-1) and emits itself;
-  //   propagate: ▲ divides each quantity across outputs, ▽ sums inputs (mirrors the energy pass).
+  //   propagate: ▲ divides each quantity across outputs, ▽ sums inputs; a SINK crystal collects it.
   const payloadByEdge = new Map();     // edgeKey -> { opName: qty }
   const consumeLog = [];               // {node, op, consumed, qty} — surfaced in the breakdown
   const bagAdd = (bag, op, q) => { if(q > 1e-9) bag[op] = (bag[op]||0) + q; };
   for(const idx of order){
     const cell=cells[idx]; const key=placed.get(idx); const d=nodeData.get(idx);
     const bag = {};
-    // gather incoming payload (▽ merge sums its in-edges; ▲ has the single in-edge)
-    for(const k of d.inEdges){ const pb=payloadByEdge.get(k); if(pb) for(const op in pb) bagAdd(bag, op, pb[op]); }
-    // produce / consume on each internal in-edge, in the cell's edge order
+    // gather incoming payload (a source crystal injects energy only, no ops)
+    if(!d.isSrc) for(const k of d.inEdges){ const pb=payloadByEdge.get(k); if(pb) for(const op in pb) bagAdd(bag, op, pb[op]); }
     for(const e of cell.edges){ if(edgeRole(cell,e)!=='in') continue;
       const nb=neighbor(idx,e); if(nb===-1 || !placed.has(nb)) continue;      // internal edges only
       const k=ek(e[0],e[1]); if(!energyByEdge.has(k)) continue;
@@ -385,22 +399,31 @@ function compile(){
       if(cons && bag[cons] > 1e-9){ const take=bag[cons];
         delete bag[cons]; bagAdd(bag, op, take);                             // 1-to-1 conversion driver
         consumeLog.push({node:nodeLabel.get(idx), op, consumed:cons, qty:take}); }
-      // interactive with nothing to consume = inert (emits nothing)
     }
-    // distribute to outputs: ▲ split divides each quantity, ▽ merge passes the whole bag
-    const outs=[]; for(const e of cell.edges){ if(edgeRole(cell,e)!=='out') continue;
-      const k=ek(e[0],e[1]); if(edgeProductive.get(k)) outs.push(k); }
-    const div = outs.length>1 ? outs.length : 1;
-    for(const k of outs){ const share={}; for(const op in bag) share[op]=bag[op]/div; payloadByEdge.set(k, share); }
+    if(d.isSink){ const b=sinks.find(s=>s.idx===idx); if(b) b.payload=bag; }   // sink collects the bag
+    else { const outs=[]; for(const e of cell.edges){ if(edgeRole(cell,e)!=='out') continue;
+        const k=ek(e[0],e[1]); if(edgeProductive.get(k)) outs.push(k); }
+      const div = outs.length>1 ? outs.length : 1;
+      for(const k of outs){ const share={}; for(const op in bag) share[op]=bag[op]/div; payloadByEdge.set(k, share); } }
   }
-  for(const b of sinks) b.payload = payloadByEdge.get(b.key) || {};
+  for(const b of sinks) if(!b.payload) b.payload={};
   const payloadTotal={};
   for(const b of sinks) for(const op in b.payload) payloadTotal[op]=(payloadTotal[op]||0)+b.payload[op];
+
+  // --- terminals: per-crystal source/sink state + candidacy, for the canvas + interaction ---
+  const terminals=[];
+  for(const idx of placed.keys()){ const f=info.get(idx);
+    const isSource=sourceCells.has(idx), isSink=sinkCells.has(idx);
+    if(!f.canSource && !f.canSink && !isSource && !isSink) continue;
+    terminals.push({idx, cx:cells[idx].cx, cy:cells[idx].cy, canSource:f.canSource, canSink:f.canSink,
+      isSource, isSink, inMid:f.inMid, outMid:f.outMid,
+      sLabel:srcByCell.get(idx), tLabel:sinkByCell.get(idx) }); }
 
   // --- trace: per-crystal energy math + the combo op it forms with each upstream neighbor ---
   const trace=[];
   for(const idx of order){ const cell=cells[idx]; const key=placed.get(idx); const d=nodeData.get(idx);
     const insrc=[], outdst=[], combos=[];
+    if(d.isSrc) insrc.push(srcByCell.get(idx)+'·core');
     for(const e of cell.edges){ const k=ek(e[0],e[1]); const role=edgeRole(cell,e);
       const nb=neighbor(idx,e); const internal = nb!==-1 && placed.has(nb);
       if(role==='in'){
@@ -408,13 +431,13 @@ function compile(){
           if(energyByEdge.has(k)){ const ev=energyByEdge.get(k);
             combos.push({ partner:nodeLabel.get(nb), op:comboOp(placed.get(nb), key),
               energy:Math.max(0,ev), debt: ev<0 }); } }
-        else if(on(k)) insrc.push(sourceByKey.get(k));
-      } else { if(internal) outdst.push(nodeLabel.get(nb)); else if(on(k)) outdst.push(sinkByKey.get(k)); }
+      } else if(internal) outdst.push(nodeLabel.get(nb));
     }
+    if(d.isSink) outdst.push(sinkByCell.get(idx)+'·weapon');
     trace.push({node:nodeLabel.get(idx), type:cell.type, name:CRYSTALS[key].name, color:CRYSTALS[key].color,
       insrc, outdst, inSum:d.inSum, outE:d.outE, nOut:d.nOut, cost:d.cost, combos});
   }
-  compiled = {n:placed.size, used, eCore:ECORE, eFlow, over, sources, sinks, handles,
+  compiled = {n:placed.size, used, eCore:ECORE, eFlow, over, sources, sinks, terminals,
               lostEnergy, weaponEnergy, edgeOps, trace, consumeLog, payloadTotal};
   return compiled;
 }
@@ -499,8 +522,8 @@ function renderSources(a){
   const el=document.getElementById('sourceList');
   const list=a.sources||[];
   if(!list.length){ lastSourceSig=''; el.style.cssText='';
-    el.innerHTML='Click a <span style="color:#39d98a">green</span> edge dot to add a core source.'; return; }
-  const sig=list.map(it=>it.label+'@'+it.key).join('|');
+    el.innerHTML='Right-click a boundary crystal to make it a <span style="color:#39d98a">source</span>.'; return; }
+  const sig=list.map(it=>it.label+'@'+it.idx).join('|');
   if(sig===lastSourceSig){                               // same sites: just refresh numbers
     list.forEach(it=>{ const v=document.getElementById('iv-'+it.label);
       if(v) v.innerHTML=`w ${it.weight} · <span style="color:#39d98a">${Math.round(it.energy)} energy</span>`; });
@@ -514,7 +537,7 @@ function renderSources(a){
     row.style.cssText='display:flex;align-items:center;gap:8px;font-size:12px';
     const rng=document.createElement('input');
     rng.type='range'; rng.min='0'; rng.max='5'; rng.step='0.5'; rng.value=it.weight; rng.style.flex='1';
-    rng.oninput=()=>{ sourceWeights.set(it.key, parseFloat(rng.value)); refresh(); };
+    rng.oninput=()=>{ sourceWeights.set(it.idx, parseFloat(rng.value)); refresh(); };
     const val=document.createElement('span'); val.id='iv-'+it.label;
     val.style.cssText='min-width:96px;text-align:right;font-variant-numeric:tabular-nums;color:var(--dim)';
     val.innerHTML=`w ${it.weight} · <span style="color:#39d98a">${Math.round(it.energy)} energy</span>`;
@@ -559,30 +582,38 @@ function draw(){
     ctx.fillText(t.type==='up'?"⋔":"⋁", t.cx, t.cy + (t.type==='up'?4:-4));
   }
 
-  // edges: internal flow arrows + site dots (candidate hollow, active filled+label)
-  for(const [i,key] of placed){
-    const cell=cells[i];
-    for(const e of cell.edges){
-      const role=edgeRole(cell,e); const nb=neighbor(i,e);
-      const mx=(e[0][0]+e[1][0])/2, my=(e[0][1]+e[1][1])/2;
-      const open = nb===-1 || !placed.has(nb);
-      if(!open){ if(role==='out'){ const nbc=cells[nb]; arrow(mx,my,nbc.cx,nbc.cy); } continue; }
-      const k=ek(e[0],e[1]); const col = role==='in' ? '#39d98a' : '#ff9d4d';
-      if(sites.has(k)){
-        marker(mx,my,col);
-        if(role==='out'){ const b=compiled.sinks.find(b=>b.key===k); if(b) blabel(mx,my,cell.cx,cell.cy,b.label,col); }
-        else { const it=compiled.sources.find(t=>t.key===k); if(it) blabel(mx,my,cell.cx,cell.cy,it.label,col); }
-      } else {
-        candidateDot(mx,my,col);          // dim ring: click to toggle this site on
-      }
-    }
+  // internal flow arrows (crystal -> crystal only)
+  for(const [i,key] of placed){ const cell=cells[i];
+    for(const e of cell.edges){ if(edgeRole(cell,e)!=='out') continue;
+      const nb=neighbor(i,e); if(nb===-1 || !placed.has(nb)) continue;
+      const mx=(e[0][0]+e[1][0])/2, my=(e[0][1]+e[1][1])/2; const nbc=cells[nb]; arrow(mx,my,nbc.cx,nbc.cy); } }
+  // crystal terminals: source (green) is seeded by the core, sink (orange) drains to the weapon.
+  // right-click a boundary crystal to cycle none → source → sink → (both) → none.
+  for(const t of (compiled.terminals||[])){ const cell=cells[t.idx];
+    if(t.isSource){ termGlow(cell,'#39d98a'); if(t.inMid) chevron(t.inMid,cell.cx,cell.cy,'#39d98a',true);
+      if(t.sLabel && t.inMid) blabel(t.inMid[0],t.inMid[1],cell.cx,cell.cy,t.sLabel,'#39d98a'); }
+    if(t.isSink){ termGlow(cell,'#ff9d4d'); if(t.outMid) chevron(t.outMid,cell.cx,cell.cy,'#ff9d4d',false);
+      if(t.tLabel && t.outMid) blabel(t.outMid[0],t.outMid[1],cell.cx,cell.cy,t.tLabel,'#ff9d4d'); }
+    if(!t.isSource && !t.isSink){                              // candidate hint on the open side(s)
+      if(t.canSource && t.inMid) candidateDot(t.inMid[0],t.inMid[1],'#39d98a');
+      if(t.canSink && t.outMid) candidateDot(t.outMid[0],t.outMid[1],'#ff9d4d'); }
   }
 }
-function marker(x,y,c){ ctx.beginPath(); ctx.arc(x,y,4.5,0,7); ctx.fillStyle=c;
-  ctx.shadowColor=c; ctx.shadowBlur=10; ctx.fill(); ctx.shadowBlur=0; }
 function candidateDot(x,y,c){ ctx.save(); ctx.globalAlpha=.45;
   ctx.beginPath(); ctx.arc(x,y,4,0,7); ctx.fillStyle='#0d1018'; ctx.fill();
   ctx.lineWidth=1.4; ctx.strokeStyle=c; ctx.stroke(); ctx.restore(); }
+function termGlow(cell,color){ ctx.save(); ctx.shadowColor=color; ctx.shadowBlur=16;
+  ctx.beginPath(); ctx.moveTo(cell.verts[0][0],cell.verts[0][1]);
+  ctx.lineTo(cell.verts[1][0],cell.verts[1][1]); ctx.lineTo(cell.verts[2][0],cell.verts[2][1]); ctx.closePath();
+  ctx.lineWidth=2.5; ctx.strokeStyle=color; ctx.stroke(); ctx.restore(); }
+function chevron(mid,cx,cy,color,inward){        // arrow at the open side: into the crystal (source) or out (sink)
+  const dx=cx-mid[0],dy=cy-mid[1],d=Math.hypot(dx,dy)||1; let ux=dx/d,uy=dy/d; if(!inward){ux=-ux;uy=-uy;}
+  const bx=mid[0]-ux*3, by=mid[1]-uy*3, tx=mid[0]+ux*7, ty=mid[1]+uy*7; const a=Math.atan2(uy,ux);
+  ctx.save(); ctx.strokeStyle=color; ctx.fillStyle=color; ctx.shadowColor=color; ctx.shadowBlur=8; ctx.lineWidth=1.8;
+  ctx.beginPath(); ctx.moveTo(bx,by); ctx.lineTo(tx,ty); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(tx,ty);
+  ctx.lineTo(tx-6*Math.cos(a-0.5),ty-6*Math.sin(a-0.5));
+  ctx.lineTo(tx-6*Math.cos(a+0.5),ty-6*Math.sin(a+0.5)); ctx.closePath(); ctx.fill(); ctx.restore(); }
 function rr(x,y,w,h,r){ ctx.beginPath();
   ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
   ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
@@ -644,10 +675,10 @@ function refresh(){
   renderTrace(a);
   renderSources(a);
   const v=document.getElementById('verdict');
-  if(a.n===0) v.textContent="Empty. Place crystals, then click edge dots to set source/sink sites.";
+  if(a.n===0) v.textContent="Empty. Place crystals, then right-click a boundary crystal to set a source/sink.";
   else if(a.over) v.innerHTML="<span style='color:#e6394a'>In debt</span> — total crystal draw exceeds the core, so the stream falls below 0 somewhere downstream. Front crystals still fire; deep ones go inert until a ▽ merge overcomes the debt.";
-  else if(a.sources.length===0) v.innerHTML="<span style='color:#39d98a'>No sources</span> — click a green dot on an edge to feed energy in from the core.";
-  else if(a.sinks.length===0) v.innerHTML="<span style='color:#f1c40f'>No sinks</span> — click an orange dot on an open output edge to fire.";
+  else if(a.sources.length===0) v.innerHTML="<span style='color:#39d98a'>No sources</span> — right-click a boundary crystal (green hint) to seed it from the core.";
+  else if(a.sinks.length===0) v.innerHTML="<span style='color:#f1c40f'>No sinks</span> — right-click a boundary crystal (orange hint) to drain it to the weapon.";
   else if(a.lostEnergy>0.5) v.innerHTML=`<span style='color:#f1c40f'>Energy dead-ends</span> — <b>${Math.round(a.lostEnergy)}</b> energy never reaches a sink. Route it onward or add a sink.`;
   else v.innerHTML="Energy flows by local tolls; combos come from adjacent crystals. The weapon energy = the sum of all sinks.";
 }
@@ -666,19 +697,33 @@ canvas.addEventListener('mousemove',e=>{
   if(e.buttons===1 && e.shiftKey) place(h);
 });
 canvas.addEventListener('mousedown',e=>{
+  if(e.button!==0) return;                        // left-click places; right-click handled below
   const r=canvas.getBoundingClientRect();
-  const px=e.clientX-r.left, py=e.clientY-r.top;
-  if(!erasing && toggleSiteAt(px,py)) return;   // edge dot takes priority over placing
-  place(hitTest(px,py));
+  place(hitTest(e.clientX-r.left, e.clientY-r.top));
 });
 canvas.addEventListener('mouseleave',()=>{hover=-1;draw();});
-// click an edge dot to toggle that input/output site on or off
-function toggleSiteAt(px,py){
-  let best=null,bd=10;                            // px hit radius around the dot
-  for(const h of (compiled.handles||[])){ const d=Math.hypot(h.x-px,h.y-py); if(d<bd){bd=d;best=h;} }
-  if(!best) return false;
-  if(sites.has(best.key)) sites.delete(best.key); else sites.add(best.key);
-  refresh(); return true;
+// right-click a boundary crystal to cycle its terminal role: none → source → sink → (both) → none.
+// Only roles the geometry allows are offered (source needs an open input side with no crystal
+// feeding it; sink needs an open output side with no crystal on it).
+canvas.addEventListener('contextmenu',e=>{
+  e.preventDefault();
+  const r=canvas.getBoundingClientRect();
+  const idx=hitTest(e.clientX-r.left, e.clientY-r.top);
+  if(idx<0 || !placed.has(idx)) return;
+  cycleTerminal(idx);
+});
+function cycleTerminal(idx){
+  const can=cellCan(idx);
+  const states=[{s:false,k:false}];
+  if(can.canSource) states.push({s:true,k:false});
+  if(can.canSink)   states.push({s:false,k:true});
+  if(can.canSource && can.canSink) states.push({s:true,k:true});   // lone crystal can be both
+  const isS=sourceCells.has(idx), isK=sinkCells.has(idx);
+  let ci=states.findIndex(st=>st.s===isS && st.k===isK); if(ci<0) ci=0;
+  const nx=states[(ci+1)%states.length];
+  if(nx.s) sourceCells.add(idx); else sourceCells.delete(idx);
+  if(nx.k) sinkCells.add(idx); else sinkCells.delete(idx);
+  lastSourceSig=''; refresh();
 }
 
 // palette
@@ -703,7 +748,7 @@ showDesc(selected);
 document.getElementById('erase').onclick=function(){ erasing=true;
   document.querySelectorAll('.swatch').forEach(s=>s.classList.remove('sel'));
   this.style.borderColor='var(--accent)'; };
-document.getElementById('clear').onclick=()=>{ placed.clear(); sites.clear(); sourceWeights.clear(); lastSourceSig=''; refresh(); };
+document.getElementById('clear').onclick=()=>{ placed.clear(); sourceCells.clear(); sinkCells.clear(); sourceWeights.clear(); lastSourceSig=''; refresh(); };
 
 // core energy — the pool that crystal costs draw from and the remainder flows
 const ecoreInput=document.getElementById('ecore');
@@ -717,9 +762,13 @@ function grow(start,colors){ let cur=start,i=0; const used=new Set();
   while(cur>=0&&i<colors.length){ placed.set(cur,colors[i]); used.add(cur); i++;
     let next=-1; for(const e of cells[cur].edges){ if(edgeRole(cells[cur],e)!=='out')continue;
       const nb=neighbor(cur,e); if(nb>=0&&!used.has(nb)){next=nb;break;} } cur=next; } }
-function autoSites(){ compile(); for(const h of (compiled.handles||[])) sites.add(h.key); }
+// mark every legal boundary crystal as a terminal (bottom crystals → sources, top → sinks,
+// a lone crystal → both). Legal by construction: cellCan enforces the leaf-input/output rules.
+function autoTerminals(){ compile(); sourceCells.clear(); sinkCells.clear();
+  for(const idx of placed.keys()){ const c=cellCan(idx);
+    if(c.canSource) sourceCells.add(idx); if(c.canSink) sinkCells.add(idx); } }
 function preset(kind){
-  placed.clear(); sites.clear(); sourceWeights.clear(); lastSourceSig='';
+  placed.clear(); sourceCells.clear(); sinkCells.clear(); sourceWeights.clear(); lastSourceSig='';
   const cx=canvas.width/DPR/2, cy=canvas.height/DPR/2;
   const near=(x,y,type)=>{ let best=-1,bd=1e9; for(let i=0;i<cells.length;i++){
     if(type&&cells[i].type!==type)continue;
@@ -747,7 +796,7 @@ function preset(kind){
     const cols=['emerald','citrine','ruby','sapphire','amethyst','quartz'];
     if(best) best.slice(0,6).forEach((id,i)=>placed.set(id,cols[i]));
   }
-  autoSites();            // light up every open edge so the preset fires out of the box
+  autoTerminals();        // seed boundary crystals so the preset fires out of the box
   refresh();
 }
 
@@ -755,52 +804,41 @@ function preset(kind){
 function roundBag(bag){ const o={}; for(const k in (bag||{})) o[k]=Math.round(bag[k]); return o; }
 function exportData(){
   const a=compile();
-  const blab=new Map();                                   // edge midpoint -> sink label
-  for(const b of a.sinks) blab.set(Math.round(b.x)+','+Math.round(b.y), b.label);
   const ids=new Map(); let n=0;
   for(const idx of placed.keys()) ids.set(idx,n++);
-  const arr=[]; const siteArr=[];   // sites keyed by crystal id + edge index (stable round-trip)
+  const arr=[];
   for(const [idx,key] of placed){
     const cell=cells[idx]; const inputs=[],outputs=[];
-    cell.edges.forEach((e,ei)=>{
-      const role=edgeRole(cell,e); const nb=neighbor(idx,e);
+    cell.edges.forEach((e)=>{ const role=edgeRole(cell,e); const nb=neighbor(idx,e);
       const has = nb!==-1 && placed.has(nb);
-      const k=ek(e[0],e[1]); const active=sites.has(k);
-      if(role==='in'){ inputs.push(has?ids.get(nb):(active?'core':'open'));
-        if(!has && active) siteArr.push({c:ids.get(idx),e:ei,role:'in',w:sourceWeights.has(k)?sourceWeights.get(k):1}); }
-      else if(has){ outputs.push(ids.get(nb)); }
-      else { const mx=(e[0][0]+e[1][0])/2, my=(e[0][1]+e[1][1])/2;
-             outputs.push(active?(blab.get(Math.round(mx)+','+Math.round(my))||'sink'):'open');
-             if(active) siteArr.push({c:ids.get(idx),e:ei,role:'out'}); }
-    });
+      if(role==='in'){ if(has) inputs.push(ids.get(nb)); }
+      else if(has) outputs.push(ids.get(nb)); });
     arr.push({id:ids.get(idx),role:cell.type==='up'?'split':'merge',crystal:key,
-      r:cell.r,j:cell.j,o:cell.type,inputs,outputs});
+      r:cell.r,j:cell.j,o:cell.type,inputs,outputs,
+      source:sourceCells.has(idx)?1:0, sink:sinkCells.has(idx)?1:0,
+      weight:sourceWeights.has(idx)?sourceWeights.get(idx):1});
   }
-  return {format:'crystal-dataflow/v2',lattice:{side:L,core:a.eCore},
-    crystals:arr, sites:siteArr,
+  return {format:'crystal-dataflow/v3',lattice:{side:L,core:a.eCore},
+    crystals:arr,
     compiled:{core:a.eCore, draw:a.used, netEnergy:Math.round(a.eFlow), weaponEnergy:Math.round(a.weaponEnergy),
       ops:a.edgeOps.map(o=>({op:o.op, pair:o.up+'·'+o.down, energy:Math.round(o.energy), debt:o.debt})),
       shot:roundBag(a.payloadTotal),
-      sinks:a.sinks.map(b=>({label:b.label, from:ids.get(b.cellIdx), energy:Math.round(b.energy), payload:roundBag(b.payload)}))}};
+      sinks:a.sinks.map(b=>({label:b.label, from:ids.get(b.idx), energy:Math.round(b.energy), payload:roundBag(b.payload)}))}};
 }
 function importData(obj){
   if(!obj||!Array.isArray(obj.crystals)) throw new Error('no crystals');
-  placed.clear();
+  placed.clear(); sourceCells.clear(); sinkCells.clear(); sourceWeights.clear(); lastSourceSig='';
   const core = obj.lattice && obj.lattice.core;
   if(typeof core==='number'){ ECORE=core; document.getElementById('ecore').value=core; }
   const map=new Map();
   for(let i=0;i<cells.length;i++) map.set(cells[i].r+'|'+cells[i].j+'|'+cells[i].type,i);
-  const idToIdx=new Map();
   for(const c of obj.crystals){
     const idx=map.get(c.r+'|'+c.j+'|'+(c.o||(c.role==='split'?'up':'down')));
-    if(idx!=null && CRYSTALS[c.crystal]){ placed.set(idx,c.crystal); idToIdx.set(c.id,idx); }
-  }
-  sites.clear(); sourceWeights.clear(); lastSourceSig='';
-  if(Array.isArray(obj.sites)) for(const s of obj.sites){
-    const idx=idToIdx.get(s.c); if(idx==null) continue;
-    const e=cells[idx].edges[s.e]; if(!e) continue;
-    const k=ek(e[0],e[1]); sites.add(k);
-    if(s.role==='in' && typeof s.w==='number') sourceWeights.set(k,s.w);
+    if(idx==null || !CRYSTALS[c.crystal]) continue;
+    placed.set(idx,c.crystal);
+    if(c.source) sourceCells.add(idx);
+    if(c.sink) sinkCells.add(idx);
+    if(typeof c.weight==='number') sourceWeights.set(idx,c.weight);
   }
   refresh();
 }
