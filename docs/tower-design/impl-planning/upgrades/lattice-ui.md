@@ -46,7 +46,7 @@ filled block. The playground's algorithm ports; its grid assumptions do not.
 - **Terminals are automatic** — the builder does **not** set them. Sources (leaf-input
   crystals) and sinks (leaf-output crystals) are derived from geometry on every edit and always
   on; the UI only *displays* them (green/orange, S#/T#). No weights — the core splits equally
-  across sources (`op-flow.md` §3–§4, `compiler-core.md`).
+  across sources (`compiler-core.md` §2–§3).
 - Show what the current build fires before committing; block or warn on illegal / over-budget
   builds (impact-count cap is a later axis).
 

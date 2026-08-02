@@ -9,8 +9,9 @@ Master build sequence for the crystal-lattice tower in Godot 4.5 / C#. Two track
 
 Design source of truth is one level up (`../compilation-system.md`,
 `../energy-conservation.md`, `../effect-vocab/vocab-overview/combo-matrix.md`). This tree
-is *how we build it*, not new mechanics — except two rules first stated here and flagged
-for back-porting: **op-metadata flow** and **leaf-node outputs** (`upgrades/op-flow.md`).
+is *how we build it*, not new mechanics — two compiler rules are detailed here and back-ported
+up: the **ordered op list** (`upgrades/op-flow.md`) and **auto source/sink terminals + equal
+split** (`upgrades/compiler-core.md`).
 
 Status: planning. Nothing built.
 
@@ -21,8 +22,8 @@ Status: planning. Nothing built.
 - **Each tower owns its own crystal lattice.** The lattice compiles to a cached result;
   that result computes what **each shot does when it hits an enemy**.
 - The compiler is **engine-free C#** (unit-testable); Godot is a thin shell over it.
-- **Sources and sinks are crystal-level terminals** at leaf sides only (leaf-input /
-  leaf-output) — see `upgrades/op-flow.md` §3.
+- **Sources and sinks are automatic crystal-level terminals** at leaf sides only (leaf-input /
+  leaf-output), always on, no weights — see `upgrades/compiler-core.md` §2–§3.
 
 ---
 
@@ -65,8 +66,8 @@ local-toll energy routing, crystal terminals, combo-op naming at leaf outs), pay
 
 ## Back-port TODO (design docs to reconcile once these land)
 
-- ✅ **Terminal rules** (leaf-input / leaf-output, crystal-level sources/sinks) → back-ported
-  to `../compilation-system.md` §2, `../legend.md`, `upgrades/op-flow.md` §3,
-  `upgrades/compiler-core.md`; enforced structurally in the playground.
-- ✅ **Op-metadata flow** → `../compilation-system.md` §3 now carries the payload channel
-  (energy is not the only thing that flows; op payloads flow and get consumed).
+- ✅ **Terminal rules** (auto leaf-input / leaf-output, crystal-level sources/sinks, equal
+  split, no weights) → canonical in `upgrades/compiler-core.md` §2–§3; back-ported to
+  `../compilation-system.md` §2 + `../legend.md`; auto-derived in the playground.
+- ✅ **Op flow** → the compiled shot is an **ordered op list** (`../compilation-system.md` §3,
+  `upgrades/op-flow.md`); consumption happens on the enemy at hit time, not in the compiler.

@@ -39,7 +39,7 @@ type (`effect-vocab/vocab-overview/delivery.md`), a separate axis.
   the weapon. The weapon = sum of all sinks. Because terminals are derived at leaf sides, the
   **leaf-input / leaf-output rule** holds by construction: a crystal's inputs are all-crystal
   **or** one source, its outputs are all-crystal **or** one sink. Details in
-  `impl-planning/upgrades/op-flow.md` §3.
+  `impl-planning/upgrades/compiler-core.md` §2–§3.
 
 ### Conservation routing
 

@@ -4,6 +4,11 @@ What the compiler emits alongside energy: an **ordered list of ops**. **Roadmap 
 layered on the compiler core (**item 1**, `compiler-core.md`), which stubs it. This is a
 **compilation-system** concern: the ordered list is part of what the compiler *emits*.
 
+Scope note: this doc owns only **how ops flow** — produce, collect, and **order**. Structure
+(cells, edges, terminals, energy routing) is `compiler-core.md`; what ops *do* to an enemy is
+the combat track. Terminals in particular are **not** an op-flow concern — see
+`compiler-core.md` §2–§3.
+
 **Consumers are not resolved here.** Nothing in this pass makes an op *do* anything, and
 nothing is consumed at compile time. Producing an ordered list is all the compiler does; the
 enemy walks that list at **hit time** and resolves consumption then
@@ -12,9 +17,6 @@ playground — port that.
 
 Design goal: **keep it simple.** Ops are named and ordered by the lattice; magnitude is the
 combo's energy. No conversion constants, no in-lattice state.
-
-Two rules first stated here — flagged for back-port to `../../compilation-system.md` and
-`../../legend.md` (see §6).
 
 ---
 
@@ -46,7 +48,8 @@ Energy is not the only thing the compiler emits. Alongside the routed energy it 
 
 1. **Produce.** Each **active** combo edge produces its op once, with
    **quantity = energy arriving at the downstream crystal** (floored at 0, per
-   `../../energy-conservation.md`). Debt / zero-energy edges produce nothing.
+   `../../energy-conservation.md`). Debt / zero-energy edges produce nothing. (What makes an
+   edge *active* — terminals, productive ∧ fed — is `compiler-core.md`.)
 2. **Collect.** Every produced op across the whole lattice goes into one flat list for the
    shot. There is no bag, no split/merge of op quantities, and no consumption — a merge does
    not sum op quantities and a split does not divide them. (Energy still splits/merges; the
@@ -74,7 +77,7 @@ reading the enemy's current Burn* — converts that Burn into chill
 
 ---
 
-## 3. Ordering rule (leaf-node evaluation order)
+## 3. Ordering rule (op evaluation order)
 
 The order the enemy applies ops in is fixed by **where each op is produced on the lattice**.
 Each op is anchored to its **downstream (producing) gem** — the crystal the combo's energy
@@ -93,39 +96,7 @@ tiebreak; the C# port should sort on lattice `(row, col)`, not pixels.
 
 ---
 
-## 4. Terminal rules (leaf-input / leaf-output) — automatic, no weights
-
-**Sources and sinks are crystal-level *terminals*, not edge sites, and AUTOMATIC.** The user
-never sets them (a requirement for the C# impl too — `compiler-core.md`). The compiler derives
-them from geometry on every compile:
-
-- A crystal is a **source iff it is a leaf on its input side** (no crystal feeds it) — seeded
-  by the core.
-- A crystal is a **sink iff it is a leaf on its output side** (no crystal sits above it) —
-  drains to the weapon.
-- A **lone** crystal is both — the minimal tower.
-
-Because terminals are *derived* at leaf sides, the two symmetric constraints hold **by
-construction** (they cannot be violated):
-
-- **Leaf-output.** A crystal's outputs are **all-crystal** or **one sink** — never mixed.
-- **Leaf-input.** A crystal's inputs are **all-crystal** or **one source** — never mixed,
-  never two.
-
-**Energy: equal split, no weights** (also a C# requirement). The core energy is divided
-**equally** among the sources: each of `n` sources is seeded `E_core / n` directly (input arity
-ignored). A sink crystal delivers its post-toll energy to the weapon. A terminal binds to the
-whole crystal, not an edge.
-
-- Rationale: a terminal is a *terminus/origin*. Deriving them at leaves keeps each stream's
-  fate singular at both ends and the energy accounting unambiguous; an equal split keeps the
-  model simple (no per-source tuning to reason about).
-- Enforcement: **none needed** — auto-derivation makes the leaf rules structural. The UI just
-  *displays* the derived terminals (`lattice-ui.md` §3). The playground already does this.
-
----
-
-## 5. Data shape (proposed, simple)
+## 4. Data shape (proposed, simple)
 
 - `Shot = List<(OpId op, float qty)>` — **ordered**; the sort of §3 is applied once at compile.
 - No `Dictionary`, no per-edge payload map, no consume step. Each entry = one active combo.
@@ -136,12 +107,14 @@ whole crystal, not an edge.
 
 ---
 
-## 6. Back-port TODO
+## 5. Back-port TODO
 
 - ✅ `../../compilation-system.md` §3 — payload is an **ordered op list**; consumption is
   deferred to the enemy at hit time (no in-lattice consume).
-- ✅ `../../compilation-system.md` §2 + `../../legend.md` — terminal rules (leaf-input /
-  leaf-output) + crystal-level source/sink; ordered-op-list + op-order terms added.
+- ✅ `../../compilation-system.md` §3 + `../../legend.md` — ordered-op-list + op-order terms.
 - ✅ `../../effect-vocab/vocab-overview/states.md` — **Shot resolution** section: the enemy
   walks the ordered list at hit time and resolves consumers (Frostburn example).
 - ✅ Playground — the shot is an ordered list; no compile-time consumption.
+
+*Terminal rules (leaf-input / leaf-output), auto-terminals, and the equal energy split are a
+**compiler-core** concern, documented in `compiler-core.md` §2–§3 — not here.*

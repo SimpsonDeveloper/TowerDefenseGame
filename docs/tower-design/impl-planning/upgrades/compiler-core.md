@@ -58,9 +58,9 @@ Structural first, then values, then effects.
 
 1. **Terminals** (auto-derive): for each cell, `source = leaf on input side`,
    `sink = leaf on output side` (a lone cell is both). **Always on, never user-set, no weights**
-   (`op-flow.md` §3, §4). The leaf-input / leaf-output rules therefore hold **by construction** —
-   there is no separate legality check for them, and `legal` stays reserved for other concerns
-   (e.g. impact bounding).
+   (§2). The leaf-input / leaf-output rules therefore hold **by construction** — there is no
+   separate legality check for them, and `legal` stays reserved for other concerns (e.g. impact
+   bounding).
 2. **Productivity** (top→bottom): mark cells/edges that can reach a sink.
 3. **Fed** (bottom→top): mark cells reachable from a source. `active = productive ∧ fed`.
 4. **Energy routing** (bottom→top): **seed each source cell** `E_core / nSources` — an **equal**
