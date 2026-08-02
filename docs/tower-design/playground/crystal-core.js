@@ -68,3 +68,27 @@ function comboOp(a, b){ return (COMBO[a] && COMBO[a][b]) || '—'; }
 
 // native (single-crystal) op for a crystal, i.e. its diagonal cell
 function nativeOp(key){ return comboOp(key, key); }
+
+// ---- op classes (folder = class, mirrors effect-vocab/ops/) ----
+// primitives apply a state / base effect and stand alone; interactives are reactive.
+const PRIMITIVE_OPS = new Set(['Burn','Chill → Freeze','Corrode','Mark','Scramble','Mind-damage','Purify']);
+function isPrimitive(op){ return PRIMITIVE_OPS.has(op); }
+function isInteractive(op){ return op !== '—' && !PRIMITIVE_OPS.has(op); }
+
+// ---- consumes map (SOURCE MIRROR of the op files' `Consumes:` header) ----
+// A PAYLOAD CONSUMER is a charge-and-spend op that removes an upstream op quantity at
+// compile time and emits its own. Only ops whose op-file header declares `Consumes:` belong
+// here — mapped to the primitive op that writes the state they spend (Short-circuit eats
+// Shield-down, which Scramble produces). Ops that only READ enemy metadata at runtime — Focus
+// (reads Mark), the Arcs (chain), Accelerant (rate), Numb (reads R), Weather (freeze count),
+// Hex (on-death spread) — are op-BEHAVIOR, not payload consumers, so they are omitted.
+const CONSUMES = {
+  'Frostburn':'Burn',
+  'Flareup':'Burn',
+  'Shatter':'Chill → Freeze',     // Freeze path (Brittle path has no primitive-op source)
+  'Dissolve':'Corrode',
+  'Detonate':'Mark',
+  'Short-circuit':'Scramble',     // Scramble writes Shield-down
+};
+// the primitive op an interactive eats (null = not a payload consumer in this demo)
+function consumedBy(op){ return CONSUMES[op] || null; }
