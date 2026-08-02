@@ -1,70 +1,99 @@
-# Op-Metadata Flow
+# Op Flow — the compiled shot's ordered op list
 
-How op results move through the lattice after a combo produces them. **Roadmap item 2** —
-the payload pass, layered on the compiler core (**item 1**, `compiler-core.md`), which
-stubs it. This is a **compilation-system** concern, not combat: the payload is part of what
-the compiler *emits*. Nothing here makes an op *do* anything to an enemy — that is the
-combat track (`../combat/primitives.md`). Already validated in the playground — port that.
+What the compiler emits alongside energy: an **ordered list of ops**. **Roadmap item 2** —
+layered on the compiler core (**item 1**, `compiler-core.md`), which stubs it. This is a
+**compilation-system** concern: the ordered list is part of what the compiler *emits*.
 
-Design goal: **keep it simple.** Op payloads ride the same routing energy already uses.
+**Consumers are not resolved here.** Nothing in this pass makes an op *do* anything, and
+nothing is consumed at compile time. Producing an ordered list is all the compiler does; the
+enemy walks that list at **hit time** and resolves consumption then
+(`../../effect-vocab/vocab-overview/states.md` → *Shot resolution*). Already validated in the
+playground — port that.
+
+Design goal: **keep it simple.** Ops are named and ordered by the lattice; magnitude is the
+combo's energy. No conversion constants, no in-lattice state.
 
 Two rules first stated here — flagged for back-port to `../../compilation-system.md` and
-`../../legend.md` (see §5).
+`../../legend.md` (see §6).
 
 ---
 
 ## 1. Scope (deliberately thin)
 
-This item does **not** implement any op. It only computes, for each leaf-node output, the
-**correct set of ops with the correct energy multipliers** — including the effect of
-consumption. Concretely:
+This item does **not** implement any op and does **not** consume anything. It computes, for
+one shot, the **ordered sequence of ops with their energy multipliers**. Concretely:
 
-- **Op names only.** An op is an `OpId` + a float quantity. No behavior, no damage, no
-  states written on an enemy.
-- **Producers / consumers come from the effect vocabulary**, not from new tables here:
-  - which combo produces which op → `../../effect-vocab/vocab-overview/combo-matrix.md`;
-  - which interactive op **consumes** which primitive → the op file's **`Consumes:`** header
-    (`../../effect-vocab/ops/interactives/`). Only genuine charge-and-spend consumers count —
-    ops that merely *read* enemy metadata at runtime (Focus, the Arcs, Accelerant, Numb, …)
-    are **not** payload consumers. (README's *Reacts to* column conflates the two.)
-- **1-to-1 conversion driver.** When a consumer eats a primitive it emits its product at
-  the **same quantity** (1 unit in → 1 unit out). No per-op conversion constants yet —
-  those are authored later with the ops (`../combat/primitives.md` / item 4).
+- **Op names + quantity only.** An op is an `OpId` + a float quantity (= energy arriving at
+  its downstream gem, floored at 0). No behavior, no damage, no states written on an enemy.
+- **Producers come from the effect vocabulary**, not new tables here: which combo produces
+  which op → `../../effect-vocab/vocab-overview/combo-matrix.md`.
+- **No consumers in the compiler.** Which interactive op consumes which primitive (the op
+  file's **`Consumes:`** header) is a **hit-time** concern, not a compile-time one. The old
+  "interactive op eats the upstream primitive during routing" model is **gone** — a primitive
+  and the interactive that will consume it both appear in the shot; the enemy resolves it.
+- **Order is the deliverable.** The list is sorted by lattice geometry (§3) so the enemy can
+  apply it deterministically.
 
-Done when: a lattice compiles to a leaf-out payload whose `(OpId → quantity)` entries match
-the hand-worked example below.
+Done when: a lattice compiles to an **ordered** `(OpId, quantity)` list matching the
+hand-worked example below.
 
 ---
 
 ## 2. The model
 
-Energy is not the only thing that flows. Alongside it flows a **payload** — a bag of
-`(OpId → quantity)`.
+Energy is not the only thing the compiler emits. Alongside the routed energy it emits a
+**shot** — an ordered list of `(OpId, quantity)`.
 
-1. **Produce.** Each active edge's combo produces its op with a **multiplier = energy
-   arriving at the downstream crystal** (floored at 0, per `../../energy-conservation.md`).
-   That becomes a quantity added to the stream's payload.
-2. **Propagate.** The payload floats **up along the energy flow**: a **split (▲) divides**
-   each op quantity across outputs; a **merge (▽) sums** the payloads of its inputs. Same
-   split/merge the lattice already defines for energy.
-3. **Consume.** An **interactive** op consumes the upstream **primitive** it reacts to and
-   emits its product. Consumption happens where the interactive combo fires: it subtracts
-   the consumed quantity and adds the product (1-to-1 for now).
-4. **Terminate.** Propagation + consumption continue until the stream reaches an **output**
-   (a leaf sink). The payload there is what the shot carries.
+1. **Produce.** Each **active** combo edge produces its op once, with
+   **quantity = energy arriving at the downstream crystal** (floored at 0, per
+   `../../energy-conservation.md`). Debt / zero-energy edges produce nothing.
+2. **Collect.** Every produced op across the whole lattice goes into one flat list for the
+   shot. There is no bag, no split/merge of op quantities, and no consumption — a merge does
+   not sum op quantities and a split does not divide them. (Energy still splits/merges; the
+   op list does not.) Each op simply carries the energy at the gem that produced it.
+3. **Order.** Sort the list by lattice geometry (§3).
+4. **Emit.** The ordered list *is* the shot's payload. What each op does — and what consumes
+   what — happens later, on the enemy (`../combat/primitives.md`,
+   `../../effect-vocab/vocab-overview/states.md`).
 
 ### Worked example
 
-Split **10 burn** → two branches of **5**. One branch's 5 is consumed by Frostburn (it
-reacts to Burn) → **5 frostburn**. The branches **merge**: the merge sums to
-**5 burn + 5 frostburn**. Continue propagating / consuming toward the output.
+Chain (flow upward): Ruby → Ruby → Sapphire. Adjacent pairs produce **Burn** (Ruby·Ruby, at
+the middle gem) and **Frostburn** (Ruby·Sapphire, at the top gem). The middle gem is lower
+than the top gem, so the shot is the ordered list:
 
-Implication: a primitive can pass through untouched on one path while being transformed on
-another; merges recombine what survived with what was produced.
+```
+1. Burn      × (energy at middle gem)
+2. Frostburn × (energy at top gem)
+```
+
+Both ride the shot. **No consumption in the compiler.** When this shot hits an enemy, the
+enemy applies `Burn` (adds Burn stacks), then applies `Frostburn`, which — *now, at hit time,
+reading the enemy's current Burn* — converts that Burn into chill
+(`../../effect-vocab/ops/interactives/frostburn.md`).
 
 ---
 
-## 3. Terminal rules (leaf-input / leaf-output)
+## 3. Ordering rule (leaf-node evaluation order)
+
+The order the enemy applies ops in is fixed by **where each op is produced on the lattice**.
+Each op is anchored to its **downstream (producing) gem** — the crystal the combo's energy
+arrives at, whose energy is the op's quantity.
+
+- **Vertical is first order.** Lower gems come first; a **higher gem is always evaluated
+  last**, regardless of its horizontal position. (This matches flow order: ops produced
+  deeper in the stream are applied before ops produced nearer the weapon exit.)
+- **Horizontal is second order.** Among gems at the same height, **leftmost first**.
+- **Tiebreak.** Two combos landing on the **same** downstream gem (a ▽ merge has two inputs)
+  order by the **leftmost upstream gem** first, then by op name for determinism.
+
+In lattice coordinates this is: sort by row (lower row first), then column (left first), then
+upstream column, then name. The playground uses gem-centroid `(cy desc, cx asc)` with the same
+tiebreak; the C# port should sort on lattice `(row, col)`, not pixels.
+
+---
+
+## 4. Terminal rules (leaf-input / leaf-output)
 
 **Sources and sinks are crystal-level *terminals*, not edge sites.** A boundary crystal is
 either seeded by the core (a **source**) or drains to the weapon (a **sink**); interior
@@ -72,46 +101,40 @@ crystals are pure crystal↔crystal. Two symmetric constraints (reading A):
 
 - **Leaf-output.** A crystal's outputs are **all-crystal** or **one sink** — never mixed.
   Forbidden: a crystal feeding a downstream crystal *and* a sink.
-- **Leaf-input (NEW).** A crystal's inputs are **all-crystal** or **one source** — never
-  mixed, never two sources. Forbidden: a crystal fed by a source *and* an upstream crystal,
-  or by two sources.
+- **Leaf-input.** A crystal's inputs are **all-crystal** or **one source** — never mixed,
+  never two sources. Forbidden: a crystal fed by a source *and* an upstream crystal, or by
+  two sources.
 - A **lone** crystal (no neighbours) may be both a source and a sink — the minimal tower.
 
 Under this model a **source crystal is seeded `E_core` directly** (its input arity is
-ignored) and a **sink crystal delivers its post-toll energy to the weapon**. The old
-per-edge site is gone: a terminal binds to the whole crystal.
+ignored) and a **sink crystal delivers its post-toll energy to the weapon**. A terminal binds
+to the whole crystal, not an edge.
 
-- Rationale: a terminal is a *terminus/origin*. Mixing "keep computing" with "emit now" (or
-  "seed here") on one cell makes payload accounting ambiguous (what's consumed downstream vs
-  already fired/seeded) and lets a build double-dip. Forcing terminals to leaves keeps each
-  stream's fate singular at both ends.
+- Rationale: a terminal is a *terminus/origin*. Forcing terminals to leaves keeps each
+  stream's fate singular at both ends and the energy accounting unambiguous.
 - Enforcement: **compiler legality pass** (`compiler-core.md` §3) — a source with any crystal
   input, or a sink with any crystal output, ⇒ `legal = false`. The UI can also enforce it
-  *structurally* by only offering a terminal where the crystal has a free side, and pruning
-  terminals when a newly placed crystal removes that freedom (`lattice-ui.md` §3). The
-  playground already does this.
+  *structurally* (`lattice-ui.md` §3). The playground already does this.
 
 ---
 
-## 4. Data shape (proposed, simple)
+## 5. Data shape (proposed, simple)
 
-- `Payload = Dictionary<OpId, float>` carried per edge, exactly parallel to `energyByEdge`.
-- Split: `q / nOut` per output. Merge: element-wise sum.
-- A consumer op's `{ consumes: OpId, produces: OpId }` is **read from the vocabulary**
-  (README *Reacts to* + combo-matrix), not declared here. At its edge it removes up to the
-  available consumed quantity and adds the product at the **same** quantity (1-to-1 driver).
-- Unconsumed primitives simply arrive at the output as-is.
-
-Exact consume math (partial consumption? ratios? multiplier scaling?) replaces the 1-to-1
-driver per interactive op when those ops are authored (item 4), in
-`../../effect-vocab/ops/interactives/`.
+- `Shot = List<(OpId op, float qty)>` — **ordered**; the sort of §3 is applied once at compile.
+- No `Dictionary`, no per-edge payload map, no consume step. Each entry = one active combo.
+- Consumption math (partial? ratios? multiplier scaling?) is authored later **per interactive
+  op** and applied by the enemy at hit time (item 4, `../combat/primitives.md`,
+  `../../effect-vocab/ops/interactives/`). The 1-to-1 driver lives there, **not** in the
+  compiler.
 
 ---
 
-## 5. Back-port TODO
+## 6. Back-port TODO
 
-- ✅ `../../compilation-system.md` §3 — payload channel added (energy is not the only thing
-  that flows).
+- ✅ `../../compilation-system.md` §3 — payload is an **ordered op list**; consumption is
+  deferred to the enemy at hit time (no in-lattice consume).
 - ✅ `../../compilation-system.md` §2 + `../../legend.md` — terminal rules (leaf-input /
-  leaf-output) + crystal-level source/sink stated.
-- ✅ Playground — sources/sinks are crystal terminals; both leaf rules enforced structurally.
+  leaf-output) + crystal-level source/sink; ordered-op-list + op-order terms added.
+- ✅ `../../effect-vocab/vocab-overview/states.md` — **Shot resolution** section: the enemy
+  walks the ordered list at hit time and resolves consumers (Frostburn example).
+- ✅ Playground — the shot is an ordered list; no compile-time consumption.

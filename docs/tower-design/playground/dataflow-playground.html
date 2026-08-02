@@ -132,13 +132,13 @@
     </div>
 
     <div class="card">
-      <h2>Shot payload (op-flow)</h2>
-      <div class="legend" style="margin-bottom:8px">Ops ride the flow as a bag of
-        <b>(op → quantity)</b>: ▲ splits divide each quantity, ▽ merges sum them. An
-        <span style="color:#ffd36b">interactive</span> op <b>consumes</b> the
-        <span style="color:#39d98a">primitive</span> it reacts to (1-to-1) and emits itself.
-        Each sink's bag is what that shot delivers.</div>
-      <div id="payloadList" style="display:flex;flex-direction:column;gap:8px"></div>
+      <h2>Shot — ordered ops</h2>
+      <div class="legend" style="margin-bottom:8px">The shot carries an <b>ordered list</b> of
+        <span style="color:#39d98a">primitive</span> / <span style="color:#ffd36b">interactive</span>
+        ops, each with a quantity (× energy at its downstream gem). Order = <b>vertical first</b>
+        (lowest gem first → a higher gem is always last), <b>horizontal second</b> (leftmost first).
+        Consumers are <b>not</b> resolved here — the enemy walks this list at hit time.</div>
+      <div id="payloadList" style="display:flex;flex-direction:column;gap:5px"></div>
     </div>
 
     <div class="card">
@@ -286,7 +286,7 @@ function hitTest(px,py){
 // inputs. EFFECTS come from COMBOS: two crystals adjacent in the flow produce COMBO[a][b], scaled
 // by the energy arriving at the downstream crystal (floored at 0). Energy below 0 is DEBT (op
 // inert, debt keeps flowing so a later ▽ can overcome it). Weapon energy = SUM of sink crystals.
-let compiled = {n:0, used:0, eCore:0, eFlow:0, over:false, sinks:[], sources:[], terminals:[], weaponEnergy:0, edgeOps:[], trace:[], consumeLog:[], payloadTotal:{}};
+let compiled = {n:0, used:0, eCore:0, eFlow:0, over:false, sinks:[], sources:[], terminals:[], weaponEnergy:0, edgeOps:[], trace:[], orderedOps:[]};
 function compile(){
   const order=[...placed.keys()].sort((p,q)=>cells[q].cy-cells[p].cy);  // bottom→top
   let used=0; for(const idx of placed.keys()) used+=CRYSTALS[placed.get(idx)].cost;
@@ -375,40 +375,20 @@ function compile(){
       const k=ek(e[0],e[1]); if(!energyByEdge.has(k)) continue;            // must be fed
       const upKey=placed.get(nb); const ev=energyByEdge.get(k);
       edgeOps.push({ up:nodeLabel.get(nb), down:nodeLabel.get(idx), upKey, downKey,
-        op:comboOp(upKey, downKey), energy:Math.max(0,ev), debt: ev<0 }); }
+        op:comboOp(upKey, downKey), energy:Math.max(0,ev), debt: ev<0,
+        downCy:cells[idx].cy, downCx:cells[idx].cx, upCx:cells[nb].cx }); }
   }
-  // --- op-flow: a payload of (op -> quantity) rides the same routing as energy ---
-  //   produce  : each internal in-edge's combo adds its op at qty = energy arriving (floored);
-  //   consume  : an interactive op removes the primitive it `Consumes` (1-to-1) and emits itself;
-  //   propagate: ▲ divides each quantity across outputs, ▽ sums inputs; a SINK crystal collects it.
-  const payloadByEdge = new Map();     // edgeKey -> { opName: qty }
-  const consumeLog = [];               // {node, op, consumed, qty} — surfaced in the breakdown
-  const bagAdd = (bag, op, q) => { if(q > 1e-9) bag[op] = (bag[op]||0) + q; };
-  for(const idx of order){
-    const cell=cells[idx]; const key=placed.get(idx); const d=nodeData.get(idx);
-    const bag = {};
-    // gather incoming payload (a source crystal injects energy only, no ops)
-    if(!d.isSrc) for(const k of d.inEdges){ const pb=payloadByEdge.get(k); if(pb) for(const op in pb) bagAdd(bag, op, pb[op]); }
-    for(const e of cell.edges){ if(edgeRole(cell,e)!=='in') continue;
-      const nb=neighbor(idx,e); if(nb===-1 || !placed.has(nb)) continue;      // internal edges only
-      const k=ek(e[0],e[1]); if(!energyByEdge.has(k)) continue;
-      const qty=Math.max(0, energyByEdge.get(k)); if(qty<=1e-9) continue;     // debt / zero = inert
-      const op=comboOp(placed.get(nb), key); if(op==='—') continue;
-      if(isPrimitive(op)){ bagAdd(bag, op, qty); continue; }                  // primitive: just rides along
-      const cons=consumedBy(op);                                             // interactive: charge-and-spend
-      if(cons && bag[cons] > 1e-9){ const take=bag[cons];
-        delete bag[cons]; bagAdd(bag, op, take);                             // 1-to-1 conversion driver
-        consumeLog.push({node:nodeLabel.get(idx), op, consumed:cons, qty:take}); }
-    }
-    if(d.isSink){ const b=sinks.find(s=>s.idx===idx); if(b) b.payload=bag; }   // sink collects the bag
-    else { const outs=[]; for(const e of cell.edges){ if(edgeRole(cell,e)!=='out') continue;
-        const k=ek(e[0],e[1]); if(edgeProductive.get(k)) outs.push(k); }
-      const div = outs.length>1 ? outs.length : 1;
-      for(const k of outs){ const share={}; for(const op in bag) share[op]=bag[op]/div; payloadByEdge.set(k, share); } }
-  }
-  for(const b of sinks) if(!b.payload) b.payload={};
-  const payloadTotal={};
-  for(const b of sinks) for(const op in b.payload) payloadTotal[op]=(payloadTotal[op]||0)+b.payload[op];
+  // --- op-flow: the shot is an ORDERED LIST of ops, NOT a consumed bag. Each active combo
+  //     emits (op, qty = energy arriving at its downstream crystal). NO consumption here —
+  //     consumers (e.g. Frostburn eating Burn) run at HIT TIME on the enemy, walking this list
+  //     in order (see impl-planning/upgrades/op-flow.md + effect-vocab/.../states.md).
+  //     ORDER: anchored to the DOWNSTREAM (producing) gem. Vertical is 1st order — lowest
+  //     (largest cy) first, so a higher gem is always evaluated LAST. Horizontal is 2nd —
+  //     leftmost (smallest cx) first. Two combos on one merge-gem tiebreak by leftmost upstream.
+  const orderedOps = edgeOps.filter(o=>o.op!=='—' && o.energy>1e-9)
+    .sort((a,b)=> (b.downCy-a.downCy) || (a.downCx-b.downCx) || (a.upCx-b.upCx)
+                || (a.op<b.op?-1:a.op>b.op?1:0));
+  orderedOps.forEach((o,i)=> o.seq=i+1);
 
   // --- terminals: per-crystal source/sink state + candidacy, for the canvas + interaction ---
   const terminals=[];
@@ -438,45 +418,27 @@ function compile(){
       insrc, outdst, inSum:d.inSum, outE:d.outE, nOut:d.nOut, cost:d.cost, combos});
   }
   compiled = {n:placed.size, used, eCore:ECORE, eFlow, over, sources, sinks, terminals,
-              lostEnergy, weaponEnergy, edgeOps, trace, consumeLog, payloadTotal};
+              lostEnergy, weaponEnergy, edgeOps, trace, orderedOps};
   return compiled;
 }
-// op-flow payload: each sink's (op -> qty) bag, the summed shot, and consumption events
-function opQtyRow(op, qty){
-  const col = isPrimitive(op) ? '#39d98a' : '#ffd36b';
-  const tag = isPrimitive(op) ? '' : ' <span style="color:var(--dim)">int</span>';
-  return `<div style="display:flex;justify-content:space-between;font-size:12px">`+
-    `<span style="color:${col}"><b>${op}</b>${tag}</span>`+
-    `<b style="font-variant-numeric:tabular-nums">${Math.round(qty)}</b></div>`;
-}
-function renderPayload(a){
+// the compiled shot = an ORDERED list of ops (op, qty). Consumers are NOT resolved here —
+// the enemy walks this list at hit time (see op-flow.md). Each row shows eval order + qty.
+function renderOrdered(a){
   const el=document.getElementById('payloadList'); el.innerHTML='';
-  const sinks=(a.sinks||[]).filter(b=>b.payload && Object.keys(b.payload).length);
-  if(!sinks.length){
-    el.innerHTML='<span style="color:var(--dim)">No ops reach a sink yet — place adjacent crystals and add a sink at a leaf edge.</span>';
+  const list=a.orderedOps||[];
+  if(!list.length){
+    el.innerHTML='<span style="color:var(--dim)">No ops fire yet — place adjacent crystals on an active source→sink path.</span>';
     return; }
-  sinks.forEach(b=>{
-    const box=document.createElement('div');
-    box.style.cssText='border:1px solid var(--line);border-radius:8px;padding:7px 9px;background:var(--panel2)';
-    const rows=Object.entries(b.payload).sort((p,q)=>q[1]-p[1]).map(([op,q])=>opQtyRow(op,q)).join('');
-    box.innerHTML=`<div style="color:#ffd9b0;font-weight:700;font-size:12px;margin-bottom:4px">${b.label}</div>${rows}`;
-    el.appendChild(box);
+  list.forEach(o=>{
+    const col = isPrimitive(o.op) ? '#39d98a' : '#ffd36b';
+    const tag = isPrimitive(o.op) ? '' : ' <span style="color:var(--dim)">int</span>';
+    const row=document.createElement('div');
+    row.style.cssText='display:flex;align-items:baseline;gap:8px;font-size:12px;justify-content:space-between';
+    row.innerHTML=`<span><span style="color:var(--dim);font-weight:700;min-width:18px;display:inline-block">${o.seq}.</span>`+
+      `<span style="color:${col}"><b>${o.op}</b>${tag}</span> <span style="color:var(--dim)">${o.up}·${o.down}</span></span>`+
+      `<b style="font-variant-numeric:tabular-nums">×${Math.round(o.energy)}</b>`;
+    el.appendChild(row);
   });
-  const tot=a.payloadTotal||{};
-  if(sinks.length>1 && Object.keys(tot).length){
-    const box=document.createElement('div');
-    box.style.cssText='border-top:1px solid var(--line);padding-top:6px';
-    const rows=Object.entries(tot).sort((p,q)=>q[1]-p[1]).map(([op,q])=>opQtyRow(op,q)).join('');
-    box.innerHTML=`<div style="color:var(--accent);font-weight:700;font-size:12px;margin-bottom:4px">∑ shot</div>${rows}`;
-    el.appendChild(box);
-  }
-  if((a.consumeLog||[]).length){
-    const box=document.createElement('div');
-    box.style.cssText='font-size:11.5px;color:var(--dim);line-height:1.6;border-top:1px solid var(--line);padding-top:6px';
-    box.innerHTML='<b style="color:var(--ink)">Consumed:</b> '+a.consumeLog.map(c=>
-      `${c.op} ← ${Math.round(c.qty)} ${c.consumed} @${c.node}`).join(' · ');
-    el.appendChild(box);
-  }
 }
 
 // readable per-step math for the Flow breakdown card
@@ -671,7 +633,7 @@ function refresh(){
     row.innerHTML=`<span><b>${o.op}</b> <span style="color:var(--dim)">${o.up}·${o.down}</span></span>`+
       (o.debt ? `<span style="color:#ff6b6b">× 0 (debt)</span>` : `<span style="color:#39d98a">× ${Math.round(o.energy)}</span>`);
     ops.appendChild(row); });
-  renderPayload(a);
+  renderOrdered(a);
   renderTrace(a);
   renderSources(a);
   const v=document.getElementById('verdict');
@@ -776,7 +738,8 @@ function preset(kind){
   if(kind==='chain'){
     grow(near(cx,cy+H*1.5,'up'),['emerald','sapphire','ruby','citrine']);
   } else if(kind==='opflow'){
-    // Ruby·Ruby = Burn (a primitive), then Ruby·Sapphire = Frostburn consumes the Burn 1-to-1.
+    // Ruby·Ruby = Burn (primitive), then Ruby·Sapphire = Frostburn. Both ride the shot as an
+    // ordered list; Frostburn eats the Burn at HIT TIME on the enemy, not in the compiler.
     grow(near(cx,cy+H*1.5,'up'),['ruby','ruby','sapphire']);
   } else if(kind==='fork'){
     const u=near(cx,cy+H*0.6,'up'); placed.set(u,'emerald'); // split feeds two merges
@@ -801,7 +764,6 @@ function preset(kind){
 }
 
 // ---- export / import: serialize the dataflow graph, not just positions ----
-function roundBag(bag){ const o={}; for(const k in (bag||{})) o[k]=Math.round(bag[k]); return o; }
 function exportData(){
   const a=compile();
   const ids=new Map(); let n=0;
@@ -818,12 +780,11 @@ function exportData(){
       source:sourceCells.has(idx)?1:0, sink:sinkCells.has(idx)?1:0,
       weight:sourceWeights.has(idx)?sourceWeights.get(idx):1});
   }
-  return {format:'crystal-dataflow/v3',lattice:{side:L,core:a.eCore},
+  return {format:'crystal-dataflow/v4',lattice:{side:L,core:a.eCore},
     crystals:arr,
     compiled:{core:a.eCore, draw:a.used, netEnergy:Math.round(a.eFlow), weaponEnergy:Math.round(a.weaponEnergy),
       ops:a.edgeOps.map(o=>({op:o.op, pair:o.up+'·'+o.down, energy:Math.round(o.energy), debt:o.debt})),
-      shot:roundBag(a.payloadTotal),
-      sinks:a.sinks.map(b=>({label:b.label, from:ids.get(b.idx), energy:Math.round(b.energy), payload:roundBag(b.payload)}))}};
+      shot:a.orderedOps.map(o=>({seq:o.seq, op:o.op, pair:o.up+'·'+o.down, qty:Math.round(o.energy)}))}};
 }
 function importData(obj){
   if(!obj||!Array.isArray(obj.crystals)) throw new Error('no crystals');

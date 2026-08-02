@@ -17,7 +17,8 @@ program — the same crystals in a different layout produce a different weapon.
 
 Two things compile out of a lattice:
 - a **weapon** (the energy it delivers), and
-- a set of **ops** (what it writes on / does to enemies — produced by crystal combos).
+- an **ordered list of ops** (what it writes on / does to enemies — produced by crystal combos,
+  ordered by lattice position, resolved on the enemy at hit time).
 
 Delivery *shape* (nova, beam, arc, …) is **not** compiled here — it belongs to the tower
 type (`effect-vocab/vocab-overview/delivery.md`), a separate axis.
@@ -67,15 +68,20 @@ Two things ride the routing, both split by ▲ and summed by ▽:
   the **local toll**: sources share `E_core` and divide it among themselves; each crystal
   draws its own cost as the stream passes; a ▲ divides the remainder, a ▽ sums
   (`energy-conservation.md`).
-- **Payload** — a bag of `(op → quantity)`. A combo adds its op at quantity = the energy
-  reaching the downstream crystal; the bag then flows up the **same** routes (▲ divides each
-  quantity, ▽ sums), and interactive ops consume upstream quantities to emit new ones. Full
-  model in `impl-planning/upgrades/op-flow.md`.
+- **Ops** — the shot's **ordered list** of `(op, quantity)`. Each active combo produces its
+  op once, at quantity = the energy reaching the downstream crystal. The list does **not**
+  flow, split, or merge like energy, and **nothing is consumed at compile time**: a primitive
+  and the interactive that will later eat it both appear in the shot. Order is fixed by lattice
+  geometry — **vertical first** (lowest gem first, so a higher gem is always last), **horizontal
+  second** (leftmost first), anchored to the producing (downstream) gem. Full model in
+  `impl-planning/upgrades/op-flow.md`.
 
 Everything else an op does — which enemy bar it hits (HP vs R — see §7), what state it
-writes, how its quantity maps to effect — is **op behavior**, authored per-op under
-`effect-vocab/ops/` and implemented in the port. The compiler here only routes energy +
-payload and names the op each combo produces.
+writes, **what it consumes**, how its quantity maps to effect — is **op behavior**, resolved
+on the enemy at **hit time** by walking the ordered list one op at a time
+(`effect-vocab/vocab-overview/states.md` → *Shot resolution*), and authored per-op under
+`effect-vocab/ops/`. The compiler here only routes energy, names each combo's op, and orders
+them.
 
 ---
 

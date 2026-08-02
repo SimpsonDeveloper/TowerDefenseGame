@@ -21,7 +21,7 @@ scripts/towers/crystal/core/      ← engine-agnostic
   CrystalStats.cs    cost per kind (Ru 28, Sa 16, Em 22, Ci 12, Am 20, Qz 6)
   Lattice.cs         cells, edges, orientation, sources, sinks — the DAG input
   Compiler.cs        the passes → CompileResult
-  CompileResult.cs   weaponEnergy, edgeOps[], payload, sinks[], lostEnergy, trace, legal
+  CompileResult.cs   weaponEnergy, edgeOps[], shot (ordered op list), sinks[], lostEnergy, trace, legal
 ```
 
 `CrystalDef` (a `[GlobalClass]` Resource: kind, color, element, texture) and everything
@@ -62,9 +62,10 @@ Structural first, then values, then effects.
    recover it.
 5. **Op production**: on each active edge, `(upKind, downKind) → ComboOp`, scaled by
    `max(0, energyAtDownstream)`. Emit `EdgeOp { op, energy, debt }`.
-6. **Payload flow** — **stubbed in item 1**; the produce / consume / propagate pass is
-   **item 2** (`op-flow.md`). The core exposes the seam (a `Payload` per edge, parallel to
-   `energyByEdge`) but leaves it empty until then.
+6. **Ordered shot** — **stubbed in item 1**; the collect-and-order pass is **item 2**
+   (`op-flow.md`). It flattens the active `EdgeOp`s into one **ordered list** (no bag, no
+   consume, no split/merge of quantities) sorted by lattice position. The core exposes the seam
+   (an empty `shot` on `CompileResult`) and leaves it empty until then.
 7. **Collect**: `weaponEnergy = Σ max(0, sinkEnergy)`; usable energy dead-ending in a
    sinkless branch = `lostEnergy`.
 
@@ -80,9 +81,9 @@ Encode the `../../energy-conservation.md` worked example as xUnit:
   in transit; a downstream merge recovers it.
 - Legality: a cell feeding one crystal **and** a sink → `legal = false` (leaf-output); a
   source cell also fed by an upstream crystal → `legal = false` (leaf-input).
-- Payload (**item 2**, `op-flow.md`): split **10 burn** → `5 / 5`; one branch consumed by
-  Frostburn → `5 frostburn`; merge → leaf out payload `{ burn: 5, frostburn: 5 }` (1-to-1
-  driver). This test lands with op-flow, not the core.
+- Ordered shot (**item 2**, `op-flow.md`): chain Ruby → Ruby → Sapphire → shot =
+  `[Burn ×(E@mid), Frostburn ×(E@top)]` in that order (Burn's gem is lower, so Burn first;
+  **no consumption** — both ride the shot). This test lands with op-flow, not the core.
 
 The core (item 1) is "done" when the energy/structure/legality tests pass and its outputs
 match the playground for shared inputs (payload aside).

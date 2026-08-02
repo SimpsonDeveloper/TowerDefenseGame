@@ -12,7 +12,7 @@ each interactive op's **Interactive** section.
 |---|---|---|
 | Chill | Sapphire | Freeze |
 | Freeze | Chill (past threshold) | Shatter |
-| Burn | Ruby | Flareup |
+| Burn | Ruby | Flareup, Frostburn |
 | Corrode | Emerald | Dissolve |
 | Brittle | Dissolve | Shatter |
 | Mark | Amethyst + Ruby | Focus, Detonate |
@@ -58,3 +58,36 @@ An op writes a flag on the enemy; another op reads it later. The reader can be a
 **different tower**, or the same tower at a later time. State is the channel where
 ops that are *not* neighbors interact (Tower 1 freezes, Tower 2 shatters). Writing a
 state is uniform; reading is what differs by consumer.
+
+## Shot resolution (applying the ordered op list at hit time)
+
+**Consumers are resolved on the enemy, not in the compiler.** The compiler emits an
+**ordered list** of `(op, quantity)` (`../../impl-planning/upgrades/op-flow.md`); this is
+where that list is spent.
+
+When a shot lands, the enemy walks the list **in order** (see below) and applies each op **one
+at a time**, mutating enemy state. Each op reads the enemy's state **as it is at that step** —
+so an op's effect depends on what earlier ops in the same shot already wrote. This is the
+runtime half of the triad: producers wrote the ordered list; consumers spend it here.
+
+- **Order** (fixed at compile, from lattice geometry): **vertical first** — lower gems first,
+  so a higher gem is always applied **last**; **horizontal second** — leftmost first; anchored
+  to each op's producing (downstream) gem (`../../impl-planning/upgrades/op-flow.md` §3).
+- **Consumption is 1-to-1 (for now).** When a consumer eats a state it converts it at the same
+  quantity; per-op ratios are authored later (`../ops/interactives/`).
+- **All in one frame.** The whole list resolves within the hit's single frame — the player
+  never sees the intermediate states between ops; only the net result after the last op.
+
+**Worked example — Frostburn after Burn.** A shot carries `[Burn ×n, Frostburn ×m]` (Burn
+lower, Frostburn higher, so Burn is applied first). At hit time:
+
+1. **Burn** adds `n` Burn stacks (true fire — ticks HP).
+2. **Frostburn** reads the current Burn and does an **initial consume**: the Burn is spent
+   (removed) and converts **1-to-1** into **Frostburn** stacks — a retained state. Frostburn
+   stacks then **tick over time**, applying **chill** on each tick (as Burn ticks HP, Frostburn
+   ticks chill), driving the enemy toward Freeze. Full behavior in
+   `../ops/interactives/frostburn.md`.
+
+Net after the frame: the enemy carries Frostburn stacks — a state no single op in the list
+writes alone. Reorder the same two ops (Frostburn before Burn) and Frostburn finds no Burn to
+convert and is inert — which is exactly why the order is fixed by the lattice.

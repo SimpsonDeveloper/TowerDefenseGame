@@ -75,20 +75,9 @@ const PRIMITIVE_OPS = new Set(['Burn','Chill → Freeze','Corrode','Mark','Scram
 function isPrimitive(op){ return PRIMITIVE_OPS.has(op); }
 function isInteractive(op){ return op !== '—' && !PRIMITIVE_OPS.has(op); }
 
-// ---- consumes map (SOURCE MIRROR of the op files' `Consumes:` header) ----
-// A PAYLOAD CONSUMER is a charge-and-spend op that removes an upstream op quantity at
-// compile time and emits its own. Only ops whose op-file header declares `Consumes:` belong
-// here — mapped to the primitive op that writes the state they spend (Short-circuit eats
-// Shield-down, which Scramble produces). Ops that only READ enemy metadata at runtime — Focus
-// (reads Mark), the Arcs (chain), Accelerant (rate), Numb (reads R), Weather (freeze count),
-// Hex (on-death spread) — are op-BEHAVIOR, not payload consumers, so they are omitted.
-const CONSUMES = {
-  'Frostburn':'Burn',
-  'Flareup':'Burn',
-  'Shatter':'Chill → Freeze',     // Freeze path (Brittle path has no primitive-op source)
-  'Dissolve':'Corrode',
-  'Detonate':'Mark',
-  'Short-circuit':'Scramble',     // Scramble writes Shield-down
-};
-// the primitive op an interactive eats (null = not a payload consumer in this demo)
-function consumedBy(op){ return CONSUMES[op] || null; }
+// NOTE: consumers are NOT evaluated in the compiler. The compiled shot carries an ORDERED
+// list of ops (see dataflow-playground.html → orderedOps and impl-planning/upgrades/op-flow.md);
+// consumption (e.g. Frostburn converting Burn) happens at HIT TIME on the enemy, per the
+// ordered list, one op at a time (effect-vocab/vocab-overview/states.md → Shot resolution).
+// The interactive→primitive consume mapping therefore lives with the enemy runtime / op files'
+// `Consumes:` header, not here.

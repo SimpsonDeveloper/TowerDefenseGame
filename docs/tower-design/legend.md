@@ -84,6 +84,8 @@ A crystal has no stat "facet". Orientation on the lattice only sets its **routin
 | `COMBO[A][B]` | combo matrix | Symmetric table over the 6 crystals; `COMBO[A][B]` names the op that pair produces. Source of truth: `effect-vocab/vocab-overview/combo-matrix.md`. |
 | — | native op | The diagonal `COMBO[A][A]` — a crystal's single-crystal op, produced by two of that crystal adjacent. |
 | **op energy** | combo multiplier | The energy arriving at the downstream crystal scales the combo-op (floored at 0). |
+| — | **ordered op list** / shot | The compiled shot: an **ordered** `(op, qty)` list, one entry per active combo. Not a bag; **not consumed at compile** — the enemy spends it at hit time (`impl-planning/upgrades/op-flow.md`). |
+| — | **op order** | Eval order of the shot: **vertical first** (lowest gem first ⇒ a higher gem is always last), **horizontal second** (leftmost first), anchored to each op's producing (downstream) gem. |
 
 **Key rule:** a combo only fires on an **active** internal edge — flow must actually cross
 the junction. Merely touching does nothing. Op *behavior* is authored per-op under
