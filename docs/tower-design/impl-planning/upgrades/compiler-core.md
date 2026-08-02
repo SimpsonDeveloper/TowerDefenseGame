@@ -36,10 +36,12 @@ no floating geometry in core.
 - **Cell** `{ int id, CrystalKind kind, Orientation orient }`. `Orientation ∈ {Up, Down}`
   = split / merge arity. Bipartite: Up only ever neighbors Down.
 - **Edge** = unordered `(cellA, cellB)`, canonical key `min,max` (like `ek()`).
-- **Site** = an edge flagged **Source** (with weight) or **Sink**.
+- **Terminal** = a **cell** flagged **Source** (with weight) or **Sink** — crystal-level, not
+  an edge site. A source cell is seeded `E_core` directly; a sink cell drains to the weapon.
+  Legal only at a leaf side (see the Legality pass); a lone cell may be both.
 - The lattice is **non-uniform**: not every grid slot is a usable cell, the perimeter is a
   contour, and size is not fixed (see `lattice-ui.md`). The core only sees the cells/edges
-  that exist — shape is the UI's problem, compiled down to `(id, kind, orient, edges, sites)`.
+  that exist — shape is the UI's problem, compiled down to `(id, kind, orient, edges, terminals)`.
 
 ---
 
@@ -49,11 +51,14 @@ Structural first, then values, then effects.
 
 1. **Productivity** (top→bottom): mark cells/edges that can reach a sink.
 2. **Fed** (bottom→top): mark cells reachable from a source. `active = productive ∧ fed`.
-3. **Legality** (structural): enforce the **leaf-node output** rule — a cell with a sink
-   has no other productive output. Illegal builds set `legal = false` (see `op-flow.md`).
-4. **Energy routing** (bottom→top): seed each source `E_core × weight`; per cell
-   `outE = inSum − cost` (local toll, may go negative = **debt**); Up divides `outE` across
-   outputs, Down sums inputs. Debt flows unclamped so a later merge can recover it.
+3. **Legality** (structural): enforce the **terminal rules** (`op-flow.md` §3) — a source
+   cell with any crystal input (leaf-input), or a sink cell with any crystal output
+   (leaf-output), ⇒ `legal = false`.
+4. **Energy routing** (bottom→top): **seed each source cell** `E_core × weight` directly
+   (input arity ignored); per cell `outE = inSum − cost` (local toll, may go negative =
+   **debt**); Up divides `outE` across outputs, Down sums inputs; a **sink cell** delivers
+   `outE` to the weapon instead of routing onward. Debt flows unclamped so a later merge can
+   recover it.
 5. **Op production**: on each active edge, `(upKind, downKind) → ComboOp`, scaled by
    `max(0, energyAtDownstream)`. Emit `EdgeOp { op, energy, debt }`.
 6. **Payload flow** (part of this milestone — `op-flow.md`): op quantities propagate along
@@ -73,7 +78,8 @@ Encode the `../../energy-conservation.md` worked example as xUnit:
 - Split `a → {b,c}` → `9.5` each → tolled to `7.5 / 6.5`.
 - Debt: a chain whose tolls exceed `E_core` floors combo output at 0 but keeps the negative
   in transit; a downstream merge recovers it.
-- Legality: a cell feeding one crystal **and** a sink → `legal = false`.
+- Legality: a cell feeding one crystal **and** a sink → `legal = false` (leaf-output); a
+  source cell also fed by an upstream crystal → `legal = false` (leaf-input).
 - Payload (`op-flow.md`): split **10 burn** → `5 / 5`; one branch consumed by Frostburn →
   `5 frostburn`; merge → leaf out payload `{ burn: 5, frostburn: 5 }` (1-to-1 driver).
 

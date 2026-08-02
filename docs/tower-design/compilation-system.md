@@ -31,7 +31,12 @@ type (`effect-vocab/vocab-overview/delivery.md`), a separate axis.
 - The lattice is **bipartite**: ▲ only ever shares an edge with ▽. No two
   same-orientation cells are adjacent.
 - Flow runs strictly **upward** ⇒ the build is a **DAG** (no cycles).
-- **Sources** (S#) seed energy; **sinks** (T#) collect it. The weapon = sum of all sinks.
+- **Sources** (S#) and **sinks** (T#) are **crystal-level terminals**, not edge sites: a
+  source crystal is seeded `E_core` directly; a sink crystal drains its post-toll energy to
+  the weapon. The weapon = sum of all sinks. **Terminal rule (leaf-input / leaf-output):** a
+  crystal's inputs are all-crystal **or** one source (never mixed, never two); its outputs are
+  all-crystal **or** one sink. A lone crystal may be both. Details in
+  `impl-planning/upgrades/op-flow.md` §3.
 
 ### Conservation routing
 

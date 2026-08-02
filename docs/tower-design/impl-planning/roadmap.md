@@ -21,7 +21,8 @@ Status: planning. Nothing built.
 - **Each tower owns its own crystal lattice.** The lattice compiles to a cached result;
   that result computes what **each shot does when it hits an enemy**.
 - The compiler is **engine-free C#** (unit-testable); Godot is a thin shell over it.
-- **Outputs (sinks) live at leaf nodes only** — new constraint, see `upgrades/op-flow.md`.
+- **Sources and sinks are crystal-level terminals** at leaf sides only (leaf-input /
+  leaf-output) — see `upgrades/op-flow.md` §3.
 
 ---
 
@@ -59,7 +60,8 @@ compiler that emits the correct ops with correct energy multipliers at each leaf
 
 ## Back-port TODO (design docs to reconcile once these land)
 
-- **Leaf-node output rule** → `../compilation-system.md` §2/§5, `../legend.md`, and the
-  playground (which currently allows a sink on any open edge).
+- ✅ **Terminal rules** (leaf-input / leaf-output, crystal-level sources/sinks) → back-ported
+  to `../compilation-system.md` §2, `../legend.md`, `upgrades/op-flow.md` §3,
+  `upgrades/compiler-core.md`; enforced structurally in the playground.
 - ✅ **Op-metadata flow** → `../compilation-system.md` §3 now carries the payload channel
   (energy is not the only thing that flows; op payloads flow and get consumed).

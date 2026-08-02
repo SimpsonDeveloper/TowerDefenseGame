@@ -61,19 +61,32 @@ another; merges recombine what survived with what was produced.
 
 ---
 
-## 3. Leaf-node output rule (NEW)
+## 3. Terminal rules (leaf-input / leaf-output)
 
-**Outputs (sinks) must sit at leaf nodes.** A cell may **either** feed downstream crystals
-**or** terminate at an output — never both.
+**Sources and sinks are crystal-level *terminals*, not edge sites.** A boundary crystal is
+either seeded by the core (a **source**) or drains to the weapon (a **sink**); interior
+crystals are pure crystal↔crystal. Two symmetric constraints (reading A):
 
-- Forbidden: a crystal splitting 50% of its output into another crystal and 50% into a
-  lattice-edge sink.
-- Rationale: an output is a *terminus*. Mixing "keep computing" and "emit now" on one cell
-  makes payload accounting ambiguous (what's consumed downstream vs already fired) and lets a
-  build double-dip. Forcing outputs to leaves keeps each stream's fate singular.
-- Enforcement: **compiler legality pass** (`compiler-core.md` §3) — a cell with a sink and
-  any other productive output ⇒ `legal = false`. The UI blocks it at author time
-  (`lattice-ui.md` §3).
+- **Leaf-output.** A crystal's outputs are **all-crystal** or **one sink** — never mixed.
+  Forbidden: a crystal feeding a downstream crystal *and* a sink.
+- **Leaf-input (NEW).** A crystal's inputs are **all-crystal** or **one source** — never
+  mixed, never two sources. Forbidden: a crystal fed by a source *and* an upstream crystal,
+  or by two sources.
+- A **lone** crystal (no neighbours) may be both a source and a sink — the minimal tower.
+
+Under this model a **source crystal is seeded `E_core` directly** (its input arity is
+ignored) and a **sink crystal delivers its post-toll energy to the weapon**. The old
+per-edge site is gone: a terminal binds to the whole crystal.
+
+- Rationale: a terminal is a *terminus/origin*. Mixing "keep computing" with "emit now" (or
+  "seed here") on one cell makes payload accounting ambiguous (what's consumed downstream vs
+  already fired/seeded) and lets a build double-dip. Forcing terminals to leaves keeps each
+  stream's fate singular at both ends.
+- Enforcement: **compiler legality pass** (`compiler-core.md` §3) — a source with any crystal
+  input, or a sink with any crystal output, ⇒ `legal = false`. The UI can also enforce it
+  *structurally* by only offering a terminal where the crystal has a free side, and pruning
+  terminals when a newly placed crystal removes that freedom (`lattice-ui.md` §3). The
+  playground already does this.
 
 ---
 
@@ -96,5 +109,6 @@ driver per interactive op when those ops are authored (item 3), in
 
 - ✅ `../../compilation-system.md` §3 — payload channel added (energy is not the only thing
   that flows).
-- `../../compilation-system.md` §2 + `../../legend.md` — state the leaf-node output rule.
-- Playground — currently permits sinks on any open edge; update to the leaf rule.
+- ✅ `../../compilation-system.md` §2 + `../../legend.md` — terminal rules (leaf-input /
+  leaf-output) + crystal-level source/sink stated.
+- ✅ Playground — sources/sinks are crystal terminals; both leaf rules enforced structurally.

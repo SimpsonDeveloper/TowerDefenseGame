@@ -25,10 +25,11 @@ layer they belong to: the **lattice** (shape), the **flow** (routing), the **ene
 
 | Symbol | Name | Meaning |
 |---|---|---|
-| — | site | A toggled edge-dot. Off = inert. On = a source or a sink. |
-| **S#** | source | An active **in** site (green). Seeds core energy into the network; carries a **weight**. |
-| **T#** | sink | An active **out** site (orange). The weapon energy = the **sum of all sinks**. |
-| — | candidate dot | A dim ring on an open edge — a site you *could* toggle. |
+| — | terminal | A **crystal** (not an edge) marked as a boundary: a source or a sink. Interior crystals are pure crystal↔crystal. |
+| **S#** | source | A **source crystal** (green): seeded core energy directly (input arity ignored); carries a **weight**. |
+| **T#** | sink | A **sink crystal** (orange): drains its post-toll energy to the weapon. Weapon energy = **sum of all sinks**. |
+| — | **leaf-input / leaf-output** | Terminal rule: a crystal's inputs are all-crystal **or** one source; its outputs are all-crystal **or** one sink (never mixed). A lone crystal may be both. |
+| — | candidate | A dim hint on a crystal's free side — a terminal you *could* set (`impl-planning/upgrades/op-flow.md`). |
 | **C#** | node label | A crystal's tag in the breakdown/trace panel (bottom→top order). |
 | — | **productive** | An edge/node that can still **reach a sink** (downward check). |
 | — | **fed** | A node **reachable from a source** through productive edges (upward check). |
