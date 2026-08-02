@@ -5,7 +5,8 @@ of `../../playground/dataflow-playground.html` `compile()`. No `using Godot`. Go
 call in; it never calls back. Testable in isolation and portable.
 
 Reference rules: `../../compilation-system.md`, `../../energy-conservation.md`.
-Roadmap item **1**. Depends on nothing.
+Roadmap item **1**, together with **op-flow** (`op-flow.md`) — the compiler emits op
+payloads at leaf outs as part of this milestone. Depends on nothing.
 
 ---
 
@@ -49,14 +50,16 @@ Structural first, then values, then effects.
 1. **Productivity** (top→bottom): mark cells/edges that can reach a sink.
 2. **Fed** (bottom→top): mark cells reachable from a source. `active = productive ∧ fed`.
 3. **Legality** (structural): enforce the **leaf-node output** rule — a cell with a sink
-   has no other productive output. Illegal builds set `legal = false` (see `../combat/op-flow.md`).
+   has no other productive output. Illegal builds set `legal = false` (see `op-flow.md`).
 4. **Energy routing** (bottom→top): seed each source `E_core × weight`; per cell
    `outE = inSum − cost` (local toll, may go negative = **debt**); Up divides `outE` across
    outputs, Down sums inputs. Debt flows unclamped so a later merge can recover it.
 5. **Op production**: on each active edge, `(upKind, downKind) → ComboOp`, scaled by
    `max(0, energyAtDownstream)`. Emit `EdgeOp { op, energy, debt }`.
-6. **Payload flow** (roadmap item 3, `../combat/op-flow.md`): op quantities propagate and
-   are consumed along the same routing. Stubbed until then.
+6. **Payload flow** (part of this milestone — `op-flow.md`): op quantities propagate along
+   the same routing (▲ divides, ▽ sums); interactive ops consume the primitive they react to
+   (vocabulary lookup) and emit their product **1-to-1**. Op *behavior* is not implemented —
+   only names + quantities.
 7. **Collect**: `weaponEnergy = Σ max(0, sinkEnergy)`; usable energy dead-ending in a
    sinkless branch = `lostEnergy`.
 
@@ -71,6 +74,8 @@ Encode the `../../energy-conservation.md` worked example as xUnit:
 - Debt: a chain whose tolls exceed `E_core` floors combo output at 0 but keeps the negative
   in transit; a downstream merge recovers it.
 - Legality: a cell feeding one crystal **and** a sink → `legal = false`.
+- Payload (`op-flow.md`): split **10 burn** → `5 / 5`; one branch consumed by Frostburn →
+  `5 frostburn`; merge → leaf out payload `{ burn: 5, frostburn: 5 }` (1-to-1 driver).
 
 The core is "done" when these pass and outputs match the playground for shared inputs.
 

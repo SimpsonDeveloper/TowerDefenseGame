@@ -44,7 +44,7 @@ filled block. The playground's algorithm ports; its grid assumptions do not.
 - Set a cell's role by geometry (▲ up = split, ▽ down = merge) — orientation is the slot's,
   not a toggle.
 - Toggle **sites** (source weight / sink) on open edges. **Sinks only on leaf edges** — the
-  UI forbids a sink where the cell still feeds another crystal (`../combat/op-flow.md`).
+  UI forbids a sink where the cell still feeds another crystal (`op-flow.md`).
 - Show what the current build fires before committing; block or warn on illegal / over-budget
   builds (impact-count cap is a later axis).
 

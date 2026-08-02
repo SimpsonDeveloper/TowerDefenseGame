@@ -1,7 +1,7 @@
 # First Primitive Op Behaviors
 
-Roadmap item **4** — where compilation first *does something* visible in-game. Depends on
-op-metadata flow (`op-flow.md`). Stub; flesh out when starting the phase.
+Roadmap item **3** — where compilation first *does something* visible in-game. Depends on
+op-metadata flow (`../upgrades/op-flow.md`). Stub; flesh out when starting the phase.
 
 Wire the seven primitives to an `EnemyStateComponent` the ops read/write:
 
@@ -21,5 +21,5 @@ Plan when starting:
   as bool+timer (Mark, Scrambled). R meter lives here too (`enemy-r.md`).
 - `IOp.Apply(context, quantity, target)` strategy registry; one handler per `OpId`. Missing
   handler = no-op so the pipeline runs before all ops exist.
-- Op quantity comes from the payload arriving at the output (`op-flow.md`).
+- Op quantity comes from the payload arriving at the output (`../upgrades/op-flow.md`).
 - Two damage bars only: **HP** (kinetic default) and **R** (mind, Am–Am). No `ice` type.

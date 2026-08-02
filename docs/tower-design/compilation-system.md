@@ -65,7 +65,7 @@ Two things ride the routing, both split by ▲ and summed by ▽:
 - **Payload** — a bag of `(op → quantity)`. A combo adds its op at quantity = the energy
   reaching the downstream crystal; the bag then flows up the **same** routes (▲ divides each
   quantity, ▽ sums), and interactive ops consume upstream quantities to emit new ones. Full
-  model in `impl-planning/combat/op-flow.md`.
+  model in `impl-planning/upgrades/op-flow.md`.
 
 Everything else an op does — which enemy bar it hits (HP vs R — see §7), what state it
 writes, how its quantity maps to effect — is **op behavior**, authored per-op under
