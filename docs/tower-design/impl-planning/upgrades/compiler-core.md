@@ -5,9 +5,10 @@ of `../../playground/dataflow-playground.html` `compile()`. No `using Godot`. Go
 call in; it never calls back. Testable in isolation and portable.
 
 Reference rules: `../../compilation-system.md`, `../../energy-conservation.md`.
-Roadmap item **1** — the engine (structure, energy, terminals, combo-op naming) with the op
-**payload stubbed**. The payload pass is **item 2** (`op-flow.md`), layered on top. Depends
-on nothing. The playground `compile()` already does both — port the engine here first.
+Roadmap item **1** — the engine (structure, energy, terminals, combo-op naming) with the
+**ordered shot stubbed**. The op-flow pass (produce + collect + order) is **item 2**
+(`op-flow.md`), layered on top. Depends on nothing. The playground `compile()` already does
+both — port the engine here first.
 
 ---
 

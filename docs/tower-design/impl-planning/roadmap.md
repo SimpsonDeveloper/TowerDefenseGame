@@ -31,29 +31,31 @@ Status: planning. Nothing built.
 
 | # | Track | Item | Doc | Depends | Size |
 |---|---|---|---|---|---|
-| 1 | upgrades | Compiler core (structure · energy · terminals · ops; payload stubbed) | `upgrades/compiler-core.md` | — | M |
-| 2 | upgrades | Op-flow (payload pass — port on top of the core) | `upgrades/op-flow.md` | 1 | S–M |
+| 1 | upgrades | Compiler core (structure · energy · terminals · ops; ordered shot stubbed) | `upgrades/compiler-core.md` | — | M |
+| 2 | upgrades | Op-flow (ordered op list — port on top of the core) | `upgrades/op-flow.md` | 1 | S–M |
 | 3 | upgrades | Lattice UI + template editor | `upgrades/lattice-ui.md` | 2 | L |
 | 4 | combat | First primitive op behaviors | `combat/primitives.md` | 2 | M |
 | 5 | combat | Enemy R + paths / roads / deviation | `combat/enemy-r.md` | 4 | XL |
 | 6 | — | Delivery shapes · impact cap · investment axes | *(later)* | 4 | — |
 
 Size: S/M/L/XL rough effort. **Compiler core is item 1** — the engine (structural passes,
-local-toll energy routing, crystal terminals, combo-op naming at leaf outs), payload
-**stubbed**. **Op-flow is item 2** — port the payload pass (produce / consume / propagate,
-1-to-1 conversion) on top. Both already validated in the playground, which is the reference.
+local-toll energy routing, auto crystal terminals, combo-op naming at leaf outs), ordered shot
+**stubbed**. **Op-flow is item 2** — port the ordered op list (produce + collect + order by
+lattice position) on top; no consumption here. Both already validated in the playground, which
+is the reference.
 
 ---
 
 ## Ordering rationale
 
 - **1 (compiler core) first.** The engine — structural passes, local-toll energy routing,
-  crystal terminals, combo-op naming — is the foundation everything reads. Build and test it
-  headless with payload stubbed. Op-flow can't produce multipliers without this energy engine.
-- **2 (op-flow) next.** Layer the payload pass (produce / consume / propagate, 1-to-1
-  conversion) onto the core. Thin and low-risk: the playground `compile()` is the reference to
-  match. This fixes what each shot *carries*. (It was validated in the playground first — that
-  is why it exists there ahead of the C# core; the C# build reverses the order.)
+  auto crystal terminals, combo-op naming — is the foundation everything reads. Build and test
+  it headless with the ordered shot stubbed. Op-flow can't produce multipliers without this
+  energy engine.
+- **2 (op-flow) next.** Layer the ordered op list (produce + collect + order by lattice
+  position; no consumption) onto the core. Thin and low-risk: the playground `compile()` is the
+  reference to match. This fixes what each shot *carries*. (It was validated in the playground
+  first — that is why it exists there ahead of the C# core; the C# build reverses the order.)
 - **3 (UI) after the compiler is trustworthy.** The UI's live preview *is* the core compiler
   (+ payload) — render it only once headless tests pass.
 - **Then combat, 4 → 5.**

@@ -137,7 +137,7 @@ the tower type supplies *how it is delivered*. The two are orthogonal.
 
 ## 7. Beyond compilation — where the rest lives
 
-This doc ends at the compiled output: **routed energy + a payload of named ops per shot**.
+This doc ends at the compiled output: **routed energy + an ordered list of named ops per shot**.
 What those ops *do* to enemies — states, consumers, bars, bounding, authoring — is the
 **effect vocabulary**, not the compiler. Canonical homes:
 
