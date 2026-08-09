@@ -90,9 +90,12 @@ arrives at, whose energy is the op's quantity.
 - **Tiebreak.** Two combos landing on the **same** downstream gem (a ▽ merge has two inputs)
   order by the **leftmost upstream gem** first, then by op name for determinism.
 
-In lattice coordinates this is: sort by row (lower row first), then column (left first), then
-upstream column, then name. The playground uses gem-centroid `(cy desc, cx asc)` with the same
-tiebreak; the C# port should sort on lattice `(row, col)`, not pixels.
+In lattice coordinates, "lower" is **not** just a larger row: within one row a ▲ sits *below*
+the ▽s beside it (its base is on the row's bottom line, their bases are on the top line). So
+verticality is `FlowDepth = 2·row + (▲ ? 1 : 0)`, **descending** — the same key the compiler
+already sweeps energy along (`compiler-core.md` §3). Full sort: `FlowDepth` desc, then
+downstream `col` asc, then upstream `col` asc, then op name. The playground uses gem-centroid
+`(cy desc, cx asc)` with the same tiebreak; the C# port sorts on lattice coordinates, not pixels.
 
 ---
 

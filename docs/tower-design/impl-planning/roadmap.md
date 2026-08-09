@@ -13,7 +13,8 @@ is *how we build it*, not new mechanics — two compiler rules are detailed here
 up: the **ordered op list** (`upgrades/op-flow.md`) and **auto source/sink terminals + equal
 split** (`upgrades/compiler-core.md`).
 
-Status: planning. Nothing built.
+Status: item **1 built** (`scripts/towers/crystal/core/`, tests in `tests/CrystalCore.Tests/`);
+items 2–6 planning.
 
 ---
 
@@ -31,7 +32,7 @@ Status: planning. Nothing built.
 
 | # | Track | Item | Doc | Depends | Size |
 |---|---|---|---|---|---|
-| 1 | upgrades | Compiler core (structure · energy · terminals · ops; ordered shot stubbed) | `upgrades/compiler-core.md` | — | M |
+| 1 ✅ | upgrades | Compiler core (structure · energy · terminals · ops; ordered shot stubbed) | `upgrades/compiler-core.md` | — | M |
 | 2 | upgrades | Op-flow (ordered op list — port on top of the core) | `upgrades/op-flow.md` | 1 | S–M |
 | 3 | upgrades | Lattice UI + template editor | `upgrades/lattice-ui.md` | 2 | L |
 | 4 | combat | First primitive op behaviors | `combat/primitives.md` | 2 | M |

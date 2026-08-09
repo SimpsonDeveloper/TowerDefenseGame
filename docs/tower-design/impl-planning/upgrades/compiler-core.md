@@ -10,6 +10,10 @@ Roadmap item **1** — the engine (structure, energy, terminals, combo-op naming
 (`op-flow.md`), layered on top. Depends on nothing. The playground `compile()` already does
 both — port the engine here first.
 
+**Status: built.** `scripts/towers/crystal/core/` + `tests/CrystalCore.Tests/` (17 tests green).
+The test project compiles the core sources directly *without* `Godot.NET.Sdk` — building at all
+is the proof it stayed engine-free. Not yet wired to a tower (§5 is still open).
+
 ---
 
 ## 1. Layout
@@ -19,8 +23,10 @@ scripts/towers/crystal/core/      ← engine-agnostic
   CrystalKind.cs     enum Ruby, Sapphire, Emerald, Citrine, Amethyst, Quartz
   OpId.cs            enum of the 21 op names (natives + interactives)
   ComboMatrix.cs     static ComboOp(a,b) / NativeOp(k) — mirrors combo-matrix.md
-  CrystalStats.cs    cost per kind (Ru 28, Sa 16, Em 22, Ci 12, Am 20, Qz 6)
-  Lattice.cs         cells, edges, orientation — the DAG input (terminals are derived, not set)
+  CrystalStats.cs    ICostTable + cost per kind (Ru 28, Sa 16, Em 22, Ci 12, Am 20, Qz 6);
+                     injectable so tests can use the abstract 1/2/3 worked examples
+  Lattice.cs         placed cells on (row, col) — the DAG input. Orientation, edges, edge roles,
+                     flow order and terminals are all DERIVED, never set by the caller
   Compiler.cs        the passes → CompileResult
   CompileResult.cs   weaponEnergy, edgeOps[], shot (ordered op list), sinks[], lostEnergy, trace, legal
 ```
@@ -35,8 +41,21 @@ else Godot lives *outside* `core/`.
 The playground keys off cell indices + an edge key `ek(a,b)` (unordered pair). Port that;
 no floating geometry in core.
 
-- **Cell** `{ int id, CrystalKind kind, Orientation orient }`. `Orientation ∈ {Up, Down}`
-  = split / merge arity. Bipartite: Up only ever neighbors Down.
+- **Cell** `{ int id, CellCoord coord, CrystalKind kind }` where `CellCoord = (row, col)`.
+  `row` grows **downward** (row 0 is the top), so flow — strictly upward — runs toward smaller
+  rows. **Orientation is derived, not stored**: `Up ⟺ (row + col) even`. `Orientation ∈
+  {Up, Down}` = split / merge arity, and the bipartite rule (Up only ever neighbors Down) then
+  holds by construction.
+- **Adjacency is derived too** — the caller supplies only *which slots are filled*:
+
+  | | in-side (feeds it) | out-side (it feeds) |
+  |---|---|---|
+  | ▲ `(r,c)` | `(r+1, c)` | `(r, c-1)`, `(r, c+1)` |
+  | ▽ `(r,c)` | `(r, c-1)`, `(r, c+1)` | `(r-1, c)` |
+
+  One cell's out-edge is always its neighbor's in-edge, so ▲ = 1-in/2-out and ▽ = 2-in/1-out
+  fall out of the coordinates. A slot that is empty *or* off-mask is an **open** side — the
+  core does not distinguish them.
 - **Edge** = unordered `(cellA, cellB)`, canonical key `min,max` (like `ek()`).
 - **Terminal** = a **cell** the compiler **auto-classifies** as **Source** and/or **Sink** —
   crystal-level, not an edge site. **Automatic and always on; the user never sets them** (req.
@@ -57,6 +76,12 @@ no floating geometry in core.
 
 Structural first, then values, then effects.
 
+**Sweep order.** "Bottom→top" is **not** row-descending: a ▲ feeds the ▽s *in its own row*
+(they only pass energy up a row from their own tops). The topological key is
+`FlowDepth = 2·row + (▲ ? 1 : 0)`, swept **descending** — ▲(r), ▽(r), ▲(r-1), ▽(r-1), … This
+is exactly the playground's `cy` descending, and it is also the first-order key for the ordered
+shot (`op-flow.md` §3).
+
 1. **Terminals** (auto-derive): for each cell, `source = leaf on input side`,
    `sink = leaf on output side` (a lone cell is both). **Always on, never user-set, no weights**
    (§2). The leaf-input / leaf-output rules therefore hold **by construction** — there is no
@@ -76,13 +101,17 @@ Structural first, then values, then effects.
    consume, no split/merge of quantities) sorted by lattice position. The core exposes the seam
    (an empty `shot` on `CompileResult`) and leaves it empty until then.
 7. **Collect**: `weaponEnergy = Σ max(0, sinkEnergy)`; usable energy dead-ending in a
-   sinkless branch = `lostEnergy`.
+   sinkless branch = `lostEnergy`. Note: under **auto-terminals** `lostEnergy` is always **0** —
+   following out-edges from any crystal must end at a leaf output, and every leaf output *is*
+   a sink, so no branch can dead-end and every node is productive. The field and its code path
+   survive as a guard (and for masks/shapes that may relax this later), not as live behavior.
 
 ---
 
 ## 4. Acceptance tests (lock the port to the docs)
 
-Encode the `../../energy-conservation.md` worked example as xUnit:
+Encoded as xUnit in `tests/CrystalCore.Tests/` (all green except the item-2 one, which asserts
+the stub is empty):
 
 - `E_core = 20`, chain costs `1,2,3` → energy-in `20 / 19 / 17`, exit **14**.
 - Split `a → {b,c}` → `9.5` each → tolled to `7.5 / 6.5`.
@@ -97,7 +126,7 @@ Encode the `../../energy-conservation.md` worked example as xUnit:
   **no consumption** — both ride the shot). This test lands with op-flow, not the core.
 
 The core (item 1) is "done" when the energy / structure / auto-terminal tests pass and its
-outputs match the playground for shared inputs (shot aside).
+outputs match the playground for shared inputs (shot aside). ✅ done — see the status note above.
 
 ---
 

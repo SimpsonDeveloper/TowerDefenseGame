@@ -5,4 +5,9 @@
     <EnableDynamicLoading>true</EnableDynamicLoading>
     <RootNamespace>towerdefensegame</RootNamespace>
   </PropertyGroup>
+  <!-- tests/ is its own non-Godot project (see tests/CrystalCore.Tests) — keep its sources out
+       of the game build. -->
+  <ItemGroup>
+    <Compile Remove="tests/**/*.cs" />
+  </ItemGroup>
 </Project>
