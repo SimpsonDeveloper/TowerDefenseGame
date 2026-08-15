@@ -42,20 +42,26 @@ The playground keys off cell indices + an edge key `ek(a,b)` (unordered pair). P
 no floating geometry in core.
 
 - **Cell** `{ int id, CellCoord coord, CrystalKind kind }` where `CellCoord = (row, col)`.
-  `row` grows **downward** (row 0 is the top), so flow — strictly upward — runs toward smaller
-  rows. **Orientation is derived, not stored**: `Up ⟺ (row + col) even`. `Orientation ∈
-  {Up, Down}` = split / merge arity, and the bipartite rule (Up only ever neighbors Down) then
-  holds by construction.
+  **`row` grows UPWARD** (row 0 is the bottom) — the same direction energy flows, so growing a
+  lattice taller never needs negative rows. **Orientation is derived, not stored**:
+  `Up ⟺ (row + col) even`. `Orientation ∈ {Up, Down}` = split / merge arity, and the bipartite
+  rule (Up only ever neighbors Down) then holds by construction.
+- **A row is one horizontal BAND** of the tiling and holds **both** orientations, interlocked
+  side by side — a ▲ stands on the band's lower line, a ▽ hangs from its upper line. They are
+  not on separate rows; within a band the ▲ sits *below* the ▽s beside it (that half-level is
+  what `FlowDepth` in §3 encodes). `col` indexes left→right across the band, so orientation
+  alternates every step.
 - **Adjacency is derived too** — the caller supplies only *which slots are filled*:
 
   | | in-side (feeds it) | out-side (it feeds) |
   |---|---|---|
-  | ▲ `(r,c)` | `(r+1, c)` | `(r, c-1)`, `(r, c+1)` |
-  | ▽ `(r,c)` | `(r, c-1)`, `(r, c+1)` | `(r-1, c)` |
+  | ▲ `(r,c)` | `(r-1, c)` | `(r, c-1)`, `(r, c+1)` |
+  | ▽ `(r,c)` | `(r, c-1)`, `(r, c+1)` | `(r+1, c)` |
 
   One cell's out-edge is always its neighbor's in-edge, so ▲ = 1-in/2-out and ▽ = 2-in/1-out
-  fall out of the coordinates. A slot that is empty *or* off-mask is an **open** side — the
-  core does not distinguish them.
+  fall out of the coordinates. Note flow takes **two half-steps per band**: a ▲ feeds the ▽s in
+  its *own* row, and a ▽ feeds the ▲ one row up. A slot that is empty *or* off-mask is an
+  **open** side — the core does not distinguish them.
 - **Edge** = unordered `(cellA, cellB)`, canonical key `min,max` (like `ek()`).
 - **Terminal** = a **cell** the compiler **auto-classifies** as **Source** and/or **Sink** —
   crystal-level, not an edge site. **Automatic and always on; the user never sets them** (req.
@@ -76,11 +82,12 @@ no floating geometry in core.
 
 Structural first, then values, then effects.
 
-**Sweep order.** "Bottom→top" is **not** row-descending: a ▲ feeds the ▽s *in its own row*
+**Sweep order.** "Bottom→top" is **not** just row-ascending: a ▲ feeds the ▽s *in its own row*
 (they only pass energy up a row from their own tops). The topological key is
-`FlowDepth = 2·row + (▲ ? 1 : 0)`, swept **descending** — ▲(r), ▽(r), ▲(r-1), ▽(r-1), … This
-is exactly the playground's `cy` descending, and it is also the first-order key for the ordered
-shot (`op-flow.md` §3).
+`FlowDepth = 2·row + (▲ ? 0 : 1)`, swept **ascending** — ▲(r), ▽(r), ▲(r+1), ▽(r+1), … It rises
+with height, so it is also the "lowest gem first" key for the ordered shot (`op-flow.md` §3).
+The playground sorts gem centroids by `cy` descending; that is the same order, because its
+screen `y` grows downward where our `row` grows upward.
 
 1. **Terminals** (auto-derive): for each cell, `source = leaf on input side`,
    `sink = leaf on output side` (a lone cell is both). **Always on, never user-set, no weights**

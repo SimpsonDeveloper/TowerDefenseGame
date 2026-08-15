@@ -51,8 +51,8 @@ public class ComboMatrixTests
     {
         // roadmap item 1 exposes the seam only; the collect-and-order pass is item 2
         var lat = new Lattice();
-        lat.Place(2, 0, CrystalKind.Ruby);
-        lat.Place(2, 1, CrystalKind.Ruby);
+        lat.Place(0, 0, CrystalKind.Ruby);
+        lat.Place(0, 1, CrystalKind.Ruby);
         lat.Place(1, 1, CrystalKind.Sapphire);
 
         var r = Compiler.Compile(lat, 100);

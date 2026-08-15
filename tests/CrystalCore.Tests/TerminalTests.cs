@@ -19,8 +19,8 @@ public class TerminalTests
     public void Chain_OnlyLeafInputIsSource_OnlyLeafOutputIsSink()
     {
         var lat = new Lattice();
-        var a = lat.Place(2, 0, CrystalKind.Ruby);       // leaf input
-        var b = lat.Place(2, 1, CrystalKind.Sapphire);   // interior
+        var a = lat.Place(0, 0, CrystalKind.Ruby);       // leaf input
+        var b = lat.Place(0, 1, CrystalKind.Sapphire);   // interior
         var c = lat.Place(1, 1, CrystalKind.Emerald);    // leaf output
 
         var r = Compiler.Compile(lat, 20, Costs123);
@@ -39,7 +39,7 @@ public class TerminalTests
     public void LoneCrystal_IsBothSourceAndSink()
     {
         var lat = new Lattice();
-        var lone = lat.Place(2, 0, CrystalKind.Ruby);
+        var lone = lat.Place(0, 0, CrystalKind.Ruby);
 
         var r = Compiler.Compile(lat, 20, Costs123);
 
@@ -59,8 +59,8 @@ public class TerminalTests
     {
         // two non-adjacent lone crystals, E_core = 20 → 10 each
         var lat = new Lattice();
-        var one = lat.Place(2, 0, CrystalKind.Ruby);       // cost 1
-        var two = lat.Place(2, 4, CrystalKind.Emerald);    // cost 3
+        var one = lat.Place(0, 0, CrystalKind.Ruby);       // cost 1
+        var two = lat.Place(0, 4, CrystalKind.Emerald);    // cost 3
 
         var r = Compiler.Compile(lat, 20, Costs123);
         var byCell = r.Terminals.ToDictionary(t => t.CellId);
@@ -77,9 +77,9 @@ public class TerminalTests
     public void MergeShape_HasTwoSources_OneSink()
     {
         var lat = new Lattice();
-        var left = lat.Place(2, 0, CrystalKind.Ruby);
-        var right = lat.Place(2, 2, CrystalKind.Emerald);
-        var merge = lat.Place(2, 1, CrystalKind.Sapphire);
+        var left = lat.Place(0, 0, CrystalKind.Ruby);
+        var right = lat.Place(0, 2, CrystalKind.Emerald);
+        var merge = lat.Place(0, 1, CrystalKind.Sapphire);
 
         var r = Compiler.Compile(lat, 20, Costs123);
 
@@ -105,12 +105,25 @@ public class TerminalTests
     }
 
     [Fact]
+    public void RowGrowsUpward_WithTheFlow()
+    {
+        // ▲ pulls from the row BELOW, ▽ pushes to the row ABOVE — so a taller lattice never
+        // needs negative rows.
+        Assert.Equal(new CellCoord(1, 0), Lattice.InSlots(new CellCoord(2, 0)).Single());
+        Assert.Equal(new CellCoord(3, 1), Lattice.OutSlots(new CellCoord(2, 1)).Single());
+
+        // and FlowDepth increases with height: ▲(r) < ▽(r) < ▲(r+1)
+        Assert.True(new CellCoord(0, 0).FlowDepth < new CellCoord(0, 1).FlowDepth);
+        Assert.True(new CellCoord(0, 1).FlowDepth < new CellCoord(1, 1).FlowDepth);
+    }
+
+    [Fact]
     public void FlowOrder_IsBottomToTop_UpBeforeDownInARow()
     {
         // a ▲ feeds the ▽s in its OWN row, so it must be processed first
         var lat = new Lattice();
-        var up = lat.Place(2, 0, CrystalKind.Ruby);
-        var down = lat.Place(2, 1, CrystalKind.Sapphire);
+        var up = lat.Place(0, 0, CrystalKind.Ruby);
+        var down = lat.Place(0, 1, CrystalKind.Sapphire);
         var above = lat.Place(1, 1, CrystalKind.Emerald);
 
         var order = lat.FlowOrder().Select(c => c.Id).ToArray();

@@ -12,9 +12,13 @@ public enum Orientation
 }
 
 /// <summary>
-/// A slot on the triangular lattice. <c>Row</c> grows DOWNWARD (row 0 is the top), so flow —
-/// which runs strictly upward — goes toward smaller rows. <c>Col</c> grows rightward and
-/// alternates orientation, so the grid is bipartite by construction.
+/// A slot on the triangular lattice. <c>Row</c> grows UPWARD (row 0 is the bottom), matching the
+/// direction energy flows — so growing a lattice taller never needs negative rows. <c>Col</c>
+/// grows rightward and alternates orientation, so the grid is bipartite by construction.
+///
+/// A row is one horizontal BAND of the tiling and holds BOTH orientations, interlocked side by
+/// side: a ▲ stands on the band's lower line, a ▽ hangs from its upper line. So within a band a
+/// ▲ sits below the ▽s beside it — that half-level is what <see cref="FlowDepth"/> encodes.
 /// </summary>
 public readonly record struct CellCoord(int Row, int Col)
 {
@@ -24,11 +28,12 @@ public readonly record struct CellCoord(int Row, int Col)
     public bool IsUp => Orient == Orientation.Up;
 
     /// <summary>
-    /// Verticality key for flow order. Larger = LOWER on the lattice = earlier in the
-    /// bottom→top sweep. Within one row a ▲ sits below the ▽s it feeds, so it ranks higher.
-    /// Also the first-order key for the ordered shot (op-flow.md, roadmap item 2).
+    /// Verticality key. Increases with height, so ASCENDING is the bottom→top sweep and
+    /// "lowest gem first". Within one row a ▲ sits below the ▽s it feeds, so it ranks lower:
+    /// ▲(r) &lt; ▽(r) &lt; ▲(r+1). Also the first-order key for the ordered shot
+    /// (op-flow.md, roadmap item 2).
     /// </summary>
-    public int FlowDepth => 2 * Row + (IsUp ? 1 : 0);
+    public int FlowDepth => 2 * Row + (IsUp ? 0 : 1);
 }
 
 /// <summary>One placed crystal.</summary>
@@ -51,9 +56,9 @@ public sealed class Cell
 /// The DAG input: which slots hold crystals. Edges, edge roles (in / out) and terminals are all
 /// DERIVED from coordinates — terminals are never set by the caller (compiler-core.md §2).
 ///
-/// Adjacency (upward flow):
-///   ▲(r,c)  IN  = (r+1, c)                 OUT = (r, c-1), (r, c+1)
-///   ▽(r,c)  IN  = (r, c-1), (r, c+1)       OUT = (r-1, c)
+/// Adjacency (flow runs upward = toward larger rows):
+///   ▲(r,c)  IN  = (r-1, c)                 OUT = (r, c-1), (r, c+1)
+///   ▽(r,c)  IN  = (r, c-1), (r, c+1)       OUT = (r+1, c)
 /// One cell's OUT edge is always the neighbor's IN edge, and every neighbor is the opposite
 /// orientation — the bipartite / split-merge arity rules hold by construction.
 /// </summary>
@@ -82,13 +87,13 @@ public sealed class Lattice
 
     /// <summary>Coordinates of the slots feeding this cell, placed or not.</summary>
     public static IEnumerable<CellCoord> InSlots(CellCoord c) => c.IsUp
-        ? new[] { new CellCoord(c.Row + 1, c.Col) }
+        ? new[] { new CellCoord(c.Row - 1, c.Col) }
         : new[] { new CellCoord(c.Row, c.Col - 1), new CellCoord(c.Row, c.Col + 1) };
 
     /// <summary>Coordinates of the slots this cell feeds, placed or not.</summary>
     public static IEnumerable<CellCoord> OutSlots(CellCoord c) => c.IsUp
         ? new[] { new CellCoord(c.Row, c.Col - 1), new CellCoord(c.Row, c.Col + 1) }
-        : new[] { new CellCoord(c.Row - 1, c.Col) };
+        : new[] { new CellCoord(c.Row + 1, c.Col) };
 
     /// <summary>Placed crystals feeding this cell (its internal in-edges).</summary>
     public IEnumerable<Cell> InNeighbors(Cell cell) => Neighbors(InSlots(cell.Coord));
@@ -110,11 +115,11 @@ public sealed class Lattice
     public bool HasOpenOut(Cell cell) => OutSlots(cell.Coord).Any(s => !_byCoord.ContainsKey(s));
 
     /// <summary>
-    /// Bottom→top topological order: FlowDepth descending, then leftmost first. Correct because
-    /// a ▲ only ever feeds ▽s in its own row (higher FlowDepth) and a ▽ only feeds the ▲ above.
+    /// Bottom→top topological order: FlowDepth ascending, then leftmost first. Correct because
+    /// a ▲ only ever feeds ▽s in its own row (next FlowDepth up) and a ▽ only feeds the ▲ above.
     /// </summary>
     public IReadOnlyList<Cell> FlowOrder() => _cells
-        .OrderByDescending(c => c.FlowDepth)
+        .OrderBy(c => c.FlowDepth)
         .ThenBy(c => c.Col)
         .ToList();
 
