@@ -50,8 +50,8 @@ public class EnergyRoutingTests
 
         CompileResult r = Compiler.Compile(lat, 20, Costs123);
 
-        EdgeOp ab = Assert.Single(r.Ops, op => op.Up == a && op.Down == b);
-        EdgeOp bc = Assert.Single(r.Ops, op => op.Up == b && op.Down == c);
+        EdgeOp ab = Assert.Single(r.Ops, op => op.Upstream == a && op.Downstream == b);
+        EdgeOp bc = Assert.Single(r.Ops, op => op.Upstream == b && op.Downstream == c);
 
         Assert.Equal(OpId.Frostburn, ab.Op);   // Ruby + Sapphire
         Assert.Equal(19, ab.Energy, Eps);      // energy entering b
@@ -122,11 +122,11 @@ public class EnergyRoutingTests
         Assert.Equal(5, r.Energy[merge.Id].Out, Eps);
         Assert.Equal(5, r.WeaponEnergy, Eps);
 
-        EdgeOp debted = Assert.Single(r.Ops, op => op.Up == left);
+        EdgeOp debted = Assert.Single(r.Ops, op => op.Upstream == left);
         Assert.True(debted.Debt);
         Assert.Equal(0, debted.Energy, Eps);               // inert op, floored at 0
 
-        EdgeOp live = Assert.Single(r.Ops, op => op.Up == right);
+        EdgeOp live = Assert.Single(r.Ops, op => op.Upstream == right);
         Assert.False(live.Debt);
         Assert.Equal(8, live.Energy, Eps);
     }

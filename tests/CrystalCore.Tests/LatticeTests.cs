@@ -45,9 +45,9 @@ public class LatticeTests
     [Fact]
     public void FlowOrder_PutsEveryInNeighbourBeforeItsCell()
     {
-        // THE precondition of the routing sweep: it reads energy[up] while computing `cell`,
-        // so every in-neighbour must already be done. Height strictly increases along every
-        // edge, which is what makes this hold.
+        // THE precondition of the routing sweep: it reads energy[upstream] while computing
+        // `cell`, so every in-neighbour must already be done. Height strictly increases along
+        // every edge, which is what makes this hold.
         Lattice lat = new Lattice();
         lat.Place(0, 2, CrystalKind.Ruby);       // ▲ source
         lat.Place(0, 1, CrystalKind.Sapphire);   // ▽
@@ -61,9 +61,9 @@ public class LatticeTests
         for (int i = 0; i < order.Count; i++) position[order[i].Id] = i;
 
         foreach (Cell cell in lat.Cells)
-        foreach (Cell up in lat.InNeighbors(cell))
-            Assert.True(position[up.Id] < position[cell.Id],
-                $"{up} must be routed before {cell}");
+        foreach (Cell upstream in lat.InNeighbors(cell))
+            Assert.True(position[upstream.Id] < position[cell.Id],
+                $"{upstream} must be routed before {cell}");
     }
 
     [Fact]
@@ -71,13 +71,13 @@ public class LatticeTests
     {
         // a ▲ feeds the ▽s in its OWN row, so it must be processed first
         Lattice lat = new Lattice();
-        Cell up = lat.Place(0, 0, CrystalKind.Ruby);
-        Cell down = lat.Place(0, 1, CrystalKind.Sapphire);
-        Cell above = lat.Place(1, 1, CrystalKind.Emerald);
+        Cell split = lat.Place(0, 0, CrystalKind.Ruby);        // ▲, row 0
+        Cell merge = lat.Place(0, 1, CrystalKind.Sapphire);    // ▽, row 0 — fed by the ▲ beside it
+        Cell above = lat.Place(1, 1, CrystalKind.Emerald);     // ▲, row 1
 
         int[] order = lat.FlowOrder().Select(cell => cell.Id).ToArray();
 
-        Assert.Equal(new[] { up.Id, down.Id, above.Id }, order);
+        Assert.Equal(new[] { split.Id, merge.Id, above.Id }, order);
     }
 
     [Fact]

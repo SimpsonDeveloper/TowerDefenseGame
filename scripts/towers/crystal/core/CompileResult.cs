@@ -35,10 +35,10 @@ public sealed record Terminal(Cell Cell, string Label, double Energy);
 /// One combo, fired by the crystal pair on one internal edge. <see cref="Energy"/> is what
 /// crossed that edge — the upstream crystal's per-output share — floored at 0.
 /// </summary>
-public sealed record EdgeOp(Cell Up, Cell Down, OpId Op, double Energy, bool Debt)
+public sealed record EdgeOp(Cell Upstream, Cell Downstream, OpId Op, double Energy, bool Debt)
 {
     public override string ToString() =>
-        $"{Ops.Display(Op)} ×{Energy:0.##}{(Debt ? " (debt)" : "")} @{Down}";
+        $"{Ops.Display(Op)} ×{Energy:0.##}{(Debt ? " (debt)" : "")} @{Downstream}";
 }
 
 /// <summary>One entry of the compiled shot: an op and how much of it the hit carries.</summary>

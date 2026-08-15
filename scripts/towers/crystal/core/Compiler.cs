@@ -70,7 +70,7 @@ public static class Compiler
         {
             double inflow = lattice.IsSource(cell)
                 ? share                              // seeded by the core; nothing feeds a source
-                : lattice.InNeighbors(cell).Sum(up => energy[up.Id].PerOut);
+                : lattice.InNeighbors(cell).Sum(upstream => energy[upstream.Id].PerOut);
             //   ▽ sums its two inputs; a ▲ has exactly one, so the same sum covers both.
 
             double cost = costs.Cost(cell.Kind);
@@ -99,14 +99,14 @@ public static class Compiler
     {
         List<EdgeOp> ops = new();
 
-        foreach (Cell down in lattice.FlowOrder())
-        foreach (Cell up in lattice.InNeighbors(down))
+        foreach (Cell downstream in lattice.FlowOrder())
+        foreach (Cell upstream in lattice.InNeighbors(downstream))
         {
-            double crossing = energy[up.Id].PerOut;
+            double crossing = energy[upstream.Id].PerOut;
             ops.Add(new EdgeOp(
-                Up: up,
-                Down: down,
-                Op: ComboMatrix.ComboOp(up.Kind, down.Kind),
+                Upstream: upstream,
+                Downstream: downstream,
+                Op: ComboMatrix.ComboOp(upstream.Kind, downstream.Kind),
                 Energy: Math.Max(0, crossing),
                 Debt: crossing < 0));
         }
