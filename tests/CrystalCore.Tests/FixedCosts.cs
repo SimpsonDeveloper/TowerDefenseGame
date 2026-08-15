@@ -13,8 +13,8 @@ public sealed class FixedCosts : ICostTable
 
     public FixedCosts(params (CrystalKind Kind, double Cost)[] entries)
     {
-        foreach (var (kind, cost) in entries) _costs[kind] = cost;
+        foreach ((CrystalKind kind, double cost) in entries) _costs[kind] = cost;
     }
 
-    public double Cost(CrystalKind kind) => _costs.TryGetValue(kind, out var c) ? c : 0;
+    public double Cost(CrystalKind kind) => _costs.TryGetValue(kind, out double c) ? c : 0;
 }

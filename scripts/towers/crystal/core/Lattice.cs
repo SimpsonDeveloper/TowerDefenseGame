@@ -73,17 +73,17 @@ public sealed class Lattice
     /// <summary>Place a crystal. Returns its id. Throws if the slot is taken.</summary>
     public Cell Place(int row, int col, CrystalKind kind)
     {
-        var coord = new CellCoord(row, col);
+        CellCoord coord = new CellCoord(row, col);
         if (_byCoord.ContainsKey(coord))
             throw new InvalidOperationException($"Cell ({row},{col}) already holds a crystal.");
 
-        var cell = new Cell { Id = _cells.Count, Coord = coord, Kind = kind };
+        Cell cell = new Cell { Id = _cells.Count, Coord = coord, Kind = kind };
         _byCoord[coord] = cell;
         _cells.Add(cell);
         return cell;
     }
 
-    public Cell At(int row, int col) => _byCoord.TryGetValue(new CellCoord(row, col), out var c) ? c : null;
+    public Cell At(int row, int col) => _byCoord.TryGetValue(new CellCoord(row, col), out Cell c) ? c : null;
 
     /// <summary>Coordinates of the slots feeding this cell, placed or not.</summary>
     public static IEnumerable<CellCoord> InSlots(CellCoord c) => c.IsUp
@@ -103,8 +103,8 @@ public sealed class Lattice
 
     private IEnumerable<Cell> Neighbors(IEnumerable<CellCoord> slots)
     {
-        foreach (var s in slots)
-            if (_byCoord.TryGetValue(s, out var n))
+        foreach (CellCoord s in slots)
+            if (_byCoord.TryGetValue(s, out Cell n))
                 yield return n;
     }
 

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using towerdefensegame.scripts.towers.crystal.core;
 using Xunit;
@@ -18,12 +19,12 @@ public class TerminalTests
     [Fact]
     public void Chain_OnlyLeafInputIsSource_OnlyLeafOutputIsSink()
     {
-        var lat = new Lattice();
-        var a = lat.Place(0, 0, CrystalKind.Ruby);       // leaf input
-        var b = lat.Place(0, 1, CrystalKind.Sapphire);   // interior
-        var c = lat.Place(1, 1, CrystalKind.Emerald);    // leaf output
+        Lattice lat = new Lattice();
+        Cell a = lat.Place(0, 0, CrystalKind.Ruby);       // leaf input
+        Cell b = lat.Place(0, 1, CrystalKind.Sapphire);   // interior
+        Cell c = lat.Place(1, 1, CrystalKind.Emerald);    // leaf output
 
-        var r = Compiler.Compile(lat, 20, Costs123);
+        CompileResult r = Compiler.Compile(lat, 20, Costs123);
 
         Assert.Equal(new[] { a.Id }, r.Sources);
         Assert.Equal(new[] { c.Id }, r.Sinks);
@@ -38,15 +39,15 @@ public class TerminalTests
     [Fact]
     public void LoneCrystal_IsBothSourceAndSink()
     {
-        var lat = new Lattice();
-        var lone = lat.Place(0, 0, CrystalKind.Ruby);
+        Lattice lat = new Lattice();
+        Cell lone = lat.Place(0, 0, CrystalKind.Ruby);
 
-        var r = Compiler.Compile(lat, 20, Costs123);
+        CompileResult r = Compiler.Compile(lat, 20, Costs123);
 
         Assert.Equal(new[] { lone.Id }, r.Sources);
         Assert.Equal(new[] { lone.Id }, r.Sinks);
 
-        var t = Assert.Single(r.Terminals);
+        Terminal t = Assert.Single(r.Terminals);
         Assert.True(t.IsSource);
         Assert.True(t.IsSink);
         Assert.Equal("S1", t.SourceLabel);
@@ -58,12 +59,12 @@ public class TerminalTests
     public void TwoSources_SplitCoreEnergyEqually_NoWeights()
     {
         // two non-adjacent lone crystals, E_core = 20 → 10 each
-        var lat = new Lattice();
-        var one = lat.Place(0, 0, CrystalKind.Ruby);       // cost 1
-        var two = lat.Place(0, 4, CrystalKind.Emerald);    // cost 3
+        Lattice lat = new Lattice();
+        Cell one = lat.Place(0, 0, CrystalKind.Ruby);       // cost 1
+        Cell two = lat.Place(0, 4, CrystalKind.Emerald);    // cost 3
 
-        var r = Compiler.Compile(lat, 20, Costs123);
-        var byCell = r.Terminals.ToDictionary(t => t.CellId);
+        CompileResult r = Compiler.Compile(lat, 20, Costs123);
+        Dictionary<int, Terminal> byCell = r.Terminals.ToDictionary(t => t.CellId);
 
         Assert.Equal(2, r.Sources.Count);
         Assert.Equal(10, byCell[one.Id].SourceEnergy, Eps);
@@ -76,17 +77,17 @@ public class TerminalTests
     [Fact]
     public void MergeShape_HasTwoSources_OneSink()
     {
-        var lat = new Lattice();
-        var left = lat.Place(0, 0, CrystalKind.Ruby);
-        var right = lat.Place(0, 2, CrystalKind.Emerald);
-        var merge = lat.Place(0, 1, CrystalKind.Sapphire);
+        Lattice lat = new Lattice();
+        Cell left = lat.Place(0, 0, CrystalKind.Ruby);
+        Cell right = lat.Place(0, 2, CrystalKind.Emerald);
+        Cell merge = lat.Place(0, 1, CrystalKind.Sapphire);
 
-        var r = Compiler.Compile(lat, 20, Costs123);
+        CompileResult r = Compiler.Compile(lat, 20, Costs123);
 
         Assert.Equal(new[] { left.Id, right.Id }, r.Sources);   // ordered leftmost first
         Assert.Equal(new[] { merge.Id }, r.Sinks);
 
-        var labels = r.Terminals.Where(t => t.IsSource)
+        IEnumerable<string> labels = r.Terminals.Where(t => t.IsSource)
             .OrderBy(t => t.SourceLabel).Select(t => t.SourceLabel);
         Assert.Equal(new[] { "S1", "S2" }, labels);
     }
@@ -98,9 +99,9 @@ public class TerminalTests
         Assert.Equal(Orientation.Up, new CellCoord(2, 0).Orient);
         Assert.Equal(Orientation.Down, new CellCoord(2, 1).Orient);
 
-        foreach (var slot in Lattice.OutSlots(new CellCoord(2, 0)))
+        foreach (CellCoord slot in Lattice.OutSlots(new CellCoord(2, 0)))
             Assert.Equal(Orientation.Down, slot.Orient);
-        foreach (var slot in Lattice.InSlots(new CellCoord(2, 1)))
+        foreach (CellCoord slot in Lattice.InSlots(new CellCoord(2, 1)))
             Assert.Equal(Orientation.Up, slot.Orient);
     }
 
@@ -121,12 +122,12 @@ public class TerminalTests
     public void FlowOrder_IsBottomToTop_UpBeforeDownInARow()
     {
         // a ▲ feeds the ▽s in its OWN row, so it must be processed first
-        var lat = new Lattice();
-        var up = lat.Place(0, 0, CrystalKind.Ruby);
-        var down = lat.Place(0, 1, CrystalKind.Sapphire);
-        var above = lat.Place(1, 1, CrystalKind.Emerald);
+        Lattice lat = new Lattice();
+        Cell up = lat.Place(0, 0, CrystalKind.Ruby);
+        Cell down = lat.Place(0, 1, CrystalKind.Sapphire);
+        Cell above = lat.Place(1, 1, CrystalKind.Emerald);
 
-        var order = lat.FlowOrder().Select(c => c.Id).ToArray();
+        int[] order = lat.FlowOrder().Select(c => c.Id).ToArray();
 
         Assert.Equal(new[] { up.Id, down.Id, above.Id }, order);
     }

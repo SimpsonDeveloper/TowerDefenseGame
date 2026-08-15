@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using towerdefensegame.scripts.towers.crystal.core;
 using Xunit;
@@ -12,16 +13,16 @@ public class ComboMatrixTests
     [Fact]
     public void Matrix_IsSymmetric()
     {
-        foreach (var a in All)
-        foreach (var b in All)
+        foreach (CrystalKind a in All)
+        foreach (CrystalKind b in All)
             Assert.Equal(ComboMatrix.ComboOp(a, b), ComboMatrix.ComboOp(b, a));
     }
 
     [Fact]
     public void EveryPair_NamesAnOp()
     {
-        foreach (var a in All)
-        foreach (var b in All)
+        foreach (CrystalKind a in All)
+        foreach (CrystalKind b in All)
             Assert.NotEqual(OpId.None, ComboMatrix.ComboOp(a, b));
     }
 
@@ -39,7 +40,7 @@ public class ComboMatrixTests
     [Fact]
     public void SevenPrimitives_FourteenInteractives()
     {
-        var ops = Enum.GetValues<OpId>().Where(o => o != OpId.None).ToList();
+        List<OpId> ops = Enum.GetValues<OpId>().Where(o => o != OpId.None).ToList();
 
         Assert.Equal(21, ops.Count);
         Assert.Equal(7, ops.Count(Ops.IsPrimitive));
@@ -50,12 +51,12 @@ public class ComboMatrixTests
     public void Shot_IsStubbedEmpty_UntilOpFlowLands()
     {
         // roadmap item 1 exposes the seam only; the collect-and-order pass is item 2
-        var lat = new Lattice();
+        Lattice lat = new Lattice();
         lat.Place(0, 0, CrystalKind.Ruby);
         lat.Place(0, 1, CrystalKind.Ruby);
         lat.Place(1, 1, CrystalKind.Sapphire);
 
-        var r = Compiler.Compile(lat, 100);
+        CompileResult r = Compiler.Compile(lat, 100);
 
         Assert.NotEmpty(r.EdgeOps);
         Assert.Empty(r.Shot);
