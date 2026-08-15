@@ -5,7 +5,9 @@ weapon interacts with enemy states. This is the architecture overview; the concr
 vocabulary of effects lives in `effect-vocab/vocab-overview/overview.md` and the symbols in `legend.md`.
 
 Status: design-stage synthesis. Effect-vocabulary topics and open questions live in
-their own docs (see §7). Nothing here is implemented yet.
+their own docs (see §7). §2 and §5 are **built** — the headless compiler core lives at
+`scripts/towers/crystal/core/` (`impl-planning/upgrades/compiler-core.md`); the ordered op list
+of §3 is not (roadmap item 2). Nothing downstream of the compiler is implemented.
 
 ---
 
@@ -96,7 +98,7 @@ A crystal does nothing on its own. Its jobs are:
   combo matrix, scaled by the energy arriving at the downstream crystal.
 
 Each crystal also has an **element** (flavor: Fire/Ice/Lightning/Nature/Arcane-Mind/Pure)
-that inspired its ops. The roster + combo matrix live in `playground/crystal-core.js`; the source of
+that inspired its ops. The roster + combo matrix live in `playground/archive/crystal-core.js`; the source of
 truth for pairs → ops is `effect-vocab/vocab-overview/combo-matrix.md`.
 
 Quartz is the identity/**catalyst** — pure routing wire whose combos spend a neighbor's

@@ -66,6 +66,14 @@
   <div class="left">
     <div>
       <h1>Crystal Dataflow — Triangle Lattice Explorer</h1>
+      <p class="sub" style="border:1px solid #f1c40f;border-radius:8px;padding:8px 10px;color:#f1c40f">
+        <b>ARCHIVED PROTOTYPE.</b> The implementation of record is the headless C# core at
+        <code>scripts/towers/crystal/core/</code>. The <b>routing model below is still accurate</b>
+        (auto terminals, equal split, local tolls, ▲ divides / ▽ sums, debt), but the
+        <b>representation is not</b>: this page uses pixel geometry with <i>y growing downward</i>,
+        while the core uses integer <code>(row, col)</code> with <i>row growing upward</i>. It also
+        still shows a <code>lostEnergy</code> verdict the core dropped, and implements the ordered
+        shot the core still stubs. Full list: <a href="README.md">README.md</a>.</p>
       <p class="sub"><b>Left-click</b> a cell to place a crystal (▲ <b>splits</b> 1→2, ▽ <b>merges</b> 2→1). Flow runs <b>upward</b>.
         Sources (<span style="color:#39d98a">green</span>) and sinks (<span style="color:#ff9d4d">orange</span>) are
         <b>automatic</b> and always on: a crystal that is a <b>leaf on its input side</b> is a source (core seeds it),
@@ -91,7 +99,7 @@
         <b>arriving</b> at a crystal (floored at 0) is the <b>multiplier for the combo-op</b> it forms with its
         upstream neighbor — so front crystals fire on more energy than deep ones. Energy below 0 is <b>debt</b>
         (the op does nothing until a ▽ merge sums it back positive). Adjacent crystals form <b>combo-ops</b>
-        (named in the <a href="../effect-vocab/vocab-overview/combo-matrix.md">combo matrix</a>); the weapon
+        (named in the <a href="../../effect-vocab/vocab-overview/combo-matrix.md">combo matrix</a>); the weapon
         energy = the <b>sum of all sinks</b>.
       </div>
     </div>
@@ -126,7 +134,7 @@
     <div class="card">
       <h2>Ops produced</h2>
       <div class="legend" style="margin-bottom:8px">Each adjacent crystal pair produces a combo-op
-        (<a href="../effect-vocab/vocab-overview/combo-matrix.md">matrix</a>), scaled by the energy reaching
+        (<a href="../../effect-vocab/vocab-overview/combo-matrix.md">matrix</a>), scaled by the energy reaching
         the downstream crystal. Names are stubs — behavior is authored under <code>effect-vocab/ops/</code>.</div>
       <div id="opsList" style="display:flex;flex-direction:column;gap:5px"></div>
     </div>

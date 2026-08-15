@@ -1,7 +1,7 @@
 # Compiler Core (headless C#)
 
 The engine-free heart of the system: a lattice → weapon-and-ops compiler, a direct port
-of `../../playground/dataflow-playground.html` `compile()`. No `using Godot`. Godot nodes and the UI
+of `../../playground/archive/dataflow-playground.html` `compile()`. No `using Godot`. Godot nodes and the UI
 call in; it never calls back. Testable in isolation and portable.
 
 Reference rules: `../../compilation-system.md`, `../../energy-conservation.md`.
@@ -10,9 +10,10 @@ Roadmap item **1** — the engine (structure, energy, terminals, combo-op naming
 (`op-flow.md`), layered on top. Depends on nothing. The playground `compile()` already does
 both — port the engine here first.
 
-**Status: built.** `scripts/towers/crystal/core/` + `tests/CrystalCore.Tests/` (17 tests green).
+**Status: built.** `scripts/towers/crystal/core/` + `tests/CrystalCore.Tests/` (21 tests green).
 The test project compiles the core sources directly *without* `Godot.NET.Sdk` — building at all
-is the proof it stayed engine-free. Not yet wired to a tower (§5 is still open).
+is the proof it stayed engine-free. Not yet wired to a tower (§5 is still open). The playground
+is now archived (`../../playground/archive/README.md` lists where it diverges).
 
 ---
 
@@ -38,8 +39,8 @@ else Godot lives *outside* `core/`.
 
 ## 2. Data model (graph only)
 
-The playground keys off cell indices + an edge key `ek(a,b)` (unordered pair). Port that;
-no floating geometry in core.
+No floating geometry in core. The playground keyed edges off *rounded pixel coordinates*
+(`ek()`); the core replaces that with integer lattice coordinates and an unordered cell-id pair.
 
 - **Cell** `{ int id, CellCoord coord, CrystalKind kind }` where `CellCoord = (row, col)`.
   **`row` grows UPWARD** (row 0 is the bottom) — the same direction energy flows, so growing a
@@ -73,8 +74,8 @@ no floating geometry in core.
 - **No input weights** (req. for the C# impl too). The core energy is split **equally** among
   the source cells: each gets `E_core / nSources`. There is no per-source weight.
 - The lattice is **non-uniform**: not every grid slot is a usable cell, the perimeter is a
-  contour, and size is not fixed (see `lattice-ui.md`). The core only sees the cells/edges
-  that exist — shape is the UI's problem, compiled down to `(id, kind, orient, edges, terminals)`.
+  contour, and size is not fixed (see `lattice-ui.md`). The core only sees the cells that exist
+  — shape is the UI's problem, compiled down to a set of `(row, col, kind)` placements.
 
 ---
 
