@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using System.Linq;
 using towerdefensegame.scripts.towers.crystal.core;
 using Xunit;
@@ -6,8 +5,8 @@ using Xunit;
 namespace towerdefensegame.tests.crystal;
 
 /// <summary>
-/// Auto source/sink terminals + equal energy split (compiler-core.md §2–§3).
-/// The user never sets a terminal; the compiler derives them from geometry every run.
+/// What terminals look like in a <see cref="CompileResult"/>: labels, seeded shares, drained
+/// energy. The topology behind them is covered in <see cref="LatticeTests"/>.
 /// </summary>
 public class TerminalTests
 {
@@ -17,42 +16,34 @@ public class TerminalTests
         (CrystalKind.Ruby, 1), (CrystalKind.Sapphire, 2), (CrystalKind.Emerald, 3));
 
     [Fact]
-    public void Chain_OnlyLeafInputIsSource_OnlyLeafOutputIsSink()
+    public void Chain_ReportsOneSourceAndOneSink()
     {
         Lattice lat = new Lattice();
         Cell a = lat.Place(0, 0, CrystalKind.Ruby);       // leaf input
-        Cell b = lat.Place(0, 1, CrystalKind.Sapphire);   // interior
+        lat.Place(0, 1, CrystalKind.Sapphire);            // interior — neither
         Cell c = lat.Place(1, 1, CrystalKind.Emerald);    // leaf output
 
         CompileResult r = Compiler.Compile(lat, 20, Costs123);
 
-        Assert.Equal(new[] { a.Id }, r.Sources);
-        Assert.Equal(new[] { c.Id }, r.Sinks);
-
-        // a feeds a crystal → NOT a sink; c is fed by a crystal → NOT a source; b is neither.
-        Assert.DoesNotContain(a.Id, r.Sinks);
-        Assert.DoesNotContain(c.Id, r.Sources);
-        Assert.DoesNotContain(b.Id, r.Sources);
-        Assert.DoesNotContain(b.Id, r.Sinks);
+        Assert.Equal(new[] { a }, r.Sources.Select(terminal => terminal.Cell));
+        Assert.Equal(new[] { c }, r.Sinks.Select(terminal => terminal.Cell));
+        Assert.Equal("S1", r.Sources[0].Label);
+        Assert.Equal("T1", r.Sinks[0].Label);
     }
 
     [Fact]
-    public void LoneCrystal_IsBothSourceAndSink()
+    public void LoneCrystal_AppearsAsBothSourceAndSink()
     {
         Lattice lat = new Lattice();
         Cell lone = lat.Place(0, 0, CrystalKind.Ruby);
 
         CompileResult r = Compiler.Compile(lat, 20, Costs123);
 
-        Assert.Equal(new[] { lone.Id }, r.Sources);
-        Assert.Equal(new[] { lone.Id }, r.Sinks);
-
-        Terminal t = Assert.Single(r.Terminals);
-        Assert.True(t.IsSource);
-        Assert.True(t.IsSink);
-        Assert.Equal("S1", t.SourceLabel);
-        Assert.Equal("T1", t.SinkLabel);
-        Assert.Equal(19, r.WeaponEnergy, Eps);   // seeded 20, tolls 1
+        Assert.Equal(lone, Assert.Single(r.Sources).Cell);
+        Assert.Equal(lone, Assert.Single(r.Sinks).Cell);
+        Assert.Equal(20, r.Sources[0].Energy, Eps);   // seeded the whole core
+        Assert.Equal(19, r.Sinks[0].Energy, Eps);     // …minus its own toll of 1
+        Assert.Equal(19, r.WeaponEnergy, Eps);
     }
 
     [Fact]
@@ -64,18 +55,17 @@ public class TerminalTests
         Cell two = lat.Place(0, 4, CrystalKind.Emerald);    // cost 3
 
         CompileResult r = Compiler.Compile(lat, 20, Costs123);
-        Dictionary<int, Terminal> byCell = r.Terminals.ToDictionary(t => t.CellId);
 
         Assert.Equal(2, r.Sources.Count);
-        Assert.Equal(10, byCell[one.Id].SourceEnergy, Eps);
-        Assert.Equal(10, byCell[two.Id].SourceEnergy, Eps);
-        Assert.Equal(9, byCell[one.Id].SinkEnergy, Eps);   // 10 − 1
-        Assert.Equal(7, byCell[two.Id].SinkEnergy, Eps);   // 10 − 3
+        Assert.All(r.Sources, source => Assert.Equal(10, source.Energy, Eps));
+
+        Assert.Equal(9, r.Sinks.Single(t => t.Cell == one).Energy, Eps);   // 10 − 1
+        Assert.Equal(7, r.Sinks.Single(t => t.Cell == two).Energy, Eps);   // 10 − 3
         Assert.Equal(16, r.WeaponEnergy, Eps);
     }
 
     [Fact]
-    public void MergeShape_HasTwoSources_OneSink()
+    public void MergeShape_LabelsSourcesLeftmostFirst()
     {
         Lattice lat = new Lattice();
         Cell left = lat.Place(0, 0, CrystalKind.Ruby);
@@ -84,51 +74,22 @@ public class TerminalTests
 
         CompileResult r = Compiler.Compile(lat, 20, Costs123);
 
-        Assert.Equal(new[] { left.Id, right.Id }, r.Sources);   // ordered leftmost first
-        Assert.Equal(new[] { merge.Id }, r.Sinks);
-
-        IEnumerable<string> labels = r.Terminals.Where(t => t.IsSource)
-            .OrderBy(t => t.SourceLabel).Select(t => t.SourceLabel);
-        Assert.Equal(new[] { "S1", "S2" }, labels);
+        Assert.Equal(new[] { left, right }, r.Sources.Select(terminal => terminal.Cell));
+        Assert.Equal(new[] { "S1", "S2" }, r.Sources.Select(terminal => terminal.Label));
+        Assert.Equal(merge, Assert.Single(r.Sinks).Cell);
     }
 
     [Fact]
-    public void OrientationIsTheSlots_NotAToggle()
+    public void SinkEnergy_IsFlooredAtZero()
     {
-        // bipartite by construction: parity of (row + col) fixes split/merge arity
-        Assert.Equal(Orientation.Up, new CellCoord(2, 0).Orient);
-        Assert.Equal(Orientation.Down, new CellCoord(2, 1).Orient);
-
-        foreach (CellCoord slot in Lattice.OutSlots(new CellCoord(2, 0)))
-            Assert.Equal(Orientation.Down, slot.Orient);
-        foreach (CellCoord slot in Lattice.InSlots(new CellCoord(2, 1)))
-            Assert.Equal(Orientation.Up, slot.Orient);
-    }
-
-    [Fact]
-    public void RowGrowsUpward_WithTheFlow()
-    {
-        // ▲ pulls from the row BELOW, ▽ pushes to the row ABOVE — so a taller lattice never
-        // needs negative rows.
-        Assert.Equal(new CellCoord(1, 0), Lattice.InSlots(new CellCoord(2, 0)).Single());
-        Assert.Equal(new CellCoord(3, 1), Lattice.OutSlots(new CellCoord(2, 1)).Single());
-
-        // and FlowDepth increases with height: ▲(r) < ▽(r) < ▲(r+1)
-        Assert.True(new CellCoord(0, 0).FlowDepth < new CellCoord(0, 1).FlowDepth);
-        Assert.True(new CellCoord(0, 1).FlowDepth < new CellCoord(1, 1).FlowDepth);
-    }
-
-    [Fact]
-    public void FlowOrder_IsBottomToTop_UpBeforeDownInARow()
-    {
-        // a ▲ feeds the ▽s in its OWN row, so it must be processed first
+        // one crystal that costs more than the whole core
         Lattice lat = new Lattice();
-        Cell up = lat.Place(0, 0, CrystalKind.Ruby);
-        Cell down = lat.Place(0, 1, CrystalKind.Sapphire);
-        Cell above = lat.Place(1, 1, CrystalKind.Emerald);
+        lat.Place(0, 0, CrystalKind.Ruby);   // shipping cost 28
 
-        int[] order = lat.FlowOrder().Select(c => c.Id).ToArray();
+        CompileResult r = Compiler.Compile(lat, 10);
 
-        Assert.Equal(new[] { up.Id, down.Id, above.Id }, order);
+        Assert.Equal(0, Assert.Single(r.Sinks).Energy, Eps);
+        Assert.Equal(0, r.WeaponEnergy, Eps);
+        Assert.True(r.Over);
     }
 }

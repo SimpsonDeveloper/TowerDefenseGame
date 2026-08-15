@@ -58,7 +58,7 @@ public class ComboMatrixTests
 
         CompileResult r = Compiler.Compile(lat, 100);
 
-        Assert.NotEmpty(r.EdgeOps);
+        Assert.NotEmpty(r.Ops);
         Assert.Empty(r.Shot);
     }
 }

@@ -30,9 +30,9 @@ layer they belong to: the **lattice** (shape), the **flow** (routing), the **ene
 | **T#** | sink | A **sink crystal** (orange): a **leaf on its output side**, drains its post-toll energy to the weapon. Weapon energy = **sum of all sinks**. |
 | — | **leaf-input / leaf-output** | Because terminals are auto-derived at leaf sides, this rule holds **by construction**: a crystal's inputs are all-crystal **or** one source; its outputs are all-crystal **or** one sink. A lone crystal is both. |
 | **C#** | node label | A crystal's tag in the breakdown/trace panel (bottom→top order). |
-| — | **productive** | An edge/node that can still **reach a sink** (downward check). |
-| — | **fed** | A node **reachable from a source** through productive edges (upward check). |
-| — | **active edge** | An internal edge that is **productive ∧ fed** — i.e. it actually carries routed flow. *Combos and effects only happen on active edges.* |
+| — | **productive** | An edge/node that can still **reach a sink** (downward check). Always true under auto-terminals — not modelled in the compiler. |
+| — | **fed** | A node **reachable from a source** (upward check). Always true under auto-terminals — not modelled in the compiler. |
+| — | **active edge** | An internal edge that is **productive ∧ fed**, i.e. actually carries routed flow. *Combos fire only on active edges* — but today **every** internal edge is active. The distinction returns when an edge can be switched off (conditional branching). |
 | — | conservation routing | The core law: energy is conserved by **local tolls**. ▲ divides the post-toll energy among productive outputs; ▽ sums inputs (`energy-conservation.md`). |
 
 ---

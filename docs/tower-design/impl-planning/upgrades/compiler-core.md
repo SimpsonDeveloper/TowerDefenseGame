@@ -10,7 +10,7 @@ Roadmap item **1** — the engine (structure, energy, terminals, combo-op naming
 (`op-flow.md`), layered on top. Depends on nothing. The playground `compile()` already does
 both — port the engine here first.
 
-**Status: built.** `scripts/towers/crystal/core/` + `tests/CrystalCore.Tests/` (21 tests green).
+**Status: built.** `scripts/towers/crystal/core/` + `tests/CrystalCore.Tests/` (28 tests green).
 The test project compiles the core sources directly *without* `Godot.NET.Sdk` — building at all
 is the proof it stayed engine-free. Not yet wired to a tower (§5 is still open). The playground
 is now archived (`../../playground/archive/README.md` lists where it diverges).
@@ -26,10 +26,11 @@ scripts/towers/crystal/core/      ← engine-agnostic
   ComboMatrix.cs     static ComboOp(a,b) / NativeOp(k) — mirrors combo-matrix.md
   CrystalStats.cs    ICostTable + cost per kind (Ru 28, Sa 16, Em 22, Ci 12, Am 20, Qz 6);
                      injectable so tests can use the abstract 1/2/3 worked examples
-  Lattice.cs         placed cells on (row, col) — the DAG input. Orientation, edges, edge roles,
-                     flow order and terminals are all DERIVED, never set by the caller
-  Compiler.cs        the passes → CompileResult
-  CompileResult.cs   weaponEnergy, edgeOps[], shot (ordered op list), sinks[], trace, legal
+  Cell.cs            Orientation, CellCoord (row, col, Height), Cell — immutable
+  Lattice.cs         which slots hold crystals — the whole compiler input. Orientation,
+                     adjacency, terminals and walk order are all QUESTIONS YOU ASK IT
+  Compiler.cs        three pure steps → CompileResult
+  CompileResult.cs   CellEnergy, Terminal, EdgeOp, ShotOp, CompileResult
 ```
 
 `CrystalDef` (a `[GlobalClass]` Resource: kind, color, element, texture) and everything
@@ -39,8 +40,9 @@ else Godot lives *outside* `core/`.
 
 ## 2. Data model (graph only)
 
-No floating geometry in core. The playground keyed edges off *rounded pixel coordinates*
-(`ek()`); the core replaces that with integer lattice coordinates and an unordered cell-id pair.
+No floating geometry in core, and no edge objects at all: the playground keyed edges off
+*rounded pixel coordinates* (`ek()`), while the core needs only integer `(row, col)` and reads
+an edge as "a cell and one of its in-neighbours" wherever it needs one.
 
 - **Cell** `{ int id, CellCoord coord, CrystalKind kind }` where `CellCoord = (row, col)`.
   **`row` grows UPWARD** (row 0 is the bottom) — the same direction energy flows, so growing a
@@ -50,7 +52,7 @@ No floating geometry in core. The playground keyed edges off *rounded pixel coor
 - **A row is one horizontal BAND** of the tiling and holds **both** orientations, interlocked
   side by side — a ▲ stands on the band's lower line, a ▽ hangs from its upper line. They are
   not on separate rows; within a band the ▲ sits *below* the ▽s beside it (that half-level is
-  what `FlowDepth` in §3 encodes). `col` indexes left→right across the band, so orientation
+  what `Height` in §3 encodes). `col` indexes left→right across the band, so orientation
   alternates every step.
 - **Adjacency is derived too** — the caller supplies only *which slots are filled*:
 
@@ -63,14 +65,12 @@ No floating geometry in core. The playground keyed edges off *rounded pixel coor
   fall out of the coordinates. Note flow takes **two half-steps per band**: a ▲ feeds the ▽s in
   its *own* row, and a ▽ feeds the ▲ one row up. A slot that is empty *or* off-mask is an
   **open** side — the core does not distinguish them.
-- **Edge** = unordered `(cellA, cellB)`, canonical key `min,max` (like `ek()`).
-- **Terminal** = a **cell** the compiler **auto-classifies** as **Source** and/or **Sink** —
-  crystal-level, not an edge site. **Automatic and always on; the user never sets them** (req.
-  for the C# impl too). A cell is a **source iff it is a leaf on its input side** (no crystal
-  feeds it) and a **sink iff it is a leaf on its output side** (no crystal sits above it); a
-  lone cell is both. A source cell is seeded core energy; a sink cell drains to the weapon.
-  Because terminals are *derived* at leaf sides, the leaf-input / leaf-output rules hold **by
-  construction** — no illegal terminal can exist.
+- **Terminal** = a **cell** at the boundary — crystal-level, not an edge site. **Automatic and
+  always on; the user never sets them** (req. for the C# impl too). Not a classification pass
+  and not stored state, but two **predicates**: `source ⟺ nothing feeds it`,
+  `sink ⟺ it feeds nothing`; a lone cell is both. A source is seeded core energy; a sink drains
+  to the weapon. Because they *are* the leaf conditions, the leaf-input / leaf-output rules hold
+  **by construction** — no illegal terminal is expressible.
 - **No input weights** (req. for the C# impl too). The core energy is split **equally** among
   the source cells: each gets `E_core / nSources`. There is no per-source weight.
 - The lattice is **non-uniform**: not every grid slot is a usable cell, the perimeter is a
@@ -79,47 +79,62 @@ No floating geometry in core. The playground keyed edges off *rounded pixel coor
 
 ---
 
-## 3. Passes (port of `compile()`)
+## 3. Steps
 
-Structural first, then values, then effects.
+Three, each a pure function of its arguments. No shared mutable state, no flags threaded
+between them.
 
 **Sweep order.** "Bottom→top" is **not** just row-ascending: a ▲ feeds the ▽s *in its own row*
 (they only pass energy up a row from their own tops). The topological key is
-`FlowDepth = 2·row + (▲ ? 0 : 1)`, swept **ascending** — ▲(r), ▽(r), ▲(r+1), ▽(r+1), … It rises
+`Height = 2·row + (▲ ? 0 : 1)`, swept **ascending** — ▲(r), ▽(r), ▲(r+1), ▽(r+1), … It rises
 with height, so it is also the "lowest gem first" key for the ordered shot (`op-flow.md` §3).
 The playground sorts gem centroids by `cy` descending; that is the same order, because its
 screen `y` grows downward where our `row` grows upward.
 
-1. **Terminals** (auto-derive): for each cell, `source = leaf on input side`,
-   `sink = leaf on output side` (a lone cell is both). **Always on, never user-set, no weights**
-   (§2). The leaf-input / leaf-output rules therefore hold **by construction** — there is no
-   separate legality check for them, and `legal` stays reserved for other concerns (e.g. impact
-   bounding).
-2. **Productivity** (top→bottom): mark cells/edges that can reach a sink.
-3. **Fed** (bottom→top): mark cells reachable from a source. `active = productive ∧ fed`.
-4. **Energy routing** (bottom→top): **seed each source cell** `E_core / nSources` — an **equal**
-   split, no weights — directly (input arity ignored); per cell `outE = inSum − cost` (local
-   toll, may go negative = **debt**); Up divides `outE` across outputs, Down sums inputs; a
-   **sink cell** delivers `outE` to the weapon instead of routing onward. Debt flows unclamped so
-   a later merge can recover it.
-5. **Op production**: on each active edge, `(upKind, downKind) → ComboOp`, scaled by
-   `max(0, energyAtDownstream)`. Emit `EdgeOp { op, energy, debt }`.
-6. **Ordered shot** — **stubbed in item 1**; the collect-and-order pass is **item 2**
-   (`op-flow.md`). It flattens the active `EdgeOp`s into one **ordered list** (no bag, no
-   consume, no split/merge of quantities) sorted by lattice position. The core exposes the seam
-   (an empty `shot` on `CompileResult`) and leaves it empty until then.
-7. **Collect**: `weaponEnergy = Σ max(0, sinkEnergy)`.
+**Terminals are not a pass.** `source ⟺ nothing feeds it`, `sink ⟺ it feeds nothing` — two
+predicates on the lattice (`Lattice.IsSource` / `IsSink`), evaluated on demand. There is nothing
+to derive into a set, nothing to store, and nothing a player could set. That is the strongest
+form of "always on, never user-set".
 
-   **Energy cannot leak.** Crystal cost is the only thing that removes energy, so
-   `weaponEnergy = E_core − Σ cost` always. Two structural facts guarantee it: following
-   out-edges from any crystal must end at a leaf output, and every leaf output *is* a sink
-   (auto-terminals); and pass 2 runs before pass 4, writing energy only onto edges whose
-   downstream node is productive, so **fed ⇒ productive** and no branch can dead-end.
+1. **Route energy** (bottom→top, one sweep): seed each source `E_core / nSources` — an **equal**
+   split, no weights. Then per cell `out = in − cost` (local toll, may go negative = **debt**),
+   where `in` is the **sum of the in-neighbours' per-output shares**. That one sum covers both
+   orientations: a ▽ has two inputs and sums them, a ▲ has exactly one, so the sum *is* it. Each
+   cell then offers `out / outCount` to each out-neighbour — a ▲ halves, a ▽ passes the lot.
+   Debt is never clamped in transit, so a ▽ downstream can sum it back above 0.
+2. **Name ops**: for every internal edge, `(upKind, downKind) → ComboOp` at the energy that
+   crossed it (the upstream cell's per-output share), floored at 0. Emit `EdgeOp`.
+3. **Order the shot** — **stubbed in item 1**; the collect-and-order pass is **item 2**
+   (`op-flow.md`). It flattens the `EdgeOp`s into one **ordered list** (no bag, no consume, no
+   split/merge of quantities) sorted by lattice position. The core exposes the seam (an empty
+   `Shot` on `CompileResult`) and leaves it empty until then.
 
-   There is deliberately **no `lostEnergy` counter**. It existed for manual terminals, where a
-   chain could be built without a sink on top ("you forgot a sink"); under auto-terminals that
-   is unbuildable, so a non-zero value would only ever mean a compiler bug, not a player
-   mistake. The conservation identity above is asserted in the tests instead.
+Then assemble: `weaponEnergy = Σ max(0, sinkEnergy)`.
+
+### What is deliberately *not* here
+
+Under auto-terminals these are all identically true, so modelling them would be modelling a
+constant:
+
+- **Productive** (can reach a sink) — following out-edges must end at a leaf output, and every
+  leaf output *is* a sink. Every cell is productive.
+- **Fed** (reachable from a source) — a cell that feeds someone has an out-neighbour, so it is
+  not a sink, so it routes; therefore every cell with in-neighbours is fed, and a cell without
+  them *is* a source. Every cell is fed.
+- **Active edge** = productive ∧ fed ⇒ **every internal edge is active**, and every one fires.
+
+They come back the moment a rule can switch an edge off — conditional branching at a split is
+the expected one. The agreed model there is "a cut edge is not live", which drops it out of
+`outCount`, so the split hands its whole share to the surviving sibling and nothing is lost. Add
+the filter in step 2 when that lands; do not carry a dead pass until then.
+
+**Energy cannot leak.** Crystal cost is the only thing that removes energy, so
+`weaponEnergy = E_core − Σ cost` always — the same two facts above are what guarantee it.
+
+There is deliberately **no `lostEnergy` counter**. It existed for manual terminals, where a
+chain could be built without a sink on top ("you forgot a sink"); under auto-terminals that is
+unbuildable, so a non-zero value would only ever mean a compiler bug, not a player mistake. The
+conservation identity is asserted in the tests instead.
 
 ---
 
@@ -136,6 +151,11 @@ the stub is empty):
   cell is a sink; interior cells are neither; a lone cell is both. A cell feeding a crystal is
   **not** a sink; a cell fed by a crystal is **not** a source (leaf rules hold by construction).
 - Equal split: two sources, `E_core = 20` → each seeded **10** (no weights).
+- Conservation: `weaponEnergy == E_core − Σ cost` across a chain, a split and a merge, at
+  several core levels (this is what replaced `lostEnergy`).
+- Walk order: every cell's in-neighbours come **before** it in `FlowOrder()`. This is the one
+  precondition the routing sweep depends on — the whole reason `Height` counts half-levels.
+- Every internal edge fires: op count == internal-edge count (there is no inactive case).
 - Ordered shot (**item 2**, `op-flow.md`): chain Ruby → Ruby → Sapphire → shot =
   `[Burn ×(E@mid), Frostburn ×(E@top)]` in that order (Burn's gem is lower, so Burn first;
   **no consumption** — both ride the shot). This test lands with op-flow, not the core.

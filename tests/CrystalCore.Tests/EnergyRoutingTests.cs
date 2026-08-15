@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using System.Linq;
 using towerdefensegame.scripts.towers.crystal.core;
 using Xunit;
@@ -28,14 +27,13 @@ public class EnergyRoutingTests
         Cell c = lat.Place(1, 1, CrystalKind.Emerald);    // ▲ leaf output → sink
 
         CompileResult r = Compiler.Compile(lat, 20, Costs123);
-        Dictionary<int, NodeTrace> trace = r.Trace.ToDictionary(t => t.CellId);
 
-        Assert.Equal(20, trace[a.Id].InSum, Eps);
-        Assert.Equal(19, trace[a.Id].OutE, Eps);
-        Assert.Equal(19, trace[b.Id].InSum, Eps);
-        Assert.Equal(17, trace[b.Id].OutE, Eps);
-        Assert.Equal(17, trace[c.Id].InSum, Eps);
-        Assert.Equal(14, trace[c.Id].OutE, Eps);
+        Assert.Equal(20, r.Energy[a.Id].In, Eps);
+        Assert.Equal(19, r.Energy[a.Id].Out, Eps);
+        Assert.Equal(19, r.Energy[b.Id].In, Eps);
+        Assert.Equal(17, r.Energy[b.Id].Out, Eps);
+        Assert.Equal(17, r.Energy[c.Id].In, Eps);
+        Assert.Equal(14, r.Energy[c.Id].Out, Eps);
 
         Assert.Equal(14, r.WeaponEnergy, Eps);
         Assert.Equal(6, r.UsedCost, Eps);
@@ -52,14 +50,32 @@ public class EnergyRoutingTests
 
         CompileResult r = Compiler.Compile(lat, 20, Costs123);
 
-        EdgeOp ab = Assert.Single(r.EdgeOps, e => e.UpCellId == a.Id && e.DownCellId == b.Id);
-        EdgeOp bc = Assert.Single(r.EdgeOps, e => e.UpCellId == b.Id && e.DownCellId == c.Id);
+        EdgeOp ab = Assert.Single(r.Ops, op => op.Up == a && op.Down == b);
+        EdgeOp bc = Assert.Single(r.Ops, op => op.Up == b && op.Down == c);
 
         Assert.Equal(OpId.Frostburn, ab.Op);   // Ruby + Sapphire
         Assert.Equal(19, ab.Energy, Eps);      // energy entering b
         Assert.Equal(OpId.Weather, bc.Op);     // Sapphire + Emerald
         Assert.Equal(17, bc.Energy, Eps);      // energy entering c
-        Assert.All(r.EdgeOps, e => Assert.False(e.Debt));
+        Assert.All(r.Ops, op => Assert.False(op.Debt));
+    }
+
+    [Fact]
+    public void EveryInternalEdgeFires_NoneAreInert()
+    {
+        // There is no "active edge" case to test: every internal edge lies on a source→sink
+        // path, so the op count is exactly the internal-edge count.
+        Lattice lat = new Lattice();
+        lat.Place(0, 2, CrystalKind.Ruby);       // ▲ source
+        lat.Place(0, 1, CrystalKind.Sapphire);   // ▽ sink
+        lat.Place(0, 3, CrystalKind.Sapphire);   // ▽
+        lat.Place(1, 3, CrystalKind.Emerald);    // ▲ sink
+
+        CompileResult r = Compiler.Compile(lat, 100, Costs123);
+
+        int internalEdges = lat.Cells.Sum(cell => lat.InNeighbors(cell).Count);
+        Assert.Equal(internalEdges, r.Ops.Count);
+        Assert.Equal(3, r.Ops.Count);          // ▲(0,2)→▽(0,1), ▲(0,2)→▽(0,3), ▽(0,3)→▲(1,3)
     }
 
     [Fact]
@@ -72,15 +88,14 @@ public class EnergyRoutingTests
         Cell c = lat.Place(0, 3, CrystalKind.Emerald);    // ▽ sink, cost 3
 
         CompileResult r = Compiler.Compile(lat, 20, Costs123);
-        Dictionary<int, NodeTrace> trace = r.Trace.ToDictionary(t => t.CellId);
 
-        Assert.Equal(19, trace[a.Id].OutE, Eps);
-        Assert.Equal(2, trace[a.Id].OutCount);
-        Assert.Equal(9.5, trace[a.Id].PerOut, Eps);
-        Assert.Equal(9.5, trace[b.Id].InSum, Eps);
-        Assert.Equal(7.5, trace[b.Id].OutE, Eps);
-        Assert.Equal(9.5, trace[c.Id].InSum, Eps);
-        Assert.Equal(6.5, trace[c.Id].OutE, Eps);
+        Assert.Equal(19, r.Energy[a.Id].Out, Eps);
+        Assert.Equal(2, r.Energy[a.Id].OutCount);
+        Assert.Equal(9.5, r.Energy[a.Id].PerOut, Eps);
+        Assert.Equal(9.5, r.Energy[b.Id].In, Eps);
+        Assert.Equal(7.5, r.Energy[b.Id].Out, Eps);
+        Assert.Equal(9.5, r.Energy[c.Id].In, Eps);
+        Assert.Equal(6.5, r.Energy[c.Id].Out, Eps);
 
         Assert.Equal(14, r.WeaponEnergy, Eps);
     }
@@ -99,43 +114,21 @@ public class EnergyRoutingTests
         Cell merge = lat.Place(0, 1, CrystalKind.Sapphire); // ▽ sink,   cost 1
 
         CompileResult r = Compiler.Compile(lat, 20, costs);
-        Dictionary<int, NodeTrace> trace = r.Trace.ToDictionary(t => t.CellId);
 
-        Assert.Equal(-2, trace[left.Id].OutE, Eps);        // debt, not clamped
-        Assert.Equal(8, trace[right.Id].OutE, Eps);
-        Assert.Equal(6, trace[merge.Id].InSum, Eps);       // −2 + 8 recovered
-        Assert.Equal(5, trace[merge.Id].OutE, Eps);
+        Assert.Equal(-2, r.Energy[left.Id].Out, Eps);      // debt, not clamped
+        Assert.True(r.Energy[left.Id].InDebt);
+        Assert.Equal(8, r.Energy[right.Id].Out, Eps);
+        Assert.Equal(6, r.Energy[merge.Id].In, Eps);       // −2 + 8 recovered
+        Assert.Equal(5, r.Energy[merge.Id].Out, Eps);
         Assert.Equal(5, r.WeaponEnergy, Eps);
 
-        EdgeOp debted = Assert.Single(r.EdgeOps, e => e.UpCellId == left.Id);
+        EdgeOp debted = Assert.Single(r.Ops, op => op.Up == left);
         Assert.True(debted.Debt);
         Assert.Equal(0, debted.Energy, Eps);               // inert op, floored at 0
 
-        EdgeOp live = Assert.Single(r.EdgeOps, e => e.UpCellId == right.Id);
+        EdgeOp live = Assert.Single(r.Ops, op => op.Up == right);
         Assert.False(live.Debt);
         Assert.Equal(8, live.Energy, Eps);
-    }
-
-    [Fact]
-    public void EnergyIsConserved_NothingCanLeakOutOfTheLattice()
-    {
-        // The invariant that replaces the old `lostEnergy` counter: every crystal's cost is the
-        // ONLY thing that removes energy, so the weapon always collects exactly
-        // E_core − Σ cost. Energy cannot dead-end, because following out-edges from any crystal
-        // must end at a leaf output and every leaf output IS automatically a sink.
-        Lattice lat = new Lattice();
-        lat.Place(0, 2, CrystalKind.Ruby);       // ▲ source, cost 1
-        lat.Place(0, 3, CrystalKind.Sapphire);   // ▽        cost 2
-        lat.Place(1, 3, CrystalKind.Emerald);    // ▲ splits, cost 3
-        lat.Place(1, 2, CrystalKind.Sapphire);   // ▽ sink,   cost 2
-        lat.Place(1, 4, CrystalKind.Sapphire);   // ▽ sink,   cost 2
-
-        CompileResult r = Compiler.Compile(lat, 40, Costs123);
-
-        Assert.All(r.Trace, t => Assert.True(t.Productive));   // no branch can dead-end
-        Assert.Equal(2, r.Sinks.Count);
-        Assert.Equal(30, r.WeaponEnergy, Eps);   // 40 −1 → 39 −2 → 37 −3 = 34, /2 = 17, −2 each
-        Assert.Equal(r.CoreEnergy - r.UsedCost, r.WeaponEnergy, Eps);
     }
 
     [Theory]
@@ -144,8 +137,9 @@ public class EnergyRoutingTests
     [InlineData(100)]
     public void EnergyIsConserved_AcrossChainSplitAndMerge(double core)
     {
-        // one lattice exercising a source, a split and a merge at once: weapon energy is still
-        // exactly E_core − Σ cost, whatever the routing shape.
+        // Crystal cost is the ONLY thing that removes energy — no branch can dead-end, because
+        // every leaf output is automatically a sink. This is the invariant that replaced the
+        // old `lostEnergy` counter. One lattice: a source, a split, and a merge back.
         Lattice lat = new Lattice();
         lat.Place(0, 2, CrystalKind.Ruby);       // ▲ source, cost 1
         lat.Place(0, 1, CrystalKind.Sapphire);   // ▽ cost 2  ┐ split
@@ -158,6 +152,23 @@ public class EnergyRoutingTests
 
         Assert.Equal(13, r.UsedCost, Eps);
         Assert.Equal(core - 13, r.WeaponEnergy, Eps);
+    }
+
+    [Fact]
+    public void EnergyIsConserved_ThroughASplitIntoTwoSinks()
+    {
+        Lattice lat = new Lattice();
+        lat.Place(0, 2, CrystalKind.Ruby);       // ▲ source, cost 1
+        lat.Place(0, 3, CrystalKind.Sapphire);   // ▽        cost 2
+        lat.Place(1, 3, CrystalKind.Emerald);    // ▲ splits, cost 3
+        lat.Place(1, 2, CrystalKind.Sapphire);   // ▽ sink,   cost 2
+        lat.Place(1, 4, CrystalKind.Sapphire);   // ▽ sink,   cost 2
+
+        CompileResult r = Compiler.Compile(lat, 40, Costs123);
+
+        Assert.Equal(2, r.Sinks.Count);
+        Assert.Equal(30, r.WeaponEnergy, Eps);   // 40 −1 → 39 −2 → 37 −3 = 34, ÷2 = 17, −2 each
+        Assert.Equal(r.CoreEnergy - r.UsedCost, r.WeaponEnergy, Eps);
     }
 
     [Fact]

@@ -92,9 +92,9 @@ arrives at, whose energy is the op's quantity.
 
 In lattice coordinates (`row` grows **upward**, with the flow), "lower" is **not** just a
 smaller row: within one row a ▲ sits *below* the ▽s beside it — its base is on the row's lower
-line, theirs hang from the upper one. So verticality is `FlowDepth = 2·row + (▲ ? 0 : 1)`,
+line, theirs hang from the upper one. So verticality is `Height = 2·row + (▲ ? 0 : 1)`,
 **ascending** — the same key the compiler already sweeps energy along (`compiler-core.md` §3).
-Full sort: `FlowDepth` asc, then downstream `col` asc, then upstream `col` asc, then op name.
+Full sort: `Height` asc, then downstream `col` asc, then upstream `col` asc, then op name.
 The playground uses gem-centroid `(cy desc, cx asc)` with the same tiebreak — same order, since
 its screen `y` grows downward. The C# port sorts on lattice coordinates, not pixels.
 

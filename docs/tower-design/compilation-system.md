@@ -57,10 +57,15 @@ recovers it). Method + example in `energy-conservation.md`.
 
 An internal edge is **active** only if it lies on a complete **source → sink path**:
 **fed** (some live source reaches it from below) ∧ **productive** (some sink is
-reachable from it above). Kill the sources below an edge and it goes inactive; cap off
-the sinks above it and likewise. This is pure connectivity — no magnitudes — so we
-**trim inactive edges first**, then the value pass routes energy through only what
-survives. Effects fire only on active edges; *nothing happens on inactive routes.*
+reachable from it above). Effects fire only on active edges; *nothing happens on inactive
+routes.*
+
+**Under auto-terminals this is vacuously true of every edge**, and the compiler does not model
+it. Every chain ends at a leaf output and every leaf output *is* a sink, so nothing can fail to
+be productive; and anything that feeds a crystal is not itself a sink, so nothing can fail to be
+fed. The concept is kept here because it becomes real the moment an edge can be **switched
+off** — conditional branching at a split is the expected case. See
+`impl-planning/upgrades/compiler-core.md` §3, *What is deliberately not here*.
 
 ---
 
