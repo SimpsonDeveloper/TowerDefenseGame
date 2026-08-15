@@ -46,8 +46,7 @@ Energy is the single scalar that flows. There are no per-stat "facets" — see
 |---|---|---|
 | `E_core` / `ECORE` | core energy | The tower's total energy pool, seeded at the sources. Raised by the **A** investment. |
 | `cost` / **draw** | crystal cost | Energy a crystal draws from the stream as it passes (local toll). Separate from its scarce **resource** cost to craft. |
-| `eFlow` | net energy | `E_core − Σcost`: energy left after every crystal's toll. |
-| `lostEnergy` | dead-end energy | Energy routed into a branch that reaches no sink (wasted). |
+| `eFlow` | net energy | `E_core − Σcost`: energy left after every crystal's toll. Equals **weapon energy** — cost is the only thing that removes energy, and auto-terminals make dead-end branches unbuildable. |
 | **op energy** | combo multiplier | Energy arriving at the downstream crystal of an adjacent pair, floored at 0 — the multiplier for that combo-op. |
 | **debt** | energy debt | Negative energy in transit. The op multiplies by 0 until a ▽ merge sums it back positive. |
 | **weapon energy** | weapon | Sum of all sink energies (floored) — the compiled tower's headline output. |

@@ -85,9 +85,6 @@ public sealed class CompileResult
     /// <summary>Energy delivered to the weapon = Σ max(0, sink energy).</summary>
     public double WeaponEnergy { get; init; }
 
-    /// <summary>Usable energy that dead-ended in a sinkless branch.</summary>
-    public double LostEnergy { get; init; }
-
     /// <summary>Reserved for other legality concerns (e.g. the impact-count cap). Terminal rules
     /// hold by construction, so they never set this.</summary>
     public bool Legal { get; init; } = true;

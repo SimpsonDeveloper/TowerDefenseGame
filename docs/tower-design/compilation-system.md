@@ -121,8 +121,9 @@ Conceptual passes (order matters; structural first, then values, then effects):
 6. **Weapon energy = sum of sinks.** Output: the delivered energy + the ordered op list.
 
 Energy: each source is seeded `E_core / nSources` (equal split); every crystal draws its cost
-locally as the stream passes (`energy-conservation.md`). Net after all tolls = `E_core − Σ cost`.
-Energy dead-ending in a sinkless branch is `lostEnergy` (wasted).
+locally as the stream passes (`energy-conservation.md`). Net after all tolls = `E_core − Σ cost`,
+and that **is** the weapon energy — cost is the only thing that removes energy. A branch cannot
+dead-end, because every leaf-output crystal is automatically a sink.
 
 ---
 

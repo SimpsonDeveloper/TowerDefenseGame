@@ -37,7 +37,6 @@ public class EnergyRoutingTests
         Assert.Equal(14, trace[c.Id].OutE, Eps);
 
         Assert.Equal(14, r.WeaponEnergy, Eps);
-        Assert.Equal(0, r.LostEnergy, Eps);
         Assert.Equal(6, r.UsedCost, Eps);
         Assert.False(r.Over);
     }
@@ -117,12 +116,12 @@ public class EnergyRoutingTests
     }
 
     [Fact]
-    public void AutoTerminals_MakeLostEnergyStructurallyImpossible()
+    public void EnergyIsConserved_NothingCanLeakOutOfTheLattice()
     {
-        // Following out-edges from any crystal must end at a crystal with no placed out-neighbor
-        // — and every such leaf output IS automatically a sink. So no branch can dead-end and
-        // every node is productive. lostEnergy stays 0 by construction; the code path survives
-        // only as a guard.
+        // The invariant that replaces the old `lostEnergy` counter: every crystal's cost is the
+        // ONLY thing that removes energy, so the weapon always collects exactly
+        // E_core − Σ cost. Energy cannot dead-end, because following out-edges from any crystal
+        // must end at a leaf output and every leaf output IS automatically a sink.
         var lat = new Lattice();
         lat.Place(0, 2, CrystalKind.Ruby);       // ▲ source, cost 1
         lat.Place(0, 3, CrystalKind.Sapphire);   // ▽        cost 2
@@ -132,10 +131,32 @@ public class EnergyRoutingTests
 
         var r = Compiler.Compile(lat, 40, Costs123);
 
-        Assert.Equal(0, r.LostEnergy, Eps);
-        Assert.All(r.Trace, t => Assert.True(t.Productive));
+        Assert.All(r.Trace, t => Assert.True(t.Productive));   // no branch can dead-end
         Assert.Equal(2, r.Sinks.Count);
         Assert.Equal(30, r.WeaponEnergy, Eps);   // 40 −1 → 39 −2 → 37 −3 = 34, /2 = 17, −2 each
+        Assert.Equal(r.CoreEnergy - r.UsedCost, r.WeaponEnergy, Eps);
+    }
+
+    [Theory]
+    [InlineData(20)]
+    [InlineData(40)]
+    [InlineData(100)]
+    public void EnergyIsConserved_AcrossChainSplitAndMerge(double core)
+    {
+        // one lattice exercising a source, a split and a merge at once: weapon energy is still
+        // exactly E_core − Σ cost, whatever the routing shape.
+        var lat = new Lattice();
+        lat.Place(0, 2, CrystalKind.Ruby);       // ▲ source, cost 1
+        lat.Place(0, 1, CrystalKind.Sapphire);   // ▽ cost 2  ┐ split
+        lat.Place(0, 3, CrystalKind.Sapphire);   // ▽ cost 2  ┘
+        lat.Place(1, 1, CrystalKind.Emerald);    // ▲ cost 3
+        lat.Place(1, 3, CrystalKind.Emerald);    // ▲ cost 3
+        lat.Place(1, 2, CrystalKind.Sapphire);   // ▽ cost 2  ← merges both back, sink
+
+        var r = Compiler.Compile(lat, core, Costs123);
+
+        Assert.Equal(13, r.UsedCost, Eps);
+        Assert.Equal(core - 13, r.WeaponEnergy, Eps);
     }
 
     [Fact]

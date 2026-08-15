@@ -20,7 +20,6 @@ public static class Compiler
         var order = lattice.FlowOrder();                         // bottom→top
 
         var used = lattice.Cells.Sum(c => costs.Cost(c.Kind));
-        var lostEnergy = 0.0;
 
         // ---- pass 1: terminals (AUTO) --------------------------------------------------
         // source iff leaf on the input side, sink iff leaf on the output side; a lone crystal
@@ -59,12 +58,7 @@ public static class Compiler
             .ToList();
         var share = sourceCells.Count > 0 ? coreEnergy / sourceCells.Count : 0.0;
 
-        var seeded = new Dictionary<int, double>();
-        foreach (var src in sourceCells)
-        {
-            if (nodeProductive[src.Id]) seeded[src.Id] = share;
-            else lostEnergy += Math.Max(0, share);               // source that reaches no sink
-        }
+        var seeded = sourceCells.ToDictionary(c => c.Id, _ => share);
 
         // ---- pass 3+4: fed + energy routing (bottom→top) -------------------------------
         // each crystal tolls its own cost; ▲ divides the remainder among its productive
@@ -110,7 +104,6 @@ public static class Compiler
 
             var outE = inSum - cost;                             // local toll (may go negative)
             var nOut = outs.Count;
-            if (!sink && nOut == 0) lostEnergy += Math.Max(0, outE);   // dead-ends, no sink
             var perOut = nOut > 1 ? outE / nOut : outE;
             if (!sink)                                           // sinks drain, they don't route on
                 foreach (var k in outs) energyByEdge[k] = perOut;
@@ -186,7 +179,6 @@ public static class Compiler
             UsedCost = used,
             Over = used > coreEnergy,
             WeaponEnergy = weaponEnergy,
-            LostEnergy = lostEnergy,
             Sources = sourceCells.Select(c => c.Id).ToList(),
             Sinks = sinkCells.Select(c => c.Id).ToList(),
             Terminals = terminals,

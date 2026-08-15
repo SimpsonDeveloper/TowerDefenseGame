@@ -28,7 +28,7 @@ scripts/towers/crystal/core/      ← engine-agnostic
   Lattice.cs         placed cells on (row, col) — the DAG input. Orientation, edges, edge roles,
                      flow order and terminals are all DERIVED, never set by the caller
   Compiler.cs        the passes → CompileResult
-  CompileResult.cs   weaponEnergy, edgeOps[], shot (ordered op list), sinks[], lostEnergy, trace, legal
+  CompileResult.cs   weaponEnergy, edgeOps[], shot (ordered op list), sinks[], trace, legal
 ```
 
 `CrystalDef` (a `[GlobalClass]` Resource: kind, color, element, texture) and everything
@@ -107,11 +107,18 @@ screen `y` grows downward where our `row` grows upward.
    (`op-flow.md`). It flattens the active `EdgeOp`s into one **ordered list** (no bag, no
    consume, no split/merge of quantities) sorted by lattice position. The core exposes the seam
    (an empty `shot` on `CompileResult`) and leaves it empty until then.
-7. **Collect**: `weaponEnergy = Σ max(0, sinkEnergy)`; usable energy dead-ending in a
-   sinkless branch = `lostEnergy`. Note: under **auto-terminals** `lostEnergy` is always **0** —
-   following out-edges from any crystal must end at a leaf output, and every leaf output *is*
-   a sink, so no branch can dead-end and every node is productive. The field and its code path
-   survive as a guard (and for masks/shapes that may relax this later), not as live behavior.
+7. **Collect**: `weaponEnergy = Σ max(0, sinkEnergy)`.
+
+   **Energy cannot leak.** Crystal cost is the only thing that removes energy, so
+   `weaponEnergy = E_core − Σ cost` always. Two structural facts guarantee it: following
+   out-edges from any crystal must end at a leaf output, and every leaf output *is* a sink
+   (auto-terminals); and pass 2 runs before pass 4, writing energy only onto edges whose
+   downstream node is productive, so **fed ⇒ productive** and no branch can dead-end.
+
+   There is deliberately **no `lostEnergy` counter**. It existed for manual terminals, where a
+   chain could be built without a sink on top ("you forgot a sink"); under auto-terminals that
+   is unbuildable, so a non-zero value would only ever mean a compiler bug, not a player
+   mistake. The conservation identity above is asserted in the tests instead.
 
 ---
 
