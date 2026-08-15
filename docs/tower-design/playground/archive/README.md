@@ -38,7 +38,7 @@ Open the HTML over `http://` (e.g. `python -m http.server`), not `file://` — t
 | **Coordinates** | real pixel geometry — triangle vertices, centroids, edges keyed by rounded coordinates (`ek()`); edge role read off "is this edge horizontal" | no geometry at all — integer `(row, col)`, orientation = parity of `row+col`, adjacency from a fixed ±1 table, edge key = unordered cell-id pair |
 | **Grid shape** | uniform: every triangle that fits the canvas | non-uniform mask with an uneven perimeter (`../../impl-planning/upgrades/lattice-ui.md` §1) |
 | **`lostEnergy`** | still computed, with an "Energy dead-ends" verdict | **removed** — unreachable under auto-terminals; the core asserts `weaponEnergy == E_core − Σcost` instead |
-| **Ordered shot** | fully implemented (`orderedOps`) | **stubbed** (empty `Shot`) — lands with op-flow, roadmap item 2 |
+| **Ordered shot** | sorts gem centroids by `(cy desc, cx asc)` | same order, sorted on lattice coords: `Height` asc → downstream `col` → upstream `col` → op name |
 | **Crystal cost** | hardcoded per kind in `CRYSTALS` | injectable `ICostTable`; `CrystalStats.Default` ships the same numbers |
 | **Op identity** | display strings (`'Chill → Freeze'`) | `OpId` enum, with `Ops.Display()` for the doc-facing name |
 

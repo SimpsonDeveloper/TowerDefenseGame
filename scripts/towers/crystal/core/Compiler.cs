@@ -11,7 +11,7 @@ namespace towerdefensegame.scripts.towers.crystal.core;
 /// Three steps, each a pure function of its arguments:
 ///   1. <see cref="RouteEnergy"/> — lattice + seeded share → energy at every crystal
 ///   2. <see cref="NameOps"/>     — lattice + energy → one op per internal edge
-///   3. <see cref="OrderShot"/>   — ops → the ordered shot (STUBBED, roadmap item 2)
+///   3. <see cref="OrderShot"/>   — ops → the ordered shot the enemy walks at hit time
 ///
 /// There is no terminal pass and no reachability pass. Source and sink are *predicates on the
 /// lattice* (<see cref="Lattice.IsSource"/> / <see cref="Lattice.IsSink"/>), and because every
@@ -115,10 +115,24 @@ public static class Compiler
     }
 
     /// <summary>
-    /// STUBBED — roadmap item 2 (`op-flow.md`). Will flatten the ops into ONE ordered list (no
-    /// bag, no compile-time consume, no split/merge of quantities), sorted by the producing
-    /// crystal's <see cref="CellCoord.Height"/> ascending, then its column. Returns empty for
-    /// now so callers can already read <see cref="CompileResult.Shot"/>.
+    /// The edge ops flattened into ONE ordered list — the shot (`op-flow.md` §2–§3). No bag, no
+    /// split/merge of op quantities, and nothing is consumed here: a primitive and the
+    /// interactive that will eat it both ride the shot, and the enemy resolves that at hit time.
+    ///
+    /// Each op is anchored to its **downstream** crystal — the one the energy arrives at, whose
+    /// energy is the op's quantity. Sort: <see cref="CellCoord.Height"/> ascending (lower gems
+    /// fire first, so a higher gem is always last), then downstream column left-to-right, then —
+    /// for the two edges landing on one ▽ — the leftmost upstream, then op name for determinism.
+    ///
+    /// Zero-energy edges produce nothing: an op with no energy behind it is inert, and a debted
+    /// edge was already floored to 0 by <see cref="NameOps"/>.
     /// </summary>
-    private static IReadOnlyList<ShotOp> OrderShot(IReadOnlyList<EdgeOp> ops) => new List<ShotOp>();
+    private static IReadOnlyList<ShotOp> OrderShot(IReadOnlyList<EdgeOp> ops) => ops
+        .Where(op => op.Energy > 0)
+        .OrderBy(op => op.Downstream.Height)
+        .ThenBy(op => op.Downstream.Col)
+        .ThenBy(op => op.Upstream.Col)
+        .ThenBy(op => Ops.Display(op.Op), StringComparer.Ordinal)
+        .Select(op => new ShotOp(op.Op, op.Energy))
+        .ToList();
 }

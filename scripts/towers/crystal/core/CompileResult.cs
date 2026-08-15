@@ -73,8 +73,9 @@ public sealed class CompileResult
     public IReadOnlyDictionary<int, CellEnergy> Energy { get; init; } = new Dictionary<int, CellEnergy>();
 
     /// <summary>
-    /// The compiled shot — an ORDERED list of ops the enemy walks one at a time at hit time.
-    /// STUBBED in roadmap item 1; the collect-and-order pass lands with op-flow (item 2).
+    /// The compiled shot — an ORDERED list of ops the enemy walks one at a time at hit time,
+    /// lowest-producing gem first. Nothing here is consumed: a primitive and the interactive
+    /// that will eat it both appear, and the enemy resolves that when the shot lands.
     /// </summary>
     public IReadOnlyList<ShotOp> Shot { get; init; } = new List<ShotOp>();
 }

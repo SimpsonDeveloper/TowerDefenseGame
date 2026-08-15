@@ -46,19 +46,4 @@ public class ComboMatrixTests
         Assert.Equal(7, ops.Count(Ops.IsPrimitive));
         Assert.Equal(14, ops.Count(Ops.IsInteractive));
     }
-
-    [Fact]
-    public void Shot_IsStubbedEmpty_UntilOpFlowLands()
-    {
-        // roadmap item 1 exposes the seam only; the collect-and-order pass is item 2
-        Lattice lat = new Lattice();
-        lat.Place(0, 0, CrystalKind.Ruby);
-        lat.Place(0, 1, CrystalKind.Ruby);
-        lat.Place(1, 1, CrystalKind.Sapphire);
-
-        CompileResult r = Compiler.Compile(lat, 100);
-
-        Assert.NotEmpty(r.Ops);
-        Assert.Empty(r.Shot);
-    }
 }

@@ -13,8 +13,8 @@ is *how we build it*, not new mechanics — two compiler rules are detailed here
 up: the **ordered op list** (`upgrades/op-flow.md`) and **auto source/sink terminals + equal
 split** (`upgrades/compiler-core.md`).
 
-Status: item **1 built** (`scripts/towers/crystal/core/`, tests in `tests/CrystalCore.Tests/`);
-items 2–6 planning.
+Status: items **1–2 built** (`scripts/towers/crystal/core/`, tests in
+`tests/CrystalCore.Tests/`); items 3–6 planning.
 
 ---
 
@@ -32,26 +32,26 @@ items 2–6 planning.
 
 | # | Track | Item | Doc | Depends | Size |
 |---|---|---|---|---|---|
-| 1 ✅ | upgrades | Compiler core (structure · energy · terminals · ops; ordered shot stubbed) | `upgrades/compiler-core.md` | — | M |
-| 2 | upgrades | Op-flow (ordered op list — port on top of the core) | `upgrades/op-flow.md` | 1 | S–M |
+| 1 ✅ | upgrades | Compiler core (structure · energy · terminals · ops) | `upgrades/compiler-core.md` | — | M |
+| 2 ✅ | upgrades | Op-flow (ordered op list — port on top of the core) | `upgrades/op-flow.md` | 1 | S–M |
 | 3 | upgrades | Lattice UI + template editor | `upgrades/lattice-ui.md` | 2 | L |
 | 4 | combat | First primitive op behaviors | `combat/primitives.md` | 2 | M |
 | 5 | combat | Enemy R + paths / roads / deviation | `combat/enemy-r.md` | 4 | XL |
 | 6 | — | Delivery shapes · impact cap · investment axes | *(later)* | 4 | — |
 
 Size: S/M/L/XL rough effort. **Compiler core is item 1** — the engine (structural passes,
-local-toll energy routing, auto crystal terminals, combo-op naming at leaf outs), ordered shot
-**stubbed**. **Op-flow is item 2** — port the ordered op list (produce + collect + order by
-lattice position) on top; no consumption here. Both already validated in the playground, which
-is the reference.
+local-toll energy routing, auto crystal terminals, combo-op naming at leaf outs). **Op-flow is
+item 2** — the ordered op list (produce + collect + order by lattice position) on top; no
+consumption here. Both were validated in the playground first, which is the reference.
+**Item 3 is next**: the compiler is trustworthy headless, so the lattice UI can render it.
 
 ---
 
 ## Ordering rationale
 
 - **1 (compiler core) first.** The engine — structural passes, local-toll energy routing,
-  auto crystal terminals, combo-op naming — is the foundation everything reads. Build and test
-  it headless with the ordered shot stubbed. Op-flow can't produce multipliers without this
+  auto crystal terminals, combo-op naming — is the foundation everything reads. Built and
+  tested headless with the ordered shot stubbed. Op-flow can't produce multipliers without this
   energy engine.
 - **2 (op-flow) next.** Layer the ordered op list (produce + collect + order by lattice
   position; no consumption) onto the core. Thin and low-risk: the playground `compile()` is the

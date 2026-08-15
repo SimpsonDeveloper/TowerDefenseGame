@@ -5,12 +5,11 @@ of `../../playground/archive/dataflow-playground.html` `compile()`. No `using Go
 call in; it never calls back. Testable in isolation and portable.
 
 Reference rules: `../../compilation-system.md`, `../../energy-conservation.md`.
-Roadmap item **1** — the engine (structure, energy, terminals, combo-op naming) with the
-**ordered shot stubbed**. The op-flow pass (produce + collect + order) is **item 2**
-(`op-flow.md`), layered on top. Depends on nothing. The playground `compile()` already does
-both — port the engine here first.
+Roadmap item **1** — the engine (structure, energy, terminals, combo-op naming). The op-flow
+pass (produce + collect + order) is **item 2** (`op-flow.md`), layered on top and now landed.
+Depends on nothing. The playground `compile()` already does both — port the engine here first.
 
-**Status: built.** `scripts/towers/crystal/core/` + `tests/CrystalCore.Tests/` (28 tests green).
+**Status: built.** `scripts/towers/crystal/core/` + `tests/CrystalCore.Tests/` (35 tests green).
 The test project compiles the core sources directly *without* `Godot.NET.Sdk` — building at all
 is the proof it stayed engine-free. Not yet wired to a tower (§5 is still open). The playground
 is now archived (`../../playground/archive/README.md` lists where it diverges).
@@ -104,10 +103,10 @@ form of "always on, never user-set".
    Debt is never clamped in transit, so a ▽ downstream can sum it back above 0.
 2. **Name ops**: for every internal edge, `(upKind, downKind) → ComboOp` at the energy that
    crossed it (the upstream cell's per-output share), floored at 0. Emit `EdgeOp`.
-3. **Order the shot** — **stubbed in item 1**; the collect-and-order pass is **item 2**
-   (`op-flow.md`). It flattens the `EdgeOp`s into one **ordered list** (no bag, no consume, no
-   split/merge of quantities) sorted by lattice position. The core exposes the seam (an empty
-   `Shot` on `CompileResult`) and leaves it empty until then.
+3. **Order the shot** (**item 2**, `op-flow.md`): flatten the `EdgeOp`s into one **ordered list**
+   — no bag, no consume, no split/merge of quantities. Each op is anchored to its **downstream**
+   cell and sorted `Height` asc → downstream `col` asc → upstream `col` asc → op name. Edges
+   carrying no energy produce nothing.
 
 Then assemble: `weaponEnergy = Σ max(0, sinkEnergy)`.
 
@@ -140,8 +139,7 @@ conservation identity is asserted in the tests instead.
 
 ## 4. Acceptance tests (lock the port to the docs)
 
-Encoded as xUnit in `tests/CrystalCore.Tests/` (all green except the item-2 one, which asserts
-the stub is empty):
+Encoded as xUnit in `tests/CrystalCore.Tests/`, all green:
 
 - `E_core = 20`, chain costs `1,2,3` → energy-in `20 / 19 / 17`, exit **14**.
 - Split `a → {b,c}` → `9.5` each → tolled to `7.5 / 6.5`.
@@ -156,12 +154,12 @@ the stub is empty):
 - Walk order: every cell's in-neighbours come **before** it in `FlowOrder()`. This is the one
   precondition the routing sweep depends on — the whole reason `Height` counts half-levels.
 - Every internal edge fires: op count == internal-edge count (there is no inactive case).
-- Ordered shot (**item 2**, `op-flow.md`): chain Ruby → Ruby → Sapphire → shot =
-  `[Burn ×(E@mid), Frostburn ×(E@top)]` in that order (Burn's gem is lower, so Burn first;
-  **no consumption** — both ride the shot). This test lands with op-flow, not the core.
+- Ordered shot (**item 2**, `op-flow.md` — `ShotOrderTests.cs`): chain Ruby → Ruby → Sapphire →
+  shot = `[Burn ×(E@mid), Frostburn ×(E@top)]` in that order (Burn's gem is lower, so Burn
+  first; **no consumption** — both ride the shot).
 
 The core (item 1) is "done" when the energy / structure / auto-terminal tests pass and its
-outputs match the playground for shared inputs (shot aside). ✅ done — see the status note above.
+outputs match the playground for shared inputs. ✅ done — see the status note above.
 
 ---
 

@@ -18,6 +18,10 @@ playground — port that.
 Design goal: **keep it simple.** Ops are named and ordered by the lattice; magnitude is the
 combo's energy. No conversion constants, no in-lattice state.
 
+**Status: built.** `Compiler.OrderShot` → `CompileResult.Shot`, tested in
+`tests/CrystalCore.Tests/ShotOrderTests.cs` (35 tests green across the core). Applying the shot
+to an enemy is item 4, not here.
+
 ---
 
 ## 1. Scope (deliberately thin)
@@ -46,10 +50,11 @@ hand-worked example below.
 Energy is not the only thing the compiler emits. Alongside the routed energy it emits a
 **shot** — an ordered list of `(OpId, quantity)`.
 
-1. **Produce.** Each **active** combo edge produces its op once, with
-   **quantity = energy arriving at the downstream crystal** (floored at 0, per
-   `../../energy-conservation.md`). Debt / zero-energy edges produce nothing. (What makes an
-   edge *active* — terminals, productive ∧ fed — is `compiler-core.md`.)
+1. **Produce.** Each combo edge produces its op once, with **quantity = energy arriving at the
+   downstream crystal** (floored at 0, per `../../energy-conservation.md`). Debt / zero-energy
+   edges produce nothing. (Under auto-terminals *every* internal edge is active — the
+   productive ∧ fed apparatus is vacuous and deliberately unmodelled, see `compiler-core.md`
+   §3. It returns if a rule can ever switch an edge off.)
 2. **Collect.** Every produced op across the whole lattice goes into one flat list for the
    shot. There is no bag, no split/merge of op quantities, and no consumption — a merge does
    not sum op quantities and a split does not divide them. (Energy still splits/merges; the
@@ -102,7 +107,8 @@ its screen `y` grows downward. The C# port sorts on lattice coordinates, not pix
 
 ## 4. Data shape (proposed, simple)
 
-- `Shot = List<(OpId op, float qty)>` — **ordered**; the sort of §3 is applied once at compile.
+- `Shot = IReadOnlyList<ShotOp>` where `ShotOp = (OpId Op, double Quantity)` — **ordered**; the
+  sort of §3 is applied once at compile.
 - No `Dictionary`, no per-edge payload map, no consume step. Each entry = one active combo.
 - Consumption math (partial? ratios? multiplier scaling?) is authored later **per interactive
   op** and applied by the enemy at hit time (item 4, `../combat/primitives.md`,
@@ -118,7 +124,9 @@ its screen `y` grows downward. The C# port sorts on lattice coordinates, not pix
 - ✅ `../../compilation-system.md` §3 + `../../legend.md` — ordered-op-list + op-order terms.
 - ✅ `../../effect-vocab/vocab-overview/states.md` — **Shot resolution** section: the enemy
   walks the ordered list at hit time and resolves consumers (Frostburn example).
-- ✅ Playground — the shot is an ordered list; no compile-time consumption.
+- ✅ Playground — the shot is an ordered list; no compile-time consumption. (Now archived under
+  `../../playground/archive/`.)
+- ✅ `compiler-core.md` §3–§4 — step 3 is no longer stubbed; the acceptance test is live.
 
 *Terminal rules (leaf-input / leaf-output), auto-terminals, and the equal energy split are a
 **compiler-core** concern, documented in `compiler-core.md` §2–§3 — not here.*
