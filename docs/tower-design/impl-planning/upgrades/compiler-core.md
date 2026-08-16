@@ -33,9 +33,10 @@ scripts/towers/crystal/core/      ← engine-agnostic
   LatticeMask.cs     which slots EXIST — the lattice's shape (item 3, `lattice-ui.md` §1)
   LatticeGeometry.cs where a cell sits: corners, centre, and point → cell
   LatticeCamera.cs   fits a lattice into a rectangle; lattice space ↔ view space
+  LatticeSnapshot.cs a lattice as plain data — the save format behind a template
 ```
 
-The last three are item 3's, but they are engine-free lattice knowledge, so they live here and
+The last four are item 3's, but they are engine-free lattice knowledge, so they live here and
 are unit-tested here. Nothing in `Compiler` reads them.
 
 `CrystalDef` (a `[GlobalClass]` Resource: kind, color, element, texture) and everything

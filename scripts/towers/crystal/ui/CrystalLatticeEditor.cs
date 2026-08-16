@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Godot;
 using towerdefensegame.scripts.towers.crystal.core;
@@ -25,9 +26,15 @@ public partial class CrystalLatticeEditor : Control
     /// </summary>
     [Export] public double CoreEnergy { get; set; } = 600;
 
+    /// <summary>Where authored templates live. Design-time assets, so <c>res://</c>.</summary>
+    private const string TemplateDir = "res://resources/crystal_templates";
+
     private LatticeView _view;
     private Label _readout;
     private Button _selected;
+    private LineEdit _templateName;
+    private Label _status;
+    private FileDialog _dialog;
 
     public override void _Ready()
     {
@@ -60,6 +67,15 @@ public partial class CrystalLatticeEditor : Control
         columns.AddChild(_view);
 
         columns.AddChild(BuildReadout());
+
+        _dialog = new FileDialog
+        {
+            Access = FileDialog.AccessEnum.Resources,   // templates ship with the build
+            Filters = new[] { "*.tres ; Crystal template" },
+            UseNativeDialog = false,
+        };
+        _dialog.FileSelected += OnFileChosen;
+        AddChild(_dialog);
     }
 
     private Control BuildPalette()
@@ -112,7 +128,76 @@ public partial class CrystalLatticeEditor : Control
         reset.Pressed += NewLattice;
         panel.AddChild(reset);
 
+        panel.AddChild(new HSeparator());
+        panel.AddChild(new Label { Text = "Template" });
+
+        _templateName = new LineEdit { Text = "Untitled", PlaceholderText = "name" };
+        panel.AddChild(_templateName);
+
+        Button save = new Button { Text = "Save…" };
+        save.Pressed += () => ShowFileDialog(FileDialog.FileModeEnum.SaveFile);
+        panel.AddChild(save);
+
+        Button load = new Button { Text = "Load…" };
+        load.Pressed += () => ShowFileDialog(FileDialog.FileModeEnum.OpenFile);
+        panel.AddChild(load);
+
+        _status = new Label { AutowrapMode = TextServer.AutowrapMode.WordSmart };
+        panel.AddChild(_status);
+
         return outer;
+    }
+
+    // ── templates ────────────────────────────────────────────────────────────────
+
+    private void ShowFileDialog(FileDialog.FileModeEnum mode)
+    {
+        DirAccess.MakeDirRecursiveAbsolute(TemplateDir);
+
+        _dialog.FileMode = mode;
+        _dialog.Title = mode == FileDialog.FileModeEnum.SaveFile ? "Save template" : "Load template";
+        _dialog.CurrentDir = TemplateDir;
+        _dialog.CurrentFile = $"{_templateName.Text.ToLowerInvariant().Replace(' ', '_')}.tres";
+        _dialog.PopupCentered(new Vector2I(760, 520));
+    }
+
+    private void OnFileChosen(string path)
+    {
+        if (_dialog.FileMode == FileDialog.FileModeEnum.SaveFile) Save(path);
+        else Load(path);
+    }
+
+    private void Save(string path)
+    {
+        CrystalTemplate template = CrystalTemplate.From(_view.Lattice, _templateName.Text);
+        Error error = ResourceSaver.Save(template, path);
+
+        Report(error == Error.Ok
+            ? $"saved {template.Mask.Count} slots / {template.Crystals.Count} crystals"
+            : $"save failed: {error}");
+    }
+
+    private void Load(string path)
+    {
+        CrystalTemplate template = ResourceLoader.Load<CrystalTemplate>(path, cacheMode: ResourceLoader.CacheMode.Ignore);
+        if (template == null) { Report("not a crystal template"); return; }
+
+        // a hand-edited file can describe something unbuildable — say so instead of half-loading
+        LatticeSnapshot snapshot = template.ToSnapshot();
+        IReadOnlyList<string> problems = snapshot.Problems();
+        if (problems.Count > 0) { Report(string.Join("\n", problems)); return; }
+
+        Lattice lattice = snapshot.Restore();
+        _templateName.Text = template.DisplayName;
+        _view.Setup(lattice, lattice.Mask);
+        Refresh();
+        Report($"loaded \"{template.DisplayName}\"");
+    }
+
+    private void Report(string message)
+    {
+        _status.Text = message;
+        GD.Print($"[lattice] {message}");
     }
 
     private Control BuildReadout()

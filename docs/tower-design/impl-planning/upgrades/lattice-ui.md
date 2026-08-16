@@ -11,14 +11,14 @@ Two surfaces share one renderer and one compiler:
    crystal configs that tower types load as their starting layout. (Tower types are out of
    scope; the editor that produces their defaults is in scope.)
 
-**Status: partly built.** The renderer, the click-to-build interactions, mask painting and the
-live compile overlay are in — run `scenes/crystal_lattice_editor.tscn`. Still open: **saving a
-template** (§4) and **wiring a tower to a lattice** (§5).
+**Status: built, bar the tower seam.** The renderer, click-to-build, mask painting, the live
+compile overlay and template save/load are all in — run `scenes/crystal_lattice_editor.tscn`.
+Still open: **wiring a tower to a lattice** (§5), which is `compiler-core.md` §5's job.
 
 | | where |
 |---|---|
-| shape (`LatticeMask`), geometry, framing + hit test | `scripts/towers/crystal/core/` — engine-free, 63 tests |
-| renderer, interactions, palette, readout | `scripts/towers/crystal/ui/` — Godot |
+| shape (`LatticeMask`), geometry, framing + hit test, save format (`LatticeSnapshot`) | `scripts/towers/crystal/core/` — engine-free, 71 tests |
+| renderer, interactions, palette, readout, `.tres` shell | `scripts/towers/crystal/ui/` — Godot |
 
 The split is the point: everything that can be wrong about a *coordinate* is tested headless,
 and the Godot classes are left holding draw calls.
@@ -81,10 +81,28 @@ Everything the builder does, plus **authoring the mask itself**:
 - ✅ Paint which grid slots are **usable / blocked**; sculpt the perimeter contour. One toggle on
   `LatticeView` — left click allows a slot, right click blocks it, and a band of off-mask grid is
   drawn around the contour so it can be grown outward.
-- Save a `{ mask, default crystals, default sites }` bundle as a **template** (a Resource).
-  **Not built** — the editor is in-memory only, so a shape does not survive closing the scene.
+- ✅ Save a `{ mask, default crystals }` bundle as a **template** (`CrystalTemplate`, a
+  `[GlobalClass]` Resource). Name it, Save…/Load… to `res://resources/crystal_templates/`.
+
+  ~~`default sites`~~ was in this list and is **gone**. It dates from the model where terminals
+  were user-set and edges were interaction points; under auto-terminals there is nothing per-site
+  to store. Same category as `lostEnergy` — a field that could only ever be empty.
+
+  A template is **authored, ships in `res://`, and is read-only at runtime**. It is deliberately
+  *not* a save-game: a player's evolving lattice is separate state, because writing it back over
+  the template would destroy the thing "reset to default" resets to. The two share this
+  serialization and nothing else — runtime saving is out of scope until a tower owns a lattice.
+
+  All of it is `LatticeSnapshot` (engine-free, tested): two `(row, col)`-sorted lists, so the
+  same lattice always writes the same file and a diff shows a real edit. `CrystalTemplate` is the
+  `.tres` shell and holds no rules.
 - Tower types (later, out of scope) reference a template as their default configuration.
-- Round-trips with the compiler for validation, so a shipped template is always legal.
+- ✅ Round-trips for validation, so a shipped template is always legal. Thinner than it sounds:
+  auto-terminals already made most illegal states unbuildable, so what a hand-edited `.tres` can
+  still get wrong is **a crystal outside the mask**, **two crystals in one slot**, or an unknown
+  crystal kind. Loading refuses rather than half-applying. Over-budget is deliberately *not* a
+  template problem — that is a fact about a lattice paired with a core energy, and a template
+  does not know which tower will load it.
 
 ---
 
@@ -92,7 +110,6 @@ Everything the builder does, plus **authoring the mask itself**:
 
 - Compiler: `../upgrades/compiler-core.md` (unchanged — UI feeds it a `Lattice`).
 - Placement/footprint patterns from `TowerPlacementManager` for the in-world side.
-- Template as a `[GlobalClass]` Resource, edited in the tool, loaded at tower spawn.
-
-Neither of the last two is wired yet: `CrystalLatticeEditor` is a standalone scene holding its
-own lattice, and no tower owns one. That is `compiler-core.md` §5, still open.
+- ✅ Template as a `[GlobalClass]` Resource, edited in the tool. **Loading at tower spawn is not
+  wired** — `CrystalLatticeEditor` is a standalone scene holding its own lattice, and no tower
+  owns one yet. That is `compiler-core.md` §5.

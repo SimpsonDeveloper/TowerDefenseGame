@@ -34,7 +34,7 @@ Status: items **1–2 built** and **3 partly built** (`scripts/towers/crystal/co
 |---|---|---|---|---|---|
 | 1 ✅ | upgrades | Compiler core (structure · energy · terminals · ops) | `upgrades/compiler-core.md` | — | M |
 | 2 ✅ | upgrades | Op-flow (ordered op list — port on top of the core) | `upgrades/op-flow.md` | 1 | S–M |
-| 3 ◐ | upgrades | Lattice UI + template editor (renderer + editing in; template saving out) | `upgrades/lattice-ui.md` | 2 | L |
+| 3 ◐ | upgrades | Lattice UI + template editor (built; tower seam still open) | `upgrades/lattice-ui.md` | 2 | L |
 | 4 | combat | First primitive op behaviors | `combat/primitives.md` | 2 | M |
 | 5 | combat | Enemy R + paths / roads / deviation | `combat/enemy-r.md` | 4 | XL |
 | 6 | — | Delivery shapes · impact cap · investment axes | *(later)* | 4 | — |
@@ -43,9 +43,10 @@ Size: S/M/L/XL rough effort. **Compiler core is item 1** — the engine (structu
 local-toll energy routing, auto crystal terminals, combo-op naming at leaf outs). **Op-flow is
 item 2** — the ordered op list (produce + collect + order by lattice position) on top; no
 consumption here. Both were validated in the playground first, which is the reference.
-**Item 3 is under way**: the lattice's shape, geometry and framing landed engine-free in
-`core/`, and `scripts/towers/crystal/ui/` renders and edits it live
-(`scenes/crystal_lattice_editor.tscn`). Template saving is what remains.
+**Item 3 is under way**: the lattice's shape, geometry, framing and save format landed
+engine-free in `core/`, and `scripts/towers/crystal/ui/` renders, edits and saves it live
+(`scenes/crystal_lattice_editor.tscn`). What remains is the **tower seam** —
+`upgrades/compiler-core.md` §5 — after which a template can actually be loaded at spawn.
 
 ---
 
