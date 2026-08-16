@@ -1,5 +1,6 @@
 using Godot;
 using Godot.Collections;
+using towerdefensegame.scripts.towers.crystal.ui;
 
 namespace towerdefensegame.scripts.towers;
 
@@ -16,11 +17,16 @@ public partial class TowerPlacementUI : CanvasLayer
     [Export] public Array<TowerDef> AvailableTowers { get; set; } = new();
 
     private Button _cancelButton;
+    private CrystalLatticeEditor _latticeEditor;
+    private TurretTower _editing;
 
     public override void _Ready()
     {
         BuildUI();
         Visible = false; // pocket starts as mini viewport; DimensionSwapped wired in scene
+
+        if (PlacementManager != null)
+            PlacementManager.TowerEditRequested += OnTowerEditRequested;
     }
 
     // ── UI construction ──────────────────────────────────────────────────────────
@@ -55,12 +61,67 @@ public partial class TowerPlacementUI : CanvasLayer
         destroyButton.Pressed += () => PlacementManager?.BeginDestroying();
         vbox.AddChild(destroyButton);
 
+        var editButton = new Button { Text = "Edit Crystals" };
+        editButton.Pressed += () => PlacementManager?.BeginEditing();
+        vbox.AddChild(editButton);
+
         _cancelButton = new Button { Text = "Cancel" };
         _cancelButton.Pressed += () => PlacementManager?.Cancel();
         vbox.AddChild(_cancelButton);
     }
 
+    // ── Crystal lattice editing ──────────────────────────────────────────────────
+
+    /// <summary>
+    /// Open the clicked tower's lattice full-screen, with the battle paused. Editing a lattice
+    /// means reading a compile trace — doing that while a wave advances would make the tool a
+    /// liability, and the tower would go on firing a stale shot besides.
+    /// </summary>
+    private void OnTowerEditRequested(Node2D tower)
+    {
+        if (tower is not TurretTower turret) return;
+        if (turret.Lattice == null)
+        {
+            GD.Print("[lattice] that tower has no crystal lattice");
+            return;
+        }
+
+        _editing = turret;
+
+        if (_latticeEditor == null)
+        {
+            _latticeEditor = new CrystalLatticeEditor
+            {
+                // must keep running while the tree is paused, or the editor freezes with it
+                ProcessMode = ProcessModeEnum.Always,
+            };
+            _latticeEditor.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+            _latticeEditor.LatticeEdited += () => _editing?.Recompile();
+            _latticeEditor.CloseRequested += CloseLatticeEditor;
+            AddChild(_latticeEditor);   // added last, so it draws over the placement panel
+        }
+
+        _latticeEditor.Visible = true;
+        _latticeEditor.Edit(turret.Lattice, turret.Name, turret.CoreEnergy);
+        GetTree().Paused = true;
+    }
+
+    private void CloseLatticeEditor()
+    {
+        GetTree().Paused = false;
+        if (_latticeEditor != null) _latticeEditor.Visible = false;
+
+        // the lattice was edited in place, so the tower already holds the new shot
+        _editing?.Recompile();
+        _editing = null;
+        PlacementManager?.Cancel();
+    }
+
     // ── Signal handler ───────────────────────────────────────────────────────────
 
-    private void OnDimensionSwapped(bool pocketIsMain) => Visible = pocketIsMain;
+    private void OnDimensionSwapped(bool pocketIsMain)
+    {
+        Visible = pocketIsMain;
+        if (!pocketIsMain && _latticeEditor is { Visible: true }) CloseLatticeEditor();
+    }
 }

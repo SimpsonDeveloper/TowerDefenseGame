@@ -11,9 +11,10 @@ Two surfaces share one renderer and one compiler:
    crystal configs that tower types load as their starting layout. (Tower types are out of
    scope; the editor that produces their defaults is in scope.)
 
-**Status: built, bar the tower seam.** The renderer, click-to-build, mask painting, the live
-compile overlay and template save/load are all in — run `scenes/crystal_lattice_editor.tscn`.
-Still open: **wiring a tower to a lattice** (§5), which is `compiler-core.md` §5's job.
+**Status: built.** Renderer, click-to-build, mask painting, the live compile overlay, template
+save/load, and the in-world route to it all: **Edit Crystals** in the placement panel, then click
+a tower to open its lattice full-screen with the battle paused. The standalone dev scene
+(`scenes/crystal_lattice_editor.tscn`) is the same editor with its own scratch lattice.
 
 | | where |
 |---|---|

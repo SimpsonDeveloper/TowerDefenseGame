@@ -16,12 +16,16 @@ namespace towerdefensegame.scripts.towers;
 ///                 left-click commits.
 ///   Destroying  — left-click on a placed tower destroys it (routed through
 ///                 <see cref="ITowerPlaceable.Destroy"/>).
+///   Editing     — left-click on a placed tower asks to open its crystal lattice
+///                 (<see cref="TowerEditRequested"/>); the UI decides what that looks like.
 ///
 /// Transitions:
 ///   BeginPlacement(def)     → Placing     (TowerPlacementUI)
 ///   BeginDestroying()       → Destroying  (TowerPlacementUI)
+///   BeginEditing()          → Editing     (TowerPlacementUI)
 ///   Left-click (Placing)    → Placing     (commits, stays for chaining)
 ///   Left-click (Destroying) → Destroying  (destroys tower under cursor, stays)
+///   Left-click (Editing)    → Editing     (raises TowerEditRequested, stays)
 ///   Right-click / Escape    → Idle        (cancel)
 ///   DimensionSwapped(false) → Idle        (pocket became mini)
 ///
@@ -40,7 +44,7 @@ public partial class TowerPlacementManager : Node2D
     /// around them for game feel.</summary>
     [Export] public float EnemyClearancePx { get; set; } = 20f;
 
-    private enum Mode { Idle, Placing, Destroying }
+    private enum Mode { Idle, Placing, Destroying, Editing }
 
     private Mode     _mode;
     private TowerDef _pending;
@@ -52,12 +56,19 @@ public partial class TowerPlacementManager : Node2D
 
     public bool IsPlacing    => _mode == Mode.Placing;
     public bool IsDestroying => _mode == Mode.Destroying;
+    public bool IsEditing    => _mode == Mode.Editing;
 
     /// <summary>Fired after a tower is successfully committed. Carries the tile footprint.</summary>
     public event Action<IReadOnlyList<Vector2I>>? TowerPlaced;
 
     /// <summary>Fired after a placed tower is removed. Carries the tile footprint it occupied.</summary>
     public event Action<IReadOnlyList<Vector2I>>? TowerRemoved;
+
+    /// <summary>
+    /// A tower was clicked in Editing mode. The manager deliberately stops here: opening the
+    /// crystal editor is a UI decision, and this node stays free of any dependency on it.
+    /// </summary>
+    public event Action<Node2D>? TowerEditRequested;
 
     // ── Public API ──────────────────────────────────────────────────────────────
 
@@ -86,6 +97,13 @@ public partial class TowerPlacementManager : Node2D
     {
         Cancel();
         _mode = Mode.Destroying;
+    }
+
+    /// <summary>Enter editing mode. Left-click on a tower asks to open its crystal lattice.</summary>
+    public void BeginEditing()
+    {
+        Cancel();
+        _mode = Mode.Editing;
     }
 
     /// <summary>Return to Idle from any mode. Discards any active ghost.</summary>
@@ -138,8 +156,9 @@ public partial class TowerPlacementManager : Node2D
             switch (mb.ButtonIndex)
             {
                 case MouseButton.Left:
-                    if (_mode == Mode.Placing)        TryCommitPlacement();
+                    if (_mode == Mode.Placing)         TryCommitPlacement();
                     else if (_mode == Mode.Destroying) TryDestroyAtMouse();
+                    else if (_mode == Mode.Editing)    TryEditAtMouse();
                     GetViewport().SetInputAsHandled();
                     break;
 
@@ -215,6 +234,15 @@ public partial class TowerPlacementManager : Node2D
         Vector2I tile    = CoordHelper.WorldToTile(worldPos, Coords);
         if (FootprintTracker.TryGetTowerAt(tile, out var tower))
             DestroyTower(tower);
+    }
+
+    /// <summary>Same lookup as destroy, different verb.</summary>
+    private void TryEditAtMouse()
+    {
+        Vector2 worldPos = GetGlobalMousePosition();
+        Vector2I tile    = CoordHelper.WorldToTile(worldPos, Coords);
+        if (FootprintTracker.TryGetTowerAt(tile, out var tower))
+            TowerEditRequested?.Invoke(tower);
     }
 
     /// <summary>

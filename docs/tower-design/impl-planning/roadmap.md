@@ -13,8 +13,9 @@ is *how we build it*, not new mechanics — two compiler rules are detailed here
 up: the **ordered op list** (`upgrades/op-flow.md`) and **auto source/sink terminals + equal
 split** (`upgrades/compiler-core.md`).
 
-Status: items **1–2 built** and **3 partly built** (`scripts/towers/crystal/core/` +
-`scripts/towers/crystal/ui/`, tests in `tests/CrystalCore.Tests/`); items 4–6 planning.
+Status: items **1–3 built** (`scripts/towers/crystal/`, tests in `tests/CrystalCore.Tests/`).
+Towers own a lattice, the player edits it in-world, and each shot carries its compiled ordered
+op list. Items 4–6 planning — **item 4 is what makes those ops do anything**.
 
 ---
 
@@ -34,7 +35,7 @@ Status: items **1–2 built** and **3 partly built** (`scripts/towers/crystal/co
 |---|---|---|---|---|---|
 | 1 ✅ | upgrades | Compiler core (structure · energy · terminals · ops) | `upgrades/compiler-core.md` | — | M |
 | 2 ✅ | upgrades | Op-flow (ordered op list — port on top of the core) | `upgrades/op-flow.md` | 1 | S–M |
-| 3 ◐ | upgrades | Lattice UI + template editor (built; tower seam still open) | `upgrades/lattice-ui.md` | 2 | L |
+| 3 ✅ | upgrades | Lattice UI + template editor | `upgrades/lattice-ui.md` | 2 | L |
 | 4 | combat | First primitive op behaviors | `combat/primitives.md` | 2 | M |
 | 5 | combat | Enemy R + paths / roads / deviation | `combat/enemy-r.md` | 4 | XL |
 | 6 | — | Delivery shapes · impact cap · investment axes | *(later)* | 4 | — |
@@ -43,10 +44,10 @@ Size: S/M/L/XL rough effort. **Compiler core is item 1** — the engine (structu
 local-toll energy routing, auto crystal terminals, combo-op naming at leaf outs). **Op-flow is
 item 2** — the ordered op list (produce + collect + order by lattice position) on top; no
 consumption here. Both were validated in the playground first, which is the reference.
-**Item 3 is under way**: the lattice's shape, geometry, framing and save format landed
-engine-free in `core/`, and `scripts/towers/crystal/ui/` renders, edits and saves it live
-(`scenes/crystal_lattice_editor.tscn`). What remains is the **tower seam** —
-`upgrades/compiler-core.md` §5 — after which a template can actually be loaded at spawn.
+**Item 3 landed**: the lattice's shape, geometry, framing and save format engine-free in `core/`;
+`crystal/ui/` renders, edits and saves it live; and `TurretTower` owns one, loaded from a
+`CrystalTemplate` on its `TowerDef`. Everything through item 3 is plumbing — a shot carries an
+ordered op list that **nothing reads yet**. Item 4 is where compilation starts to matter.
 
 ---
 

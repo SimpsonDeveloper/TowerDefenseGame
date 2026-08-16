@@ -192,5 +192,10 @@ lattice"). A tower fires a compiled shot; a tower with no lattice fires as it al
   costs, splits and debt show up at the muzzle. **The conversion factor is a placeholder**:
   damage properly comes from the ops in `CompileResult.Shot`, which is item 4's work.
   `TurretTower.ShotLanded` is the event that work plugs into.
-- **Open:** letting the player *reach* the lattice — an edit mode on `TowerPlacementManager`
-  that opens the editor on the clicked tower. R meter is still new (`../combat/enemy-r.md`).
+- ✅ Reaching the lattice: `TowerPlacementManager` gained **Editing** beside Placing and
+  Destroying — same state machine, same tower-under-cursor lookup as destroy. It raises
+  `TowerEditRequested` and stops there, so the manager keeps no dependency on the editor; the UI
+  decides what opening one looks like. Today that is `CrystalLatticeEditor` full-screen with the
+  tree **paused**, because reading a compile trace while a wave advances would make the tool a
+  liability and the tower would fire a stale shot meanwhile.
+- **Open:** the R meter (`../combat/enemy-r.md`), and item 4 consuming the ordered ops.

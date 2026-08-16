@@ -15,6 +15,10 @@ namespace towerdefensegame.scripts.towers.crystal.ui;
 /// Both surfaces the doc describes live here behind one toggle: **build** places crystals on a
 /// fixed mask, **paint mask** sculpts the contour itself (§4). The in-game builder is the same
 /// <see cref="LatticeView"/> with painting off.
+///
+/// Two entry points, one editor. Standing alone (`scenes/crystal_lattice_editor.tscn`) it makes
+/// its own scratch lattice; <see cref="Edit"/> points it at one that already exists — a tower's,
+/// opened from the world.
 /// </summary>
 public partial class CrystalLatticeEditor : Control
 {
@@ -37,6 +41,15 @@ public partial class CrystalLatticeEditor : Control
     private Label _status;
     private Label _hint;
     private FileDialog _dialog;
+    private Button _close;
+    private SpinBox _coreSpin;
+    private bool _editingExisting;
+
+    /// <summary>The lattice changed. A host editing a tower's lattice recompiles on this.</summary>
+    public event Action LatticeEdited;
+
+    /// <summary>The user asked to leave. Only reachable when hosted — see <see cref="Edit"/>.</summary>
+    public event Action CloseRequested;
 
     public override void _Ready()
     {
@@ -44,6 +57,32 @@ public partial class CrystalLatticeEditor : Control
         BuildUI();
         ShowHint();
         NewLattice();
+    }
+
+    public override void _Input(InputEvent @event)
+    {
+        // Only when hosted: the standalone dev scene has nothing to escape to.
+        if (!_editingExisting || !Visible) return;
+        if (!@event.IsActionPressed("ui_cancel")) return;
+
+        GetViewport().SetInputAsHandled();
+        CloseRequested?.Invoke();
+    }
+
+    /// <summary>
+    /// Point the editor at a lattice that already exists — a placed tower's — instead of the
+    /// scratch one it builds for itself. Call after adding to the tree.
+    /// </summary>
+    public void Edit(Lattice lattice, string title, double coreEnergy)
+    {
+        _editingExisting = true;
+        CoreEnergy = coreEnergy;
+
+        _coreSpin.Value = coreEnergy;      // fires ValueChanged → view.CoreEnergy + Rebuild
+        _templateName.Text = title;
+        _view.Setup(lattice, lattice.Mask);
+        _close.Visible = true;
+        Refresh();
     }
 
     // ── UI construction ──────────────────────────────────────────────────────────
@@ -66,7 +105,7 @@ public partial class CrystalLatticeEditor : Control
             SizeFlagsHorizontal = SizeFlags.ExpandFill,
             SizeFlagsVertical = SizeFlags.ExpandFill,
         };
-        _view.LatticeChanged += Refresh;
+        _view.LatticeChanged += () => { Refresh(); LatticeEdited?.Invoke(); };
         columns.AddChild(_view);
 
         columns.AddChild(BuildReadout());
@@ -132,13 +171,18 @@ public partial class CrystalLatticeEditor : Control
         panel.AddChild(new HSeparator());
         panel.AddChild(new Label { Text = "Core energy" });
 
-        SpinBox core = new SpinBox { MinValue = 0, MaxValue = 5000, Step = 25, Value = CoreEnergy };
-        core.ValueChanged += value => { _view.CoreEnergy = value; _view.Rebuild(); Refresh(); };
-        panel.AddChild(core);
+        _coreSpin = new SpinBox { MinValue = 0, MaxValue = 5000, Step = 25, Value = CoreEnergy };
+        _coreSpin.ValueChanged += value => { _view.CoreEnergy = value; _view.Rebuild(); Refresh(); };
+        panel.AddChild(_coreSpin);
 
         Button reset = new Button { Text = "Clear" };
         reset.Pressed += NewLattice;
         panel.AddChild(reset);
+
+        // Only meaningful when hosted over the world; the standalone dev scene has nowhere to go.
+        _close = new Button { Text = "Done", Visible = false };
+        _close.Pressed += () => CloseRequested?.Invoke();
+        panel.AddChild(_close);
 
         panel.AddChild(new HSeparator());
         panel.AddChild(new Label { Text = "Template" });
@@ -241,6 +285,19 @@ public partial class CrystalLatticeEditor : Control
 
     private void NewLattice()
     {
+        // Editing a tower's lattice, "Clear" must empty the SAME Lattice object — the tower holds
+        // a reference to it, so swapping in a fresh one would quietly disconnect the two.
+        if (_editingExisting && _view?.Lattice != null)
+        {
+            foreach (Cell cell in _view.Lattice.Cells.ToList())
+                _view.Lattice.Remove(cell.Row, cell.Col);
+
+            _view.Rebuild();
+            Refresh();
+            LatticeEdited?.Invoke();
+            return;
+        }
+
         LatticeMask mask = LatticeMask.Filled(MaskRows, MaskCols);
         _view.Setup(new Lattice(mask), mask);
         Refresh();

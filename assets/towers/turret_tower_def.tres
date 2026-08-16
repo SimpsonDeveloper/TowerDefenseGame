@@ -1,9 +1,10 @@
-[gd_resource type="Resource" script_class="TowerDef" load_steps=5 format=3 uid="uid://cty8l0mgobduv"]
+[gd_resource type="Resource" script_class="TowerDef" load_steps=6 format=3 uid="uid://cty8l0mgobduv"]
 
 [ext_resource type="Script" uid="uid://6fcff7tjoj3y" path="res://scripts/towers/TowerDef.cs" id="1_def"]
 [ext_resource type="Script" uid="uid://cshkkhksickr0" path="res://scripts/towers/TowerCost.cs" id="1_w86qd"]
 [ext_resource type="Texture2D" uid="uid://dgqpjb6qmvano" path="res://assets/towers/tower64_top_down_full.png" id="3_preview"]
 [ext_resource type="PackedScene" uid="uid://2xgnso3nt742" path="res://scenes/turret_tower.tscn" id="3_w86qd"]
+[ext_resource type="Resource" path="res://resources/crystal_templates/turret_starter.tres" id="4_lattice"]
 
 [resource]
 script = ExtResource("1_def")
@@ -12,3 +13,5 @@ TowerScene = ExtResource("3_w86qd")
 SizePixels = Vector2i(128, 128)
 PreviewTexture = ExtResource("3_preview")
 TargetRadius = 512.0
+Lattice = ExtResource("4_lattice")
+CoreEnergy = 150.0

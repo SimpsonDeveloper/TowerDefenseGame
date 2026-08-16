@@ -54,6 +54,9 @@ public partial class TurretTower : StaticBody2D, ITowerPlaceable
 	/// <summary>What the lattice currently compiles to. Null when there is no lattice.</summary>
 	public CompileResult Shot { get; private set; }
 
+	/// <summary>Energy this tower's core feeds the lattice each shot.</summary>
+	public double CoreEnergy => _coreEnergy;
+
 	/// <summary>
 	/// Raised when a shot lands, carrying what it delivered. The seam roadmap item 4 plugs into:
 	/// the ordered op list is already on <see cref="CompileResult.Shot"/>, and applying each op
