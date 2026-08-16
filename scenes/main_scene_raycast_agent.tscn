@@ -1,6 +1,7 @@
-[gd_scene load_steps=35 format=3 uid="uid://bvr6e1vs0egs7"]
+[gd_scene load_steps=36 format=3 uid="uid://bvr6e1vs0egs7"]
 
 [ext_resource type="PackedScene" uid="uid://d23xmn1ko1rqq" path="res://scenes/pocket_dimension.tscn" id="0_pd"]
+[ext_resource type="Script" uid="uid://cx6tlfx7evd1b" path="res://scripts/towers/crystal/ui/CrystalLatticeEditor.cs" id="0_lattice_editor"]
 [ext_resource type="Script" uid="uid://dlf3scmu37ybh" path="res://scripts/world/WorldManager.cs" id="0_wm"]
 [ext_resource type="Script" uid="uid://dc1qoqdmljdl1" path="res://scripts/ui/SpawnFadeOverlay.cs" id="1_to7gp"]
 [ext_resource type="Script" uid="uid://b5nqdbgtipn07" path="res://scripts/ui/WaveTimerOverlay.cs" id="1_wto"]
@@ -57,10 +58,28 @@ metadata/_custom_type_script = "uid://bn66bgttlo0pn"
 
 [node name="Node2D" type="Node2D"]
 
-[node name="SpawnFadeOverlay" type="CanvasLayer" parent="."]
+[node name="WhenPaused" type="Node" parent="."]
+process_mode = 2
+
+[node name="LatticeEditorLayer" type="CanvasLayer" parent="WhenPaused"]
+
+[node name="CrystalLatticeEditor" type="Control" parent="WhenPaused/LatticeEditorLayer"]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("0_lattice_editor")
+
+[node name="Pausable" type="Node" parent="."]
+process_mode = 1
+
+[node name="SpawnFadeOverlay" type="CanvasLayer" parent="Pausable"]
 script = ExtResource("1_to7gp")
 
-[node name="WorldManager" type="Node2D" parent="." node_paths=PackedStringArray("OverworldContainer", "PocketDimensionContainer", "OverworldViewport", "PocketDimensionViewport", "PocketDimensionCamera", "OverworldCamera", "PocketSpawner")]
+[node name="WorldManager" type="Node2D" parent="Pausable" node_paths=PackedStringArray("OverworldContainer", "PocketDimensionContainer", "OverworldViewport", "PocketDimensionViewport", "PocketDimensionCamera", "OverworldCamera", "PocketSpawner")]
 script = ExtResource("0_wm")
 OverworldContainer = NodePath("../OverworldContainer")
 PocketDimensionContainer = NodePath("../PocketDimensionContainer")
@@ -70,26 +89,26 @@ PocketDimensionCamera = NodePath("../PocketDimensionContainer/PocketDimensionVie
 OverworldCamera = NodePath("../OverworldContainer/OverworldViewport/PlayerCamera")
 PocketSpawner = NodePath("../PocketDimensionContainer/PocketDimensionViewport/PocketDimension/PocketDimensionEnemySpawner")
 
-[node name="OverworldContainer" type="SubViewportContainer" parent="."]
+[node name="OverworldContainer" type="SubViewportContainer" parent="Pausable"]
 texture_filter = 1
 offset_right = 1920.0
 offset_bottom = 1080.0
 stretch = true
 
-[node name="OverworldViewport" type="SubViewport" parent="OverworldContainer"]
+[node name="OverworldViewport" type="SubViewport" parent="Pausable/OverworldContainer"]
 disable_3d = true
 handle_input_locally = false
 canvas_item_default_texture_filter = 0
 size = Vector2i(1920, 1080)
 render_target_update_mode = 4
 
-[node name="InventoryUI" type="CanvasLayer" parent="OverworldContainer/OverworldViewport"]
+[node name="InventoryUI" type="CanvasLayer" parent="Pausable/OverworldContainer/OverworldViewport"]
 script = ExtResource("2_u0fll")
 
-[node name="GensUI" type="CanvasLayer" parent="OverworldContainer/OverworldViewport"]
+[node name="GensUI" type="CanvasLayer" parent="Pausable/OverworldContainer/OverworldViewport"]
 layer = 10
 
-[node name="TerrainUI" type="Container" parent="OverworldContainer/OverworldViewport/GensUI" node_paths=PackedStringArray("SimplexGenNode")]
+[node name="TerrainUI" type="Container" parent="Pausable/OverworldContainer/OverworldViewport/GensUI" node_paths=PackedStringArray("SimplexGenNode")]
 offset_left = 600.0
 offset_top = 100.0
 offset_right = 640.0
@@ -97,41 +116,41 @@ offset_bottom = 140.00034
 script = ExtResource("3_6p3nn")
 SimplexGenNode = NodePath("../../TerrainGen")
 
-[node name="GrassUI" type="Container" parent="OverworldContainer/OverworldViewport/GensUI" node_paths=PackedStringArray("SimplexGenNode")]
+[node name="GrassUI" type="Container" parent="Pausable/OverworldContainer/OverworldViewport/GensUI" node_paths=PackedStringArray("SimplexGenNode")]
 offset_top = 100.0
 offset_right = 40.0
 offset_bottom = 140.00034
 script = ExtResource("3_6p3nn")
 SimplexGenNode = NodePath("../../TerrainGen/GensLayer/GrassGen")
 
-[node name="RockUI" type="Container" parent="OverworldContainer/OverworldViewport/GensUI" node_paths=PackedStringArray("SimplexGenNode")]
+[node name="RockUI" type="Container" parent="Pausable/OverworldContainer/OverworldViewport/GensUI" node_paths=PackedStringArray("SimplexGenNode")]
 offset_top = 200.0
 offset_right = 40.0
 offset_bottom = 240.0
 script = ExtResource("3_6p3nn")
 SimplexGenNode = NodePath("../../TerrainGen/GensLayer/RockGen")
 
-[node name="SandUI" type="Container" parent="OverworldContainer/OverworldViewport/GensUI" node_paths=PackedStringArray("SimplexGenNode")]
+[node name="SandUI" type="Container" parent="Pausable/OverworldContainer/OverworldViewport/GensUI" node_paths=PackedStringArray("SimplexGenNode")]
 offset_top = 300.0
 offset_right = 40.0
 offset_bottom = 340.00034
 script = ExtResource("3_6p3nn")
 SimplexGenNode = NodePath("../../TerrainGen/GensLayer/SandGen")
 
-[node name="WaterUI" type="Container" parent="OverworldContainer/OverworldViewport/GensUI" node_paths=PackedStringArray("SimplexGenNode")]
+[node name="WaterUI" type="Container" parent="Pausable/OverworldContainer/OverworldViewport/GensUI" node_paths=PackedStringArray("SimplexGenNode")]
 offset_left = 600.0
 offset_right = 640.0
 offset_bottom = 40.0
 script = ExtResource("3_6p3nn")
 SimplexGenNode = NodePath("../../TerrainGen/GensLayer/WaterGen")
 
-[node name="CameraUI" type="Container" parent="OverworldContainer/OverworldViewport/GensUI" node_paths=PackedStringArray("Camera")]
+[node name="CameraUI" type="Container" parent="Pausable/OverworldContainer/OverworldViewport/GensUI" node_paths=PackedStringArray("Camera")]
 offset_right = 40.0
 offset_bottom = 40.0
 script = ExtResource("5_k3g67")
 Camera = NodePath("../../PlayerCamera")
 
-[node name="TerrainGen" type="Node2D" parent="OverworldContainer/OverworldViewport" node_paths=PackedStringArray("SimplexGens", "ChunkManager")]
+[node name="TerrainGen" type="Node2D" parent="Pausable/OverworldContainer/OverworldViewport" node_paths=PackedStringArray("SimplexGens", "ChunkManager")]
 script = ExtResource("6_4bgka")
 Config = ExtResource("29_terrain")
 SimplexGens = [NodePath("GensLayer/WaterGen"), NodePath("GensLayer/GrassGen"), NodePath("GensLayer/SandGen"), NodePath("GensLayer/RockGen")]
@@ -143,84 +162,87 @@ SubResource("Resource_7th4q"): 3
 }
 ChunkManager = NodePath("ChunkManager")
 
-[node name="GensLayer" type="Node2D" parent="OverworldContainer/OverworldViewport/TerrainGen"]
+[node name="GensLayer" type="Node2D" parent="Pausable/OverworldContainer/OverworldViewport/TerrainGen"]
 
-[node name="GrassGen" type="Node2D" parent="OverworldContainer/OverworldViewport/TerrainGen/GensLayer" node_paths=PackedStringArray("ChunkManager")]
+[node name="GrassGen" type="Node2D" parent="Pausable/OverworldContainer/OverworldViewport/TerrainGen/GensLayer" node_paths=PackedStringArray("ChunkManager")]
 script = ExtResource("8_pgk25")
 Config = ExtResource("25_grass")
 ChunkManager = NodePath("../../ChunkManager")
 TerrainType = 1
 
-[node name="RockGen" type="Node2D" parent="OverworldContainer/OverworldViewport/TerrainGen/GensLayer" node_paths=PackedStringArray("ChunkManager")]
+[node name="RockGen" type="Node2D" parent="Pausable/OverworldContainer/OverworldViewport/TerrainGen/GensLayer" node_paths=PackedStringArray("ChunkManager")]
 script = ExtResource("8_pgk25")
 Config = ExtResource("26_rock")
 ChunkManager = NodePath("../../ChunkManager")
 TerrainType = 3
 
-[node name="SandGen" type="Node2D" parent="OverworldContainer/OverworldViewport/TerrainGen/GensLayer" node_paths=PackedStringArray("ChunkManager")]
+[node name="SandGen" type="Node2D" parent="Pausable/OverworldContainer/OverworldViewport/TerrainGen/GensLayer" node_paths=PackedStringArray("ChunkManager")]
 script = ExtResource("8_pgk25")
 Config = ExtResource("27_sand")
 ChunkManager = NodePath("../../ChunkManager")
 TerrainType = 2
 
-[node name="WaterGen" type="Node2D" parent="OverworldContainer/OverworldViewport/TerrainGen/GensLayer" node_paths=PackedStringArray("ChunkManager")]
+[node name="WaterGen" type="Node2D" parent="Pausable/OverworldContainer/OverworldViewport/TerrainGen/GensLayer" node_paths=PackedStringArray("ChunkManager")]
 script = ExtResource("8_pgk25")
 Config = ExtResource("28_water")
 ChunkManager = NodePath("../../ChunkManager")
 
-[node name="ChunkManager" type="Node2D" parent="OverworldContainer/OverworldViewport/TerrainGen" node_paths=PackedStringArray("TerrainGen", "Camera")]
+[node name="ChunkManager" type="Node2D" parent="Pausable/OverworldContainer/OverworldViewport/TerrainGen" node_paths=PackedStringArray("TerrainGen", "Camera")]
 script = ExtResource("9_kkokr")
 TerrainGen = NodePath("..")
 Camera = NodePath("../../PlayerCamera")
 CoordConfig = ExtResource("33_coordcfg")
 
-[node name="PlayerCamera" type="Camera2D" parent="OverworldContainer/OverworldViewport"]
+[node name="PlayerCamera" type="Camera2D" parent="Pausable/OverworldContainer/OverworldViewport"]
 position = Vector2(960, 540)
 script = ExtResource("10_lhwp2")
 MinZoom = 1.0
 
-[node name="CrystalSpawner" type="Node2D" parent="OverworldContainer/OverworldViewport"]
+[node name="CrystalSpawner" type="Node2D" parent="Pausable/OverworldContainer/OverworldViewport"]
 script = ExtResource("11_l40q6")
 CrystalScene = ExtResource("12_iav3h")
 Variants = Array[Object]([ExtResource("13_womr8"), ExtResource("14_onjth"), ExtResource("15_xa0eo"), ExtResource("16_3mjum"), ExtResource("17_p27gv"), ExtResource("18_cn4eu")])
 
-[node name="PlayerSpawner" type="Node2D" parent="OverworldContainer/OverworldViewport" node_paths=PackedStringArray("ChunkManager")]
+[node name="PlayerSpawner" type="Node2D" parent="Pausable/OverworldContainer/OverworldViewport" node_paths=PackedStringArray("ChunkManager")]
 script = ExtResource("35_spawner")
 ChunkManager = NodePath("../TerrainGen/ChunkManager")
 CoordConfig = ExtResource("33_coordcfg")
 PlayerScene = ExtResource("25_pndb5")
 SpawnOrigin = Vector2(1152, 648)
 
-[node name="PolygonTerrainManager" type="Node2D" parent="OverworldContainer/OverworldViewport" node_paths=PackedStringArray("ChunkManager")]
+[node name="PolygonTerrainManager" type="Node2D" parent="Pausable/OverworldContainer/OverworldViewport" node_paths=PackedStringArray("ChunkManager")]
 script = ExtResource("34_polytm")
 ChunkManager = NodePath("../TerrainGen/ChunkManager")
 CoordConfig = ExtResource("33_coordcfg")
 DebugDrawEnabled = true
 
-[node name="EnemyRaycastAgent" parent="OverworldContainer/OverworldViewport" instance=ExtResource("28_7b1ka")]
+[node name="EnemyRaycastAgent" parent="Pausable/OverworldContainer/OverworldViewport" instance=ExtResource("28_7b1ka")]
 position = Vector2(800, 648)
 
-[node name="PocketDimensionContainer" type="SubViewportContainer" parent="."]
+[node name="PocketDimensionContainer" type="SubViewportContainer" parent="Pausable"]
 texture_filter = 1
 stretch = true
 
-[node name="PocketDimensionViewport" type="SubViewport" parent="PocketDimensionContainer"]
+[node name="PocketDimensionViewport" type="SubViewport" parent="Pausable/PocketDimensionContainer"]
 disable_3d = true
 handle_input_locally = false
 canvas_item_default_texture_filter = 0
 size = Vector2i(2, 2)
 render_target_update_mode = 4
 
-[node name="PocketDimension" parent="PocketDimensionContainer/PocketDimensionViewport" instance=ExtResource("0_pd")]
+[node name="PocketDimension" parent="Pausable/PocketDimensionContainer/PocketDimensionViewport" instance=ExtResource("0_pd")]
 
-[node name="WaveTimerOverlay" type="CanvasLayer" parent="." node_paths=PackedStringArray("Spawner")]
+[node name="WaveTimerOverlay" type="CanvasLayer" parent="Pausable" node_paths=PackedStringArray("Spawner")]
 script = ExtResource("1_wto")
 Spawner = NodePath("../PocketDimensionContainer/PocketDimensionViewport/PocketDimension/PocketDimensionEnemySpawner")
 
-[connection signal="DimensionSwapped" from="WorldManager" to="PocketDimensionContainer/PocketDimensionViewport/PocketDimension/TowerPlacementManager" method="OnDimensionSwapped"]
-[connection signal="DimensionSwapped" from="WorldManager" to="PocketDimensionContainer/PocketDimensionViewport/PocketDimension/TowerPlacementUI" method="OnDimensionSwapped"]
-[connection signal="PlayerSpawned" from="OverworldContainer/OverworldViewport/PlayerSpawner" to="SpawnFadeOverlay" method="OnPlayerSpawned"]
-[connection signal="PlayerSpawned" from="OverworldContainer/OverworldViewport/PlayerSpawner" to="WorldManager" method="OnPlayerSpawned"]
-[connection signal="PlayerSpawned" from="OverworldContainer/OverworldViewport/PlayerSpawner" to="OverworldContainer/OverworldViewport/InventoryUI" method="OnPlayerSpawned"]
-[connection signal="PlayerSpawned" from="OverworldContainer/OverworldViewport/PlayerSpawner" to="OverworldContainer/OverworldViewport/PlayerCamera" method="OnPlayerSpawned"]
-[connection signal="PlayerSpawned" from="OverworldContainer/OverworldViewport/PlayerSpawner" to="OverworldContainer/OverworldViewport/CrystalSpawner" method="OnPlayerSpawned"]
+[node name="TowerPlacementUI" parent="Pausable/PocketDimensionContainer/PocketDimensionViewport/PocketDimension" index="7" node_paths=PackedStringArray("LatticeEditor")]
+LatticeEditor = NodePath("../../../../../WhenPaused/LatticeEditorLayer/CrystalLatticeEditor")
+
+[connection signal="DimensionSwapped" from="Pausable/WorldManager" to="Pausable/PocketDimensionContainer/PocketDimensionViewport/PocketDimension/TowerPlacementManager" method="OnDimensionSwapped"]
+[connection signal="DimensionSwapped" from="Pausable/WorldManager" to="Pausable/PocketDimensionContainer/PocketDimensionViewport/PocketDimension/TowerPlacementUI" method="OnDimensionSwapped"]
+[connection signal="PlayerSpawned" from="Pausable/OverworldContainer/OverworldViewport/PlayerSpawner" to="Pausable/SpawnFadeOverlay" method="OnPlayerSpawned"]
+[connection signal="PlayerSpawned" from="Pausable/OverworldContainer/OverworldViewport/PlayerSpawner" to="Pausable/WorldManager" method="OnPlayerSpawned"]
+[connection signal="PlayerSpawned" from="Pausable/OverworldContainer/OverworldViewport/PlayerSpawner" to="Pausable/OverworldContainer/OverworldViewport/InventoryUI" method="OnPlayerSpawned"]
+[connection signal="PlayerSpawned" from="Pausable/OverworldContainer/OverworldViewport/PlayerSpawner" to="Pausable/OverworldContainer/OverworldViewport/PlayerCamera" method="OnPlayerSpawned"]
+[connection signal="PlayerSpawned" from="Pausable/OverworldContainer/OverworldViewport/PlayerSpawner" to="Pausable/OverworldContainer/OverworldViewport/CrystalSpawner" method="OnPlayerSpawned"]

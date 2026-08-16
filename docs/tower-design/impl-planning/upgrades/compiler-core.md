@@ -199,12 +199,33 @@ lattice"). A tower fires a compiled shot; a tower with no lattice fires as it al
   decides what opening one looks like. Today that is `CrystalLatticeEditor` full-screen with the
   tree **paused**, because reading a compile trace while a wave advances would make the tool a
   liability and the tower would fire a stale shot meanwhile.
-- ⚠️ **The editor hangs off the root viewport, not off `TowerPlacementUI`.** That UI lives inside
-  the pocket dimension's `SubViewport`, and a `SubViewport` gets input only because the
-  `SubViewportContainer` above it forwards it — which that container can only do while it is
-  processing input. Pausing the tree stops it, so anything hosted in there goes **deaf the moment
-  it pauses the game**, no matter what `ProcessMode` it sets on itself: `Always` decides whether an
-  event is handled, and here the event never arrives. A modal that outlives a pause must sit on the
-  viewport that reads the mouse. Its own `CanvasLayer` at 100 also puts it above the other
-  dimension's mini-view and the wave timer, which is what "full-screen" was supposed to mean.
+- ⚠️ **The editor is not under `TowerPlacementUI`, and cannot be.** That UI lives inside the pocket
+  dimension's `SubViewport`, and a `SubViewport` gets input only because the `SubViewportContainer`
+  above it forwards it — which that container can only do while it is processing input. Pausing the
+  tree stops it, so anything hosted in there goes **deaf the moment it pauses the game**, no matter
+  what `ProcessMode` it sets on itself: `Always` decides whether an event is *handled*, and here
+  none *arrives*. A modal that outlives a pause has to sit on the viewport that reads the mouse.
+
+  So `main_scene_raycast_agent.tscn` states the split outright, and the editor lives on the far
+  side of it:
+
+  ```
+  Node2D
+  ├─ WhenPaused    process_mode = 2   ← runs only while paused
+  │   └─ LatticeEditorLayer  CanvasLayer
+  │       └─ CrystalLatticeEditor
+  └─ Pausable      process_mode = 1   ← the game and its HUD
+      ├─ WorldManager · OverworldContainer · PocketDimensionContainer
+      └─ SpawnFadeOverlay · WaveTimerOverlay
+  ```
+
+  Anything else that must survive a pause parents under `WhenPaused` and inherits the behaviour
+  without knowing this rule exists, which is the point of naming the branches. `TowerPlacementUI`
+  reaches its editor through an exported `NodePath` and only drives it.
+
+  Draw order is `scripts/ui/UiLayer.cs`: **0–99 pausable, 100+ modal**, every value assigned in
+  `_Ready` so the scene never carries a competing number. Godot has no sublayers — `layer` is one
+  absolute int per viewport and nesting `CanvasLayer`s does not compose — so a stated convention is
+  the only mechanism there is. The band is also what makes "full-screen" true: before it, the other
+  dimension's mini-view and the wave timer drew on top of the editor.
 - **Open:** the R meter (`../combat/enemy-r.md`), and item 4 consuming the ordered ops.

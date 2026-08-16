@@ -16,18 +16,26 @@ public partial class TowerPlacementUI : CanvasLayer
     [Export] public TowerPlacementManager PlacementManager { get; set; }
     [Export] public Array<TowerDef> AvailableTowers { get; set; } = new();
 
-    private Button _cancelButton;
-    private CanvasLayer _editorLayer;
-    private CrystalLatticeEditor _latticeEditor;
-    private TurretTower _editing;
+    /// <summary>
+    /// The lattice editor, which lives under the scene's <c>WhenPaused</c> branch — outside this
+    /// SubViewport, and outside anything that stops when the game does. See
+    /// <see cref="OnTowerEditRequested"/> for why it cannot live in here.
+    /// </summary>
+    [Export] public CrystalLatticeEditor LatticeEditor { get; set; }
 
-    /// <summary>Above every other overlay in the scene — those sit on the default layer 1.</summary>
-    private const int EditorCanvasLayer = 100;
+    private Button _cancelButton;
+    private TurretTower _editing;
 
     public override void _Ready()
     {
         BuildUI();
         Visible = false; // pocket starts as mini viewport; DimensionSwapped wired in scene
+
+        if (LatticeEditor != null)
+        {
+            LatticeEditor.LatticeEdited += () => _editing?.Recompile();
+            LatticeEditor.CloseRequested += CloseLatticeEditor;
+        }
 
         if (PlacementManager != null)
             PlacementManager.TowerEditRequested += OnTowerEditRequested;
@@ -80,9 +88,23 @@ public partial class TowerPlacementUI : CanvasLayer
     /// Open the clicked tower's lattice full-screen, with the battle paused. Editing a lattice
     /// means reading a compile trace — doing that while a wave advances would make the tool a
     /// liability, and the tower would go on firing a stale shot besides.
+    ///
+    /// The editor itself is <b>not</b> a child of this node, and cannot be. This UI lives inside
+    /// the pocket dimension's <c>SubViewport</c>, which receives input only because the
+    /// <c>SubViewportContainer</c> above it forwards it — and a paused container forwards nothing.
+    /// A modal hosted in here would go deaf the instant it paused the game, whatever
+    /// <c>ProcessMode</c> it set on itself: <c>Always</c> governs whether an event is handled, not
+    /// whether one arrives. So it hangs off the scene's <c>WhenPaused</c> branch instead, and this
+    /// class only drives it.
     /// </summary>
     private void OnTowerEditRequested(Node2D tower)
     {
+        if (LatticeEditor == null)
+        {
+            GD.PushWarning("[lattice] TowerPlacementUI has no LatticeEditor wired");
+            return;
+        }
+
         if (tower is not TurretTower turret) return;
         if (turret.Lattice == null)
         {
@@ -91,52 +113,16 @@ public partial class TowerPlacementUI : CanvasLayer
         }
 
         _editing = turret;
-        _editorLayer ??= BuildEditorLayer();
 
-        // the Control, not the layer: CrystalLatticeEditor gates its own escape handling on Visible
-        _latticeEditor.Visible = true;
-        _latticeEditor.Edit(turret.Lattice, turret.DisplayName, turret.CoreEnergy);
+        LatticeEditor.Visible = true;
+        LatticeEditor.Edit(turret.Lattice, turret.DisplayName, turret.CoreEnergy);
         GetTree().Paused = true;
-    }
-
-    /// <summary>
-    /// Builds the editor into its own <see cref="CanvasLayer"/> under the <b>root</b> viewport,
-    /// deliberately not under this node.
-    ///
-    /// This UI lives inside the pocket dimension's <c>SubViewport</c>, and a SubViewport only
-    /// receives input because the <c>SubViewportContainer</c> above it forwards it — which that
-    /// container can only do while it is processing input. Pausing the tree stops it, so anything
-    /// hosted in there goes deaf the instant it pauses the game, however it sets its own
-    /// <c>ProcessMode</c>: the events never arrive to be handled. A modal that outlives the pause
-    /// has to hang off the viewport that reads the mouse directly.
-    ///
-    /// Being at the root also makes "full-screen" true — inside the SubViewport the editor was
-    /// still underneath the other dimension's mini-view and the wave timer.
-    /// </summary>
-    private CanvasLayer BuildEditorLayer()
-    {
-        _latticeEditor = new CrystalLatticeEditor();
-        _latticeEditor.SetAnchorsPreset(Control.LayoutPreset.FullRect);
-        _latticeEditor.LatticeEdited += () => _editing?.Recompile();
-        _latticeEditor.CloseRequested += CloseLatticeEditor;
-
-        CanvasLayer layer = new CanvasLayer
-        {
-            Layer = EditorCanvasLayer,
-            // Always propagates to children, so the whole editor keeps running while paused.
-            ProcessMode = ProcessModeEnum.Always,
-        };
-        layer.AddChild(_latticeEditor);
-
-        // Parented to the root, so it must be freed by hand — see _ExitTree.
-        GetTree().Root.AddChild(layer);
-        return layer;
     }
 
     private void CloseLatticeEditor()
     {
         GetTree().Paused = false;
-        if (_latticeEditor != null) _latticeEditor.Visible = false;
+        if (LatticeEditor != null) LatticeEditor.Visible = false;
 
         // the lattice was edited in place, so the tower already holds the new shot
         _editing?.Recompile();
@@ -144,26 +130,12 @@ public partial class TowerPlacementUI : CanvasLayer
         PlacementManager?.Cancel();
     }
 
-    public override void _ExitTree()
-    {
-        if (_editorLayer == null) return;
-
-        // The layer hangs off the root, so unloading this scene would otherwise strand it —
-        // and strand the pause with it.
-        SceneTree tree = GetTree();
-        if (tree != null && _latticeEditor is { Visible: true }) tree.Paused = false;
-
-        _editorLayer.QueueFree();
-        _editorLayer = null;
-        _latticeEditor = null;
-    }
-
     // ── Signal handler ───────────────────────────────────────────────────────────
 
     private void OnDimensionSwapped(bool pocketIsMain)
     {
         Visible = pocketIsMain;
-        // the editor no longer hides with this node, so it has to be closed explicitly
-        if (!pocketIsMain && _latticeEditor is { Visible: true }) CloseLatticeEditor();
+        // the editor is not below this node, so it does not hide with it — close it explicitly
+        if (!pocketIsMain && LatticeEditor is { Visible: true }) CloseLatticeEditor();
     }
 }

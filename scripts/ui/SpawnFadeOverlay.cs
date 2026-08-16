@@ -23,7 +23,7 @@ public partial class SpawnFadeOverlay : CanvasLayer
 			return;
 		}
 
-		Layer = 100;
+		Layer = UiLayer.SpawnFade;
 
 		_fadeRect = new ColorRect();
 		_fadeRect.Color = new Color(0, 0, 0, 1);

@@ -18,7 +18,7 @@ public partial class WaveTimerOverlay : CanvasLayer
 
     public override void _Ready()
     {
-        Layer = 50;
+        Layer = UiLayer.WaveTimer;
         _label = new Label { Position = Anchor };
         _label.AddThemeFontSizeOverride("font_size", FontSize);
         _label.AddThemeColorOverride("font_color", Colors.White);

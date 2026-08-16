@@ -4,6 +4,7 @@ using System.Linq;
 using Godot;
 using towerdefensegame.scripts.towers.crystal.core;
 using towerdefensegame.scripts.towers.crystal;
+using towerdefensegame.scripts.ui;
 
 namespace towerdefensegame.scripts.towers.crystal.ui;
 
@@ -54,6 +55,13 @@ public partial class CrystalLatticeEditor : Control
     public override void _Ready()
     {
         SetAnchorsPreset(LayoutPreset.FullRect);
+
+        // Hosted over the world, this Control is wrapped in a CanvasLayer whose number decides
+        // both what it covers and what gets the mouse first. It is claimed here rather than in the
+        // scene so every layer in the game reads from UiLayer and only from there. Standing alone
+        // in the dev scene there is no wrapper, hence the type test.
+        if (GetParent() is CanvasLayer host) host.Layer = UiLayer.LatticeEditor;
+
         BuildUI();
         ShowHint();
         NewLattice();
