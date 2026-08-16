@@ -154,13 +154,15 @@ public partial class LatticeView : Control
 
             if (cell == null) continue;
 
+            // the crystal itself outranks every annotation drawn over it, so it is the one thing
+            // drawn LARGER than the base size, in ink picked to survive its own fill
             Vector2 centre = Centre(coord);
-            DrawLabel(font, CrystalVisuals.Glyph(cell.Kind), centre, fontSize,
-                CrystalVisuals.CrystalOutline, plate: false);
+            DrawLabel(font, CrystalVisuals.Glyph(cell.Kind), centre, fontSize + 5,
+                CrystalVisuals.Ink(cell.Kind), plate: false);
 
             if (ShowEnergy && Result != null && Result.Energy.TryGetValue(cell.Id, out CellEnergy energy))
                 DrawLabel(font, $"{energy.Out:0.#}",
-                    centre + new Vector2(0, fontSize * 1.2f), fontSize - 2,
+                    centre + new Vector2(0, fontSize * 1.6f), fontSize - 2,
                     energy.InDebt ? CrystalVisuals.Debt : CrystalVisuals.OpText);
         }
     }
@@ -177,7 +179,9 @@ public partial class LatticeView : Control
             Vector2 to = Centre(op.Downstream.Coord);
             Color color = op.Debt ? CrystalVisuals.Debt : CrystalVisuals.OpText;
 
-            DrawLine(from, to, CrystalVisuals.Edge, 1f);
+            // the line is what ties a label to the pair that produced it — too faint and the
+            // labels read as free-floating
+            DrawLine(from, to, CrystalVisuals.Edge, 2f);
             DrawLabel(font, $"{Ops.Display(op.Op)} ×{op.Energy:0.#}",
                 from.Lerp(to, 0.5f), fontSize - 2, color);
         }

@@ -25,6 +25,17 @@ public static class CrystalVisuals
     /// <summary>Single letter drawn on the triangle — the roster has no two kinds sharing one.</summary>
     public static string Glyph(CrystalKind kind) => kind.ToString()[..1];
 
+    /// <summary>
+    /// Ink that reads on top of <see cref="Tint"/>. Six saturated fills spanning near-white
+    /// Quartz to deep Ruby have no single legible ink, so pick by perceived brightness.
+    /// </summary>
+    public static Color Ink(CrystalKind kind)
+    {
+        Color tint = Tint(kind);
+        float luminance = 0.299f * tint.R + 0.587f * tint.G + 0.114f * tint.B;
+        return luminance > 0.6f ? new Color("11141c") : new Color("ffffff");
+    }
+
     // ── lattice chrome ───────────────────────────────────────────────────────────
 
     /// <summary>A slot the mask allows but nothing occupies.</summary>
