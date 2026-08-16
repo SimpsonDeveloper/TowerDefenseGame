@@ -146,8 +146,10 @@ public partial class LatticeView : Control
                 ? CrystalVisuals.Tint(cell.Kind)
                 : usable ? CrystalVisuals.EmptySlot : CrystalVisuals.BlockedSlot;
 
-            // a crystal left outside the mask is flagged here, not at save time — it compiles,
-            // so nothing else would ever mention it
+            // Painting can no longer strand a crystal (Paint removes it) and Load refuses a file
+            // that contains one, so this is a guard for other callers of the view — anything that
+            // shrinks a mask under a lattice it does not own. It compiles, so nothing else would
+            // ever mention it.
             bool orphan = cell != null && !usable;
             Color outline = orphan ? CrystalVisuals.Orphan
                 : cell != null ? CrystalVisuals.CrystalOutline
@@ -266,13 +268,28 @@ public partial class LatticeView : Control
         return true;
     }
 
-    /// <summary>Template editor: sculpt the contour itself.</summary>
+    /// <summary>
+    /// Template editor: sculpt the contour itself.
+    ///
+    /// Blocking a slot also takes out whatever stood there. <see cref="LatticeMask.Block"/> is
+    /// non-destructive on purpose — the mask states what may be built, and a lattice can outlive
+    /// a mask edit — but as a *gesture* this one means "nothing can ever be here", so leaving the
+    /// crystal behind would contradict what the player just said.
+    /// </summary>
     private bool Paint(CellCoord coord, bool usable)
     {
         if (Mask == null || Mask.IsUsable(coord) == usable) return false;
 
-        if (usable) Mask.Allow(coord.Row, coord.Col);
-        else Mask.Block(coord.Row, coord.Col);
+        if (usable)
+        {
+            Mask.Allow(coord.Row, coord.Col);
+        }
+        else
+        {
+            Mask.Block(coord.Row, coord.Col);
+            Lattice.Remove(coord.Row, coord.Col);
+        }
+
         return true;
     }
 }

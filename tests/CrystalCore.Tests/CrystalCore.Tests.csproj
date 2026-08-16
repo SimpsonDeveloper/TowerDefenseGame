@@ -15,6 +15,12 @@
     <Compile Include="../../scripts/towers/crystal/core/**/*.cs" LinkBase="core" />
   </ItemGroup>
 
+  <!-- Templates authored in the editor, frozen here as fixtures. Copies of real output, owned by
+       the tests — nothing under res:// is load-bearing, so the editor's own saves stay disposable. -->
+  <ItemGroup>
+    <None Include="fixtures/**" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
     <PackageReference Include="xunit" Version="2.9.2" />
