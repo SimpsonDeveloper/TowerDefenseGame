@@ -181,17 +181,18 @@ already exist**, exactly as `../roadmap.md`'s ground facts say ("each tower owns
 lattice"). A tower fires a compiled shot; a tower with no lattice fires as it always did.
 
 - ✅ `TurretTower` holds a `Lattice`, calls `Compiler`, caches the `CompileResult`. `TowerDef`
-  gained `Lattice` (a `CrystalTemplate`), `CoreEnergy` and `DamagePerWeaponEnergy`. Existing
-  placement/footprint/destroy machinery is untouched — the lattice rides in through the same
-  `ITowerPlaceable.Configure(def)`.
+  gained `Lattice` (a `CrystalTemplate`) and `CoreEnergy`. Existing placement/footprint/destroy
+  machinery is untouched — the lattice rides in through the same `ITowerPlaceable.Configure(def)`.
 - ✅ A template describes a *starting* lattice; `Configure` builds the tower its own copy, so a
   player's edits never write back to the shipped asset.
 - ✅ `Recompile()` after an edit (cheap, finite DAG). Shots use the existing `TurretTower`
   cadence and carry the cached result.
-- ✅ HP damage via existing `HealthComponent.TakeDamage`, scaled by weapon energy — so crystal
-  costs, splits and debt show up at the muzzle. **The conversion factor is a placeholder**:
-  damage properly comes from the ops in `CompileResult.Shot`, which is item 4's work.
-  `TurretTower.ShotLanded` is the event that work plugs into.
+- ✅ **The lattice's whole effect on combat is `ShotLanded`.** The gun's flat `TowerDef.Damage` is
+  untouched by it. A tower briefly had a `DamagePerWeaponEnergy` factor folding weapon energy into
+  the damage number; that was scope creep and is **removed**. A compiled shot is a list of ops, and
+  whether an op does damage is decided by that op's definition — some do, some do not. Deriving
+  damage here would double-count the ones that do and invent damage for the ones that don't.
+  Forwarding the whole `CompileResult` is the only correct thing this class can do before item 4.
 - ✅ Reaching the lattice: `TowerPlacementManager` gained **Editing** beside Placing and
   Destroying — same state machine, same tower-under-cursor lookup as destroy. It raises
   `TowerEditRequested` and stops there, so the manager keeps no dependency on the editor; the UI

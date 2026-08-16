@@ -30,14 +30,13 @@ public partial class TowerDef : Resource
     /// <summary>World-pixel radius of this tower's targeting zone.</summary>
     [Export] public float TargetRadius { get; set; }
 
-    /// <summary>HP removed from a target per shot. Used as-is when the tower has no crystal
-    /// lattice; with one, <see cref="DamagePerWeaponEnergy"/> takes over.</summary>
+    /// <summary>HP removed from a target per shot, lattice or no lattice. What a lattice adds
+    /// rides alongside this as ops, and each op decides whether it does damage at all.</summary>
     [Export] public int Damage { get; set; } = 2;
 
     /// <summary>
     /// The crystal lattice this tower type starts with — its shape and default crystals
-    /// (`crystal/CrystalTemplate.cs`). Leave null for a tower with no lattice, which keeps the
-    /// flat <see cref="Damage"/> behaviour.
+    /// (`crystal/CrystalTemplate.cs`). Leave null for a tower whose shots carry no ops.
     /// </summary>
     [Export] public CrystalTemplate Lattice { get; set; }
 
@@ -47,13 +46,6 @@ public partial class TowerDef : Resource
     /// costs are what decide how much survives to the weapon.
     /// </summary>
     [Export] public double CoreEnergy { get; set; } = 600;
-
-    /// <summary>
-    /// HP per unit of weapon energy delivered. **Placeholder** — mapping a compiled shot to
-    /// damage properly is the combat track's job (roadmap item 4), where each op does its own
-    /// work. Until then this keeps a lattice visibly connected to the gun.
-    /// </summary>
-    [Export] public float DamagePerWeaponEnergy { get; set; } = 0.02f;
 
     /// <summary>Seconds between shots once aimed.</summary>
     [Export] public float FireInterval { get; set; } = 0.5f;

@@ -7,12 +7,13 @@ using towerdefensegame.scripts.towers.crystal.core;
 namespace towerdefensegame.scripts.towers;
 
 /// <summary>
-/// A turret, optionally driven by a **crystal lattice**. The lattice is the tower's upgrade
+/// A turret, optionally carrying a **crystal lattice**. The lattice is the tower's upgrade
 /// surface: the player edits it, it compiles to a cached <see cref="CompileResult"/>, and that
-/// result is what each shot carries (`impl-planning/upgrades/compiler-core.md` §5).
+/// result is what each shot delivers (`impl-planning/upgrades/compiler-core.md` §5).
 ///
-/// A tower with no lattice behaves exactly as before — flat <see cref="TowerDef.Damage"/> — so
-/// existing tower defs keep working untouched.
+/// The gun's own <see cref="TowerDef.Damage"/> is unaffected by the lattice. A compiled shot is a
+/// list of ops, and whether an op does damage is the op's business — so the lattice is forwarded,
+/// never folded into a damage number here.
 /// </summary>
 public partial class TurretTower : StaticBody2D, ITowerPlaceable
 {
@@ -41,7 +42,6 @@ public partial class TurretTower : StaticBody2D, ITowerPlaceable
 	private TowerFootprintTracker _footprints;
 
 	private double _coreEnergy;
-	private float _damagePerWeaponEnergy;
 
 	public event Action<Node2D> Destroyed;
 
@@ -58,9 +58,9 @@ public partial class TurretTower : StaticBody2D, ITowerPlaceable
 	public double CoreEnergy => _coreEnergy;
 
 	/// <summary>
-	/// Raised when a shot lands, carrying what it delivered. The seam roadmap item 4 plugs into:
-	/// the ordered op list is already on <see cref="CompileResult.Shot"/>, and applying each op
-	/// to the enemy is that item's work, not this class's.
+	/// Raised when a shot lands, carrying what it delivered. This is the lattice's *only* effect on
+	/// combat, and the seam roadmap item 4 plugs into: the ordered op list is already on
+	/// <see cref="CompileResult.Shot"/>, and applying each op to the enemy is that item's work.
 	/// </summary>
 	public event Action<CompileResult, Node2D> ShotLanded;
 
@@ -71,7 +71,6 @@ public partial class TurretTower : StaticBody2D, ITowerPlaceable
 		_damage = def.Damage;
 		_fireInterval = def.FireInterval;
 		_coreEnergy = def.CoreEnergy;
-		_damagePerWeaponEnergy = def.DamagePerWeaponEnergy;
 
 		if (def.Lattice == null) return;
 
@@ -180,7 +179,7 @@ public partial class TurretTower : StaticBody2D, ITowerPlaceable
 		{
 			if (child is HealthComponent { IsDead: false} h)
 			{
-				h.TakeDamage(DamageForOneShot());
+				h.TakeDamage(_damage);
 				// The compiled shot rides along. Nothing consumes it yet — resolving the ordered
 				// ops against the enemy is roadmap item 4.
 				if (Shot != null) ShotLanded?.Invoke(Shot, _target);
@@ -213,20 +212,6 @@ public partial class TurretTower : StaticBody2D, ITowerPlaceable
 		if (ShootParticles != null) ShootParticles.Restart();
 		if (HitParticles != null) HitParticles.Restart();
 	}
-
-	/// <summary>
-	/// HP this shot removes. Without a lattice, the def's flat damage. With one, it scales with
-	/// the energy that actually reached the weapon — so crystal costs, splits and debt all show
-	/// up at the muzzle.
-	///
-	/// The conversion factor is a **placeholder**: damage properly comes from the ops in
-	/// <see cref="CompileResult.Shot"/>, which is roadmap item 4's job. This keeps the lattice
-	/// visibly connected to the gun until then, and floors at 1 so a lattice can never make a
-	/// tower harmless by rounding.
-	/// </summary>
-	private int DamageForOneShot() => Shot == null
-		? _damage
-		: Math.Max(1, (int)Math.Round(Shot.WeaponEnergy * _damagePerWeaponEnergy));
 
 	// Returns the closest body in the DetectionZone that belongs to the enemies group.
 	private Node2D FindClosestInZone()
