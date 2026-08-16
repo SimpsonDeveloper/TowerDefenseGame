@@ -48,5 +48,11 @@ public static class CrystalVisuals
     public static readonly Color OpText = new Color("dfe6e9");
 
     /// <summary>An edge whose upstream crystal ran into debt — it fires nothing.</summary>
-    public static readonly Color Debt = new Color("d63031");
+    public static readonly Color Debt = new Color("ff7675");
+
+    /// <summary>
+    /// Backing behind every label. Text sits on top of saturated crystal fills, so without an
+    /// opaque plate a red op label on a Ruby is invisible.
+    /// </summary>
+    public static readonly Color Plate = new Color(0.04f, 0.05f, 0.08f, 0.85f);
 }

@@ -122,7 +122,10 @@ public partial class LatticeView : Control
     public override void _Draw()
     {
         Font font = GetThemeDefaultFont();
-        int fontSize = Math.Max(9, (int)(_camera.Scale * 0.22));
+        // Scale is pixels per triangle side. Text has to fit INSIDE a triangle, whose usable
+        // width at the centroid is a fraction of that — and it must stop growing once the
+        // lattice is small enough that the cells are already huge.
+        int fontSize = Math.Clamp((int)(_camera.Scale * 0.13), 9, 17);
 
         DrawSlots(font, fontSize);
         if (Result == null) return;
@@ -152,13 +155,13 @@ public partial class LatticeView : Control
             if (cell == null) continue;
 
             Vector2 centre = Centre(coord);
-            DrawCentered(font, CrystalVisuals.Glyph(cell.Kind), centre, fontSize,
-                CrystalVisuals.CrystalOutline);
+            DrawLabel(font, CrystalVisuals.Glyph(cell.Kind), centre, fontSize,
+                CrystalVisuals.CrystalOutline, plate: false);
 
             if (ShowEnergy && Result != null && Result.Energy.TryGetValue(cell.Id, out CellEnergy energy))
-                DrawCentered(font, $"{energy.Out:0.#}",
-                    centre + new Vector2(0, fontSize * 1.1f), Math.Max(8, fontSize - 3),
-                    energy.InDebt ? CrystalVisuals.Debt : CrystalVisuals.CrystalOutline);
+                DrawLabel(font, $"{energy.Out:0.#}",
+                    centre + new Vector2(0, fontSize * 1.2f), fontSize - 2,
+                    energy.InDebt ? CrystalVisuals.Debt : CrystalVisuals.OpText);
         }
     }
 
@@ -172,12 +175,11 @@ public partial class LatticeView : Control
         {
             Vector2 from = Centre(op.Upstream.Coord);
             Vector2 to = Centre(op.Downstream.Coord);
-            Color color = op.Debt ? CrystalVisuals.Debt : CrystalVisuals.Edge;
+            Color color = op.Debt ? CrystalVisuals.Debt : CrystalVisuals.OpText;
 
-            DrawLine(from, to, color, 1.5f);
-            DrawCentered(font, $"{Ops.Display(op.Op)} ×{op.Energy:0.#}",
-                from.Lerp(to, 0.5f), Math.Max(8, fontSize - 2),
-                op.Debt ? CrystalVisuals.Debt : CrystalVisuals.OpText);
+            DrawLine(from, to, CrystalVisuals.Edge, 1f);
+            DrawLabel(font, $"{Ops.Display(op.Op)} ×{op.Energy:0.#}",
+                from.Lerp(to, 0.5f), fontSize - 2, color);
         }
     }
 
@@ -187,7 +189,7 @@ public partial class LatticeView : Control
     /// </summary>
     private void DrawTerminals(Font font, int fontSize)
     {
-        float radius = (float)(_camera.Scale * 0.09);
+        float radius = Math.Clamp((float)(_camera.Scale * 0.06), 4f, 11f);
 
         foreach (Terminal source in Result.Sources)
             Badge(font, source, CrystalVisuals.Source, -1, radius, fontSize);
@@ -198,17 +200,30 @@ public partial class LatticeView : Control
 
     private void Badge(Font font, Terminal terminal, Color color, int side, float radius, int fontSize)
     {
-        // a lone crystal is BOTH, so the two badges sit on opposite sides and never overlap
-        Vector2 at = Centre(terminal.Cell.Coord) + new Vector2(side * radius * 2.2f, 0);
+        // a lone crystal is BOTH source and sink, so the two badges sit on opposite sides of the
+        // glyph and never land on top of each other
+        Vector2 at = Centre(terminal.Cell.Coord) + new Vector2(side * radius * 2.4f, 0);
         DrawCircle(at, radius, color);
-        DrawCentered(font, $"{terminal.Label} {terminal.Energy:0.#}",
-            at + new Vector2(0, -radius * 2.2f), Math.Max(8, fontSize - 2), color);
+        DrawLabel(font, $"{terminal.Label} {terminal.Energy:0.#}",
+            at + new Vector2(0, -radius * 2f), fontSize - 3, color);
     }
 
-    private void DrawCentered(Font font, string text, Vector2 at, int fontSize, Color color)
+    /// <summary>
+    /// Centred text on an opaque plate. The plate is not decoration: labels land on saturated
+    /// crystal fills, where unbacked text of any colour is unreadable on some kind or other.
+    /// </summary>
+    private void DrawLabel(Font font, string text, Vector2 at, int fontSize, Color color, bool plate = true)
     {
+        fontSize = Math.Max(8, fontSize);
         Vector2 extents = font.GetStringSize(text, HorizontalAlignment.Left, -1, fontSize);
-        DrawString(font, at + new Vector2(-extents.X / 2, extents.Y * 0.3f),
+        Vector2 topLeft = at - extents / 2;
+
+        if (plate)
+            DrawRect(new Rect2(topLeft - new Vector2(3, 1), extents + new Vector2(6, 2)),
+                CrystalVisuals.Plate);
+
+        // DrawString takes a BASELINE, which sits roughly 80% down the line box
+        DrawString(font, new Vector2(topLeft.X, topLeft.Y + extents.Y * 0.8f),
             text, HorizontalAlignment.Left, -1, fontSize, color);
     }
 

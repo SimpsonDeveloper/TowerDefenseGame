@@ -18,7 +18,12 @@ public partial class CrystalLatticeEditor : Control
 {
     [Export] public int MaskRows { get; set; } = 4;
     [Export] public int MaskCols { get; set; } = 7;
-    [Export] public double CoreEnergy { get; set; } = 100;
+    /// <summary>
+    /// Enough to actually light a full default mask. Shipping costs are steep (a Ruby is 28), so
+    /// a 4×7 board runs ~300 — at 100 the whole lattice is in debt and every op reads ×0, which
+    /// is correct but useless to look at.
+    /// </summary>
+    [Export] public double CoreEnergy { get; set; } = 600;
 
     private LatticeView _view;
     private Label _readout;
@@ -59,7 +64,12 @@ public partial class CrystalLatticeEditor : Control
 
     private Control BuildPalette()
     {
-        VBoxContainer panel = new VBoxContainer { CustomMinimumSize = new Vector2(150, 0) };
+        MarginContainer outer = new MarginContainer { CustomMinimumSize = new Vector2(172, 0) };
+        foreach (string side in new[] { "left", "right", "top", "bottom" })
+            outer.AddThemeConstantOverride($"margin_{side}", 10);
+
+        VBoxContainer panel = new VBoxContainer();
+        outer.AddChild(panel);
 
         panel.AddChild(new Label { Text = "Crystal" });
         foreach (CrystalKind kind in Enum.GetValues<CrystalKind>())
@@ -94,7 +104,7 @@ public partial class CrystalLatticeEditor : Control
         panel.AddChild(new HSeparator());
         panel.AddChild(new Label { Text = "Core energy" });
 
-        SpinBox core = new SpinBox { MinValue = 0, MaxValue = 1000, Step = 5, Value = CoreEnergy };
+        SpinBox core = new SpinBox { MinValue = 0, MaxValue = 5000, Step = 25, Value = CoreEnergy };
         core.ValueChanged += value => { _view.CoreEnergy = value; _view.Rebuild(); Refresh(); };
         panel.AddChild(core);
 
@@ -102,15 +112,15 @@ public partial class CrystalLatticeEditor : Control
         reset.Pressed += NewLattice;
         panel.AddChild(reset);
 
-        return panel;
+        return outer;
     }
 
     private Control BuildReadout()
     {
         PanelContainer panel = new PanelContainer { CustomMinimumSize = new Vector2(230, 0) };
         MarginContainer margin = new MarginContainer();
-        margin.AddThemeConstantOverride("margin_left", 8);
-        margin.AddThemeConstantOverride("margin_top", 8);
+        foreach (string side in new[] { "left", "right", "top", "bottom" })
+            margin.AddThemeConstantOverride($"margin_{side}", 10);
         panel.AddChild(margin);
 
         _readout = new Label { VerticalAlignment = VerticalAlignment.Top };
