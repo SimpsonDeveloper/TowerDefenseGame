@@ -48,6 +48,12 @@ public static class CrystalVisuals
 
     public static readonly Color CrystalOutline = new Color("0b0e14");
 
+    /// <summary>
+    /// A crystal left standing outside the mask by a mask edit. Compiles fine, cannot be saved —
+    /// so it has to be visible rather than discovered at save time.
+    /// </summary>
+    public static readonly Color Orphan = new Color("ffb142");
+
     /// <summary>Source badge: a leaf-input crystal the core seeds. Never user-set.</summary>
     public static readonly Color Source = new Color("58d68d");
 

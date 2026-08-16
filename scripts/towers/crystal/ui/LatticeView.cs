@@ -146,11 +146,18 @@ public partial class LatticeView : Control
                 ? CrystalVisuals.Tint(cell.Kind)
                 : usable ? CrystalVisuals.EmptySlot : CrystalVisuals.BlockedSlot;
 
+            // a crystal left outside the mask is flagged here, not at save time — it compiles,
+            // so nothing else would ever mention it
+            bool orphan = cell != null && !usable;
+            Color outline = orphan ? CrystalVisuals.Orphan
+                : cell != null ? CrystalVisuals.CrystalOutline
+                : CrystalVisuals.SlotOutline;
+
             DrawColoredPolygon(triangle, fill);
             DrawPolyline(
                 triangle.Append(triangle[0]).ToArray(),
-                cell != null ? CrystalVisuals.CrystalOutline : CrystalVisuals.SlotOutline,
-                usable ? 1.5f : 1f);
+                outline,
+                orphan ? 4f : usable ? 1.5f : 1f);
 
             if (cell == null) continue;
 

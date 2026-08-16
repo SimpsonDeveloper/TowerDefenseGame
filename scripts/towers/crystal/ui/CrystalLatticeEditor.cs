@@ -34,12 +34,14 @@ public partial class CrystalLatticeEditor : Control
     private Button _selected;
     private LineEdit _templateName;
     private Label _status;
+    private Label _hint;
     private FileDialog _dialog;
 
     public override void _Ready()
     {
         SetAnchorsPreset(LayoutPreset.FullRect);
         BuildUI();
+        ShowHint();
         NewLattice();
     }
 
@@ -102,11 +104,20 @@ public partial class CrystalLatticeEditor : Control
         }
 
         panel.AddChild(new HSeparator());
-        panel.AddChild(new Label { Text = "left click: place\nright click: remove" });
+
+        _hint = new Label { AutowrapMode = TextServer.AutowrapMode.WordSmart };
+        panel.AddChild(_hint);
         panel.AddChild(new HSeparator());
 
+        // the two modes bind the SAME two buttons to different verbs, so the hint has to follow
         CheckBox paint = new CheckBox { Text = "Paint mask" };
-        paint.Toggled += on => { _view.PaintMask = on; _view.Rebuild(); Refresh(); };
+        paint.Toggled += on =>
+        {
+            _view.PaintMask = on;
+            _view.Rebuild();
+            ShowHint();
+            Refresh();
+        };
         panel.AddChild(paint);
 
         CheckBox ops = new CheckBox { Text = "Show ops", ButtonPressed = true };
@@ -213,6 +224,10 @@ public partial class CrystalLatticeEditor : Control
         return panel;
     }
 
+    private void ShowHint() => _hint.Text = _view.PaintMask
+        ? "left click: add cell\nright click: remove cell"
+        : "left click: place\nright click: remove";
+
     private void SelectKind(CrystalKind kind, Button button)
     {
         _view.SelectedKind = kind;
@@ -239,6 +254,10 @@ public partial class CrystalLatticeEditor : Control
         CompileResult result = _view.Result;
         if (result == null) return;
 
+        // surfaced here as well as on the lattice, because it is the reason a Save will refuse
+        int orphans = _view.Lattice.OffMask().Count();
+        string warning = orphans == 0 ? "" : $"\n{orphans} crystal(s) outside the mask — cannot save";
+
         string shot = result.Shot.Count == 0
             ? "  (no combos yet)"
             : string.Join("\n", result.Shot.Select((ShotOp op, int i) => $"  {i + 1}. {op}"));
@@ -248,7 +267,7 @@ public partial class CrystalLatticeEditor : Control
             $"core       {result.CoreEnergy:0.#}",
             $"crystals   {_view.Lattice.Cells.Count}",
             $"cost       {result.UsedCost:0.#}" + (result.Over ? "   OVER BUDGET" : ""),
-            $"weapon     {result.WeaponEnergy:0.#}",
+            $"weapon     {result.WeaponEnergy:0.#}" + warning,
             "",
             $"sources  {string.Join(", ", result.Sources.Select(t => t.Label))}",
             $"sinks    {string.Join(", ", result.Sinks.Select(t => t.Label))}",

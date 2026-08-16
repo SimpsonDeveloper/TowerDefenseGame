@@ -77,6 +77,15 @@ public sealed class Lattice
     public Cell At(int row, int col) =>
         _byCoord.TryGetValue(new CellCoord(row, col), out Cell cell) ? cell : null;
 
+    /// <summary>
+    /// Crystals standing outside the mask. <see cref="Place"/> cannot create one, but blocking an
+    /// occupied slot can — a mask edit says what may be built and deliberately does not demolish.
+    /// Such a crystal still compiles; what it cannot do is be saved, so a UI needs to show it.
+    /// </summary>
+    public IEnumerable<Cell> OffMask() => Mask == null
+        ? Enumerable.Empty<Cell>()
+        : _cells.Where(cell => !Mask.IsUsable(cell.Coord));
+
     private bool IsUsable(CellCoord coord) => Mask == null || Mask.IsUsable(coord);
 
     // ---- topology -------------------------------------------------------------------------

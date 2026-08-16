@@ -74,6 +74,34 @@ public class LatticeMaskTests
     }
 
     [Fact]
+    public void OffMask_FindsCrystalsStrandedByAMaskEdit()
+    {
+        // Place cannot create one, but blocking an occupied slot can. Such a crystal still
+        // compiles, so nothing else would ever mention it — and it is exactly what stops a
+        // template saving.
+        LatticeMask mask = new LatticeMask().Allow(0, 0).Allow(0, 1);
+        Lattice lat = new Lattice(mask);
+        Cell stranded = lat.Place(0, 0, CrystalKind.Ruby);
+        lat.Place(0, 1, CrystalKind.Sapphire);
+
+        Assert.Empty(lat.OffMask());
+
+        mask.Block(0, 0);
+
+        Assert.Equal(new[] { stranded }, lat.OffMask());
+        Assert.Contains(LatticeSnapshot.Of(lat).Problems(), p => p.Contains("outside the mask"));
+    }
+
+    [Fact]
+    public void OffMask_IsEmptyWithoutAMask()
+    {
+        Lattice lat = new Lattice();
+        lat.Place(3, 9, CrystalKind.Ruby);
+
+        Assert.Empty(lat.OffMask());
+    }
+
+    [Fact]
     public void Bounds_FramesAnUnevenContour()
     {
         LatticeMask mask = new LatticeMask()
