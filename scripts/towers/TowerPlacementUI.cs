@@ -16,26 +16,14 @@ public partial class TowerPlacementUI : CanvasLayer
     [Export] public TowerPlacementManager PlacementManager { get; set; }
     [Export] public Array<TowerDef> AvailableTowers { get; set; } = new();
 
-    /// <summary>
-    /// The lattice editor, which lives under the scene's <c>WhenPaused</c> branch — outside this
-    /// SubViewport, and outside anything that stops when the game does. See
-    /// <see cref="OnTowerEditRequested"/> for why it cannot live in here.
-    /// </summary>
-    [Export] public CrystalLatticeEditor LatticeEditor { get; set; }
-
     private Button _cancelButton;
+    private CrystalLatticeEditor _latticeEditor;
     private TurretTower _editing;
 
     public override void _Ready()
     {
         BuildUI();
         Visible = false; // pocket starts as mini viewport; DimensionSwapped wired in scene
-
-        if (LatticeEditor != null)
-        {
-            LatticeEditor.LatticeEdited += () => _editing?.Recompile();
-            LatticeEditor.CloseRequested += CloseLatticeEditor;
-        }
 
         if (PlacementManager != null)
             PlacementManager.TowerEditRequested += OnTowerEditRequested;
@@ -94,14 +82,16 @@ public partial class TowerPlacementUI : CanvasLayer
     /// <c>SubViewportContainer</c> above it forwards it — and a paused container forwards nothing.
     /// A modal hosted in here would go deaf the instant it paused the game, whatever
     /// <c>ProcessMode</c> it set on itself: <c>Always</c> governs whether an event is handled, not
-    /// whether one arrives. So it hangs off the scene's <c>WhenPaused</c> branch instead, and this
-    /// class only drives it.
+    /// whether one arrives. So it hangs off the scene's <c>WhenPaused</c> branch instead, found by
+    /// group (<see cref="CrystalLatticeEditor.GroupName"/>), and this class only drives it.
     /// </summary>
     private void OnTowerEditRequested(Node2D tower)
     {
-        if (LatticeEditor == null)
+        if (Editor() == null)
         {
-            GD.PushWarning("[lattice] TowerPlacementUI has no LatticeEditor wired");
+            GD.PushWarning(
+                $"[lattice] no node in group '{CrystalLatticeEditor.GroupName}' — " +
+                "the scene needs a CrystalLatticeEditor under WhenPaused");
             return;
         }
 
@@ -114,15 +104,34 @@ public partial class TowerPlacementUI : CanvasLayer
 
         _editing = turret;
 
-        LatticeEditor.Visible = true;
-        LatticeEditor.Edit(turret.Lattice, turret.DisplayName, turret.CoreEnergy);
+        _latticeEditor.Visible = true;
+        _latticeEditor.Edit(turret.Lattice, turret.DisplayName, turret.CoreEnergy);
         GetTree().Paused = true;
+    }
+
+    /// <summary>
+    /// Finds the editor and subscribes, once, on first use. Deliberately not in
+    /// <c>_Ready</c>: the group is filled by the editor's own <c>_Ready</c>, and which of the two
+    /// runs first is decided by the order <c>WhenPaused</c> and <c>Pausable</c> happen to sit in
+    /// the scene. Nothing should break from moving a branch up or down.
+    /// </summary>
+    private CrystalLatticeEditor Editor()
+    {
+        if (_latticeEditor != null) return _latticeEditor;
+
+        _latticeEditor = GetTree().GetFirstNodeInGroup(CrystalLatticeEditor.GroupName)
+            as CrystalLatticeEditor;
+        if (_latticeEditor == null) return null;
+
+        _latticeEditor.LatticeEdited += () => _editing?.Recompile();
+        _latticeEditor.CloseRequested += CloseLatticeEditor;
+        return _latticeEditor;
     }
 
     private void CloseLatticeEditor()
     {
         GetTree().Paused = false;
-        if (LatticeEditor != null) LatticeEditor.Visible = false;
+        if (_latticeEditor != null) _latticeEditor.Visible = false;
 
         // the lattice was edited in place, so the tower already holds the new shot
         _editing?.Recompile();
@@ -136,6 +145,6 @@ public partial class TowerPlacementUI : CanvasLayer
     {
         Visible = pocketIsMain;
         // the editor is not below this node, so it does not hide with it — close it explicitly
-        if (!pocketIsMain && LatticeEditor is { Visible: true }) CloseLatticeEditor();
+        if (!pocketIsMain && _latticeEditor is { Visible: true }) CloseLatticeEditor();
     }
 }

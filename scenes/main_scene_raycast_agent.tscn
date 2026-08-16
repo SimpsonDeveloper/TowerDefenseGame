@@ -236,9 +236,6 @@ render_target_update_mode = 4
 script = ExtResource("1_wto")
 Spawner = NodePath("../PocketDimensionContainer/PocketDimensionViewport/PocketDimension/PocketDimensionEnemySpawner")
 
-[node name="TowerPlacementUI" parent="Pausable/PocketDimensionContainer/PocketDimensionViewport/PocketDimension" index="7" node_paths=PackedStringArray("LatticeEditor")]
-LatticeEditor = NodePath("../../../../../WhenPaused/LatticeEditorLayer/CrystalLatticeEditor")
-
 [connection signal="DimensionSwapped" from="Pausable/WorldManager" to="Pausable/PocketDimensionContainer/PocketDimensionViewport/PocketDimension/TowerPlacementManager" method="OnDimensionSwapped"]
 [connection signal="DimensionSwapped" from="Pausable/WorldManager" to="Pausable/PocketDimensionContainer/PocketDimensionViewport/PocketDimension/TowerPlacementUI" method="OnDimensionSwapped"]
 [connection signal="PlayerSpawned" from="Pausable/OverworldContainer/OverworldViewport/PlayerSpawner" to="Pausable/SpawnFadeOverlay" method="OnPlayerSpawned"]

@@ -35,6 +35,16 @@ public partial class CrystalLatticeEditor : Control
     /// <summary>Where authored templates live. Design-time assets, so <c>res://</c>.</summary>
     private const string TemplateDir = "res://resources/crystal_templates";
 
+    /// <summary>
+    /// How a host finds this editor. It has to be a lookup rather than an exported
+    /// <c>NodePath</c>: the only host is <c>TowerPlacementUI</c>, which lives inside
+    /// <c>pocket_dimension.tscn</c>, while the editor has to sit outside that scene entirely (see
+    /// <see cref="_Ready"/> and the <c>WhenPaused</c> branch). An export there could only ever be
+    /// filled by an override from the parent scene, leaving an unfillable hole in the inspector
+    /// for anyone opening the pocket dimension on its own.
+    /// </summary>
+    public const string GroupName = "crystal_lattice_editor";
+
     private LatticeView _view;
     private Label _readout;
     private Button _selected;
@@ -55,6 +65,7 @@ public partial class CrystalLatticeEditor : Control
     public override void _Ready()
     {
         SetAnchorsPreset(LayoutPreset.FullRect);
+        AddToGroup(GroupName);
 
         // Hosted over the world, this Control is wrapped in a CanvasLayer whose number decides
         // both what it covers and what gets the mouse first. It is claimed here rather than in the
