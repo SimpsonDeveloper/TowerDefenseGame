@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Godot;
 using towerdefensegame.scripts.towers.crystal.core;
+using towerdefensegame.scripts.towers.crystal;
 
 namespace towerdefensegame.scripts.towers.crystal.ui;
 

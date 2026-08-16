@@ -175,9 +175,22 @@ outputs match the playground for shared inputs. ✅ done — see the status note
 
 ## 5. Integration seam
 
-- `CrystalTower : StaticBody2D, ITowerPlaceable` holds a `Lattice`, calls `Compiler`, caches
-  `CompileResult`. Reuses existing placement/footprint/destroy machinery
-  (`ITowerPlaceable.Configure/Destroy`, `TowerPlacementManager`).
-- Recompile on lattice edit (cheap, finite DAG). Fire loop can start from the current
-  `TurretTower` cadence; **each shot applies the cached result** to the hit enemy.
-- HP damage via existing `HealthComponent.TakeDamage`; R meter is new (`../combat/enemy-r.md`).
+**There is no separate crystal tower.** An earlier draft of this section proposed
+`CrystalTower : StaticBody2D` — wrong. The lattice is an **upgrade surface on the towers that
+already exist**, exactly as `../roadmap.md`'s ground facts say ("each tower owns its own crystal
+lattice"). A tower fires a compiled shot; a tower with no lattice fires as it always did.
+
+- ✅ `TurretTower` holds a `Lattice`, calls `Compiler`, caches the `CompileResult`. `TowerDef`
+  gained `Lattice` (a `CrystalTemplate`), `CoreEnergy` and `DamagePerWeaponEnergy`. Existing
+  placement/footprint/destroy machinery is untouched — the lattice rides in through the same
+  `ITowerPlaceable.Configure(def)`.
+- ✅ A template describes a *starting* lattice; `Configure` builds the tower its own copy, so a
+  player's edits never write back to the shipped asset.
+- ✅ `Recompile()` after an edit (cheap, finite DAG). Shots use the existing `TurretTower`
+  cadence and carry the cached result.
+- ✅ HP damage via existing `HealthComponent.TakeDamage`, scaled by weapon energy — so crystal
+  costs, splits and debt show up at the muzzle. **The conversion factor is a placeholder**:
+  damage properly comes from the ops in `CompileResult.Shot`, which is item 4's work.
+  `TurretTower.ShotLanded` is the event that work plugs into.
+- **Open:** letting the player *reach* the lattice — an edit mode on `TowerPlacementManager`
+  that opens the editor on the clicked tower. R meter is still new (`../combat/enemy-r.md`).

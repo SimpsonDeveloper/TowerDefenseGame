@@ -3,7 +3,7 @@ using System.Linq;
 using Godot;
 using towerdefensegame.scripts.towers.crystal.core;
 
-namespace towerdefensegame.scripts.towers.crystal.ui;
+namespace towerdefensegame.scripts.towers.crystal;
 
 /// <summary>
 /// A saved lattice **shape plus the crystals it starts with** — the design-time asset a tower

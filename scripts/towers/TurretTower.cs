@@ -1,9 +1,19 @@
 using System;
 using Godot;
 using towerdefensegame.scripts.components;
+using towerdefensegame.scripts.towers.crystal;
+using towerdefensegame.scripts.towers.crystal.core;
 
 namespace towerdefensegame.scripts.towers;
 
+/// <summary>
+/// A turret, optionally driven by a **crystal lattice**. The lattice is the tower's upgrade
+/// surface: the player edits it, it compiles to a cached <see cref="CompileResult"/>, and that
+/// result is what each shot carries (`impl-planning/upgrades/compiler-core.md` §5).
+///
+/// A tower with no lattice behaves exactly as before — flat <see cref="TowerDef.Damage"/> — so
+/// existing tower defs keep working untouched.
+/// </summary>
 public partial class TurretTower : StaticBody2D, ITowerPlaceable
 {
 	[Export] public SpriteComponent TurretSprite;
@@ -30,7 +40,26 @@ public partial class TurretTower : StaticBody2D, ITowerPlaceable
 	private const float LaserStartIntensity = 0.874f;
 	private TowerFootprintTracker _footprints;
 
+	private double _coreEnergy;
+	private float _damagePerWeaponEnergy;
+
 	public event Action<Node2D> Destroyed;
+
+	/// <summary>
+	/// This tower's crystal lattice, or null if it has none. Edit it, then call
+	/// <see cref="Recompile"/> — the tower does not watch it.
+	/// </summary>
+	public Lattice Lattice { get; private set; }
+
+	/// <summary>What the lattice currently compiles to. Null when there is no lattice.</summary>
+	public CompileResult Shot { get; private set; }
+
+	/// <summary>
+	/// Raised when a shot lands, carrying what it delivered. The seam roadmap item 4 plugs into:
+	/// the ordered op list is already on <see cref="CompileResult.Shot"/>, and applying each op
+	/// to the enemy is that item's work, not this class's.
+	/// </summary>
+	public event Action<CompileResult, Node2D> ShotLanded;
 
 	// Stores stats before entering the tree; nodes resolve in _Ready.
 	public void Configure(TowerDef def)
@@ -38,7 +67,23 @@ public partial class TurretTower : StaticBody2D, ITowerPlaceable
 		_targetRadius = def.TargetRadius;
 		_damage = def.Damage;
 		_fireInterval = def.FireInterval;
+		_coreEnergy = def.CoreEnergy;
+		_damagePerWeaponEnergy = def.DamagePerWeaponEnergy;
+
+		if (def.Lattice == null) return;
+
+		// A template describes a startING lattice; from here this tower owns its own copy and
+		// the player's edits never touch the shipped asset.
+		Lattice = def.Lattice.ToLattice();
+		Recompile();
 	}
+
+	/// <summary>
+	/// Recompile after a lattice edit. Cheap — a finite DAG of a few dozen cells — so the editor
+	/// can call it on every click.
+	/// </summary>
+	public void Recompile() =>
+		Shot = Lattice == null ? null : Compiler.Compile(Lattice, _coreEnergy);
 
 	public override void _Ready()
 	{
@@ -132,7 +177,10 @@ public partial class TurretTower : StaticBody2D, ITowerPlaceable
 		{
 			if (child is HealthComponent { IsDead: false} h)
 			{
-				h.TakeDamage(_damage);
+				h.TakeDamage(DamageForOneShot());
+				// The compiled shot rides along. Nothing consumes it yet — resolving the ordered
+				// ops against the enemy is roadmap item 4.
+				if (Shot != null) ShotLanded?.Invoke(Shot, _target);
 				break;
 			}
 		}
@@ -162,6 +210,20 @@ public partial class TurretTower : StaticBody2D, ITowerPlaceable
 		if (ShootParticles != null) ShootParticles.Restart();
 		if (HitParticles != null) HitParticles.Restart();
 	}
+
+	/// <summary>
+	/// HP this shot removes. Without a lattice, the def's flat damage. With one, it scales with
+	/// the energy that actually reached the weapon — so crystal costs, splits and debt all show
+	/// up at the muzzle.
+	///
+	/// The conversion factor is a **placeholder**: damage properly comes from the ops in
+	/// <see cref="CompileResult.Shot"/>, which is roadmap item 4's job. This keeps the lattice
+	/// visibly connected to the gun until then, and floors at 1 so a lattice can never make a
+	/// tower harmless by rounding.
+	/// </summary>
+	private int DamageForOneShot() => Shot == null
+		? _damage
+		: Math.Max(1, (int)Math.Round(Shot.WeaponEnergy * _damagePerWeaponEnergy));
 
 	// Returns the closest body in the DetectionZone that belongs to the enemies group.
 	private Node2D FindClosestInZone()
