@@ -222,11 +222,11 @@ lattice"). A tower fires a compiled shot; a tower with no lattice fires as it al
   Anything else that must survive a pause parents under `WhenPaused` and inherits the behaviour
   without knowing this rule exists, which is the point of naming the branches.
 
-  `TowerPlacementUI` finds the editor by **group** (`CrystalLatticeEditor.GroupName`), not by an
-  exported `NodePath`. It lives in `pocket_dimension.tscn` and the editor cannot, so an export
-  there would be an unfillable slot in that scene's inspector, settable only as an override from
-  the parent scene. The lookup is lazy rather than in `_Ready`, because the group is filled by the
-  editor's own `_Ready` and which runs first depends on the order the two branches sit in.
+  `TowerPlacementUI` reaches the editor through an exported `NodePath` and only drives it. That
+  export briefly could not work: the pocket dimension used to be its own scene, so the slot was
+  unfillable from the scene that owned the node and settable only as a parent-scene override. It
+  is now inlined — `pocket_dimension.tscn` had exactly one reference and nothing loaded it at
+  runtime — so both ends of the wire live in one file and the export is assignable by drag.
 
   Draw order is `scripts/ui/UiLayer.cs`: **0–99 pausable, 100+ modal**, every value assigned in
   `_Ready` so the scene never carries a competing number. Godot has no sublayers — `layer` is one

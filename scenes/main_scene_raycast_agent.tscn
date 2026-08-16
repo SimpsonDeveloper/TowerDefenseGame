@@ -1,6 +1,5 @@
-[gd_scene load_steps=36 format=3 uid="uid://bvr6e1vs0egs7"]
+[gd_scene load_steps=50 format=3 uid="uid://bvr6e1vs0egs7"]
 
-[ext_resource type="PackedScene" uid="uid://d23xmn1ko1rqq" path="res://scenes/pocket_dimension.tscn" id="0_pd"]
 [ext_resource type="Script" uid="uid://cx6tlfx7evd1b" path="res://scripts/towers/crystal/ui/CrystalLatticeEditor.cs" id="0_lattice_editor"]
 [ext_resource type="Script" uid="uid://dlf3scmu37ybh" path="res://scripts/world/WorldManager.cs" id="0_wm"]
 [ext_resource type="Script" uid="uid://dc1qoqdmljdl1" path="res://scripts/ui/SpawnFadeOverlay.cs" id="1_to7gp"]
@@ -28,9 +27,23 @@
 [ext_resource type="PackedScene" uid="uid://dkbb3vtt55g4i" path="res://scenes/enemy_raycast.tscn" id="28_7b1ka"]
 [ext_resource type="Resource" uid="uid://cxr1s1s660n54" path="res://assets/terrain_configs/water_config.tres" id="28_water"]
 [ext_resource type="Resource" path="res://assets/terrain_configs/terrain_config.tres" id="29_terrain"]
+[ext_resource type="Script" uid="uid://dl4mma1ufub27" path="res://scripts/camera/PocketCameraController.cs" id="30_gnlsw"]
+[ext_resource type="Script" uid="uid://c7qj3sbk5vasn" path="res://scripts/towers/TowerFootprintTracker.cs" id="31_t2o3n"]
+[ext_resource type="Script" uid="uid://dqe7kydia2ros" path="res://scripts/towers/TowerPlacementManager.cs" id="32_p8dcq"]
 [ext_resource type="Resource" uid="uid://c54gxd5gu86v1" path="res://assets/coord_config.tres" id="33_coordcfg"]
+[ext_resource type="Script" uid="uid://d4my3kkn7sesj" path="res://scripts/world/PocketNavGridManager.cs" id="33_esqqo"]
 [ext_resource type="Script" uid="uid://bnphhwegnok8r" path="res://scripts/world/PolygonTerrainManager.cs" id="34_polytm"]
+[ext_resource type="Script" uid="uid://dhocbxp6pqng7" path="res://scripts/world/PocketReachabilityIndex.cs" id="34_rtlhk"]
+[ext_resource type="Script" uid="uid://o172smp500iw" path="res://scripts/world/PathfindingResourceCoordinator.cs" id="35_rnhpf"]
 [ext_resource type="Script" uid="uid://biw3x0efa8pp6" path="res://scripts/player/PlayerSpawner.cs" id="35_spawner"]
+[ext_resource type="Script" uid="uid://ch17qk346ti87" path="res://scripts/towers/TowerPlacementUI.cs" id="36_i6tc2"]
+[ext_resource type="Script" uid="uid://6fcff7tjoj3y" path="res://scripts/towers/TowerDef.cs" id="37_y8rda"]
+[ext_resource type="Resource" uid="uid://cty8l0mgobduv" path="res://assets/towers/turret_tower_def.tres" id="38_ntlrf"]
+[ext_resource type="Script" uid="uid://pgvdnd4maxey" path="res://scripts/world/PocketDimensionEnemySpawner.cs" id="39_hp8ga"]
+[ext_resource type="PackedScene" uid="uid://ct8oyhx38cldu" path="res://scenes/enemy_nav_agent.tscn" id="40_s3172"]
+[ext_resource type="PackedScene" uid="uid://drutvmxnk4bx0" path="res://scenes/SpawnerPortal.tscn" id="41_lwwcw"]
+[ext_resource type="Script" uid="uid://cnndnd6o714x4" path="res://scripts/world/DebugEnemySpawner.cs" id="42_fghut"]
+[ext_resource type="Resource" uid="uid://y2qahljinvs4" path="res://assets/enemies/chonky_enemy.tres" id="43_4m6mh"]
 
 [sub_resource type="Resource" id="Resource_ak604"]
 script = ExtResource("7_02d50")
@@ -54,6 +67,12 @@ metadata/_custom_type_script = "uid://bn66bgttlo0pn"
 script = ExtResource("7_02d50")
 FirstIndex = 4
 LastIndex = 6
+metadata/_custom_type_script = "uid://bn66bgttlo0pn"
+
+[sub_resource type="Resource" id="Resource_pdgenrange"]
+script = ExtResource("7_02d50")
+FirstIndex = -1
+LastIndex = 1
 metadata/_custom_type_script = "uid://bn66bgttlo0pn"
 
 [node name="Node2D" type="Node2D"]
@@ -230,7 +249,97 @@ canvas_item_default_texture_filter = 0
 size = Vector2i(2, 2)
 render_target_update_mode = 4
 
-[node name="PocketDimension" parent="Pausable/PocketDimensionContainer/PocketDimensionViewport" instance=ExtResource("0_pd")]
+[node name="PocketDimension" type="Node2D" parent="Pausable/PocketDimensionContainer/PocketDimensionViewport"]
+
+[node name="TerrainGen" type="Node2D" parent="Pausable/PocketDimensionContainer/PocketDimensionViewport/PocketDimension" node_paths=PackedStringArray("SimplexGens", "ChunkManager")]
+script = ExtResource("6_4bgka")
+Config = ExtResource("29_terrain")
+SimplexGens = [NodePath("GensLayer/GrassGen")]
+GenRanges = {
+SubResource("Resource_pdgenrange"): 0
+}
+ChunkManager = NodePath("ChunkManager")
+AllowRegenerate = false
+
+[node name="GensLayer" type="Node2D" parent="Pausable/PocketDimensionContainer/PocketDimensionViewport/PocketDimension/TerrainGen"]
+
+[node name="GrassGen" type="Node2D" parent="Pausable/PocketDimensionContainer/PocketDimensionViewport/PocketDimension/TerrainGen/GensLayer" node_paths=PackedStringArray("ChunkManager")]
+script = ExtResource("8_pgk25")
+Config = ExtResource("25_grass")
+ChunkManager = NodePath("../../ChunkManager")
+TerrainType = 1
+
+[node name="ChunkManager" type="Node2D" parent="Pausable/PocketDimensionContainer/PocketDimensionViewport/PocketDimension/TerrainGen" node_paths=PackedStringArray("TerrainGen", "Camera")]
+script = ExtResource("9_kkokr")
+TerrainGen = NodePath("..")
+Camera = NodePath("../../PocketCamera")
+CoordConfig = ExtResource("33_coordcfg")
+ChunksToApplyPerFrame = 50
+MaxConcurrentGenerations = 16
+BoundsEnabled = true
+BoundsMax = Vector2i(3, 3)
+PreGenerateAll = true
+
+[node name="PocketCamera" type="Camera2D" parent="Pausable/PocketDimensionContainer/PocketDimensionViewport/PocketDimension"]
+position = Vector2(1024, 1024)
+script = ExtResource("30_gnlsw")
+MinZoom = 1.0
+
+[node name="TowerFootprintTracker" type="Node" parent="Pausable/PocketDimensionContainer/PocketDimensionViewport/PocketDimension"]
+script = ExtResource("31_t2o3n")
+Coords = ExtResource("33_coordcfg")
+
+[node name="TowerPlacementManager" type="Node2D" parent="Pausable/PocketDimensionContainer/PocketDimensionViewport/PocketDimension" node_paths=PackedStringArray("FootprintTracker", "PlacedTowersContainer", "Camera")]
+script = ExtResource("32_p8dcq")
+Coords = ExtResource("33_coordcfg")
+FootprintTracker = NodePath("../TowerFootprintTracker")
+PlacedTowersContainer = NodePath("PlacedTowers")
+Camera = NodePath("../PocketCamera")
+
+[node name="PlacedTowers" type="Node2D" parent="Pausable/PocketDimensionContainer/PocketDimensionViewport/PocketDimension/TowerPlacementManager"]
+
+[node name="PocketNavGridManager" type="Node2D" parent="Pausable/PocketDimensionContainer/PocketDimensionViewport/PocketDimension" node_paths=PackedStringArray("ChunkManager", "TowerPlacementManager")]
+script = ExtResource("33_esqqo")
+ChunkManager = NodePath("../TerrainGen/ChunkManager")
+CoordConfig = ExtResource("33_coordcfg")
+TowerPlacementManager = NodePath("../TowerPlacementManager")
+
+[node name="PocketReachabilityIndex" type="Node2D" parent="Pausable/PocketDimensionContainer/PocketDimensionViewport/PocketDimension" node_paths=PackedStringArray("ChunkManager", "TowerPlacementManager", "FootprintTracker")]
+script = ExtResource("34_rtlhk")
+ChunkManager = NodePath("../TerrainGen/ChunkManager")
+CoordConfig = ExtResource("33_coordcfg")
+TowerPlacementManager = NodePath("../TowerPlacementManager")
+FootprintTracker = NodePath("../TowerFootprintTracker")
+
+[node name="PathfindingResourceCoordinator" type="Node" parent="Pausable/PocketDimensionContainer/PocketDimensionViewport/PocketDimension" node_paths=PackedStringArray("NavGrid", "Reach", "TowerPlacement")]
+script = ExtResource("35_rnhpf")
+NavGrid = NodePath("../PocketNavGridManager")
+Reach = NodePath("../PocketReachabilityIndex")
+TowerPlacement = NodePath("../TowerPlacementManager")
+
+[node name="TowerPlacementUI" type="CanvasLayer" parent="Pausable/PocketDimensionContainer/PocketDimensionViewport/PocketDimension" node_paths=PackedStringArray("PlacementManager", "LatticeEditor")]
+visible = false
+script = ExtResource("36_i6tc2")
+PlacementManager = NodePath("../TowerPlacementManager")
+AvailableTowers = Array[ExtResource("37_y8rda")]([ExtResource("38_ntlrf")])
+LatticeEditor = NodePath("../../../../../WhenPaused/LatticeEditorLayer/CrystalLatticeEditor")
+
+[node name="SpawnedEnemies" type="Node2D" parent="Pausable/PocketDimensionContainer/PocketDimensionViewport/PocketDimension"]
+
+[node name="PocketDimensionEnemySpawner" type="Node2D" parent="Pausable/PocketDimensionContainer/PocketDimensionViewport/PocketDimension" node_paths=PackedStringArray("ChunkManager", "EnemiesContainer")]
+script = ExtResource("39_hp8ga")
+ChunkManager = NodePath("../TerrainGen/ChunkManager")
+CoordConfig = ExtResource("33_coordcfg")
+EnemyScene = ExtResource("40_s3172")
+PortalScene = ExtResource("41_lwwcw")
+EnemiesContainer = NodePath("../SpawnedEnemies")
+
+[node name="DebugEnemySpawner" type="Node2D" parent="Pausable/PocketDimensionContainer/PocketDimensionViewport/PocketDimension" node_paths=PackedStringArray("EnemiesContainer")]
+position = Vector2(1024, 1024)
+script = ExtResource("42_fghut")
+EnemyScene = ExtResource("40_s3172")
+EnemyType = ExtResource("43_4m6mh")
+EnemiesContainer = NodePath("../SpawnedEnemies")
 
 [node name="WaveTimerOverlay" type="CanvasLayer" parent="Pausable" node_paths=PackedStringArray("Spawner")]
 script = ExtResource("1_wto")
