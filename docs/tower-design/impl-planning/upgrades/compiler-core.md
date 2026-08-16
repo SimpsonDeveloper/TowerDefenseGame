@@ -30,7 +30,13 @@ scripts/towers/crystal/core/      ← engine-agnostic
                      adjacency, terminals and walk order are all QUESTIONS YOU ASK IT
   Compiler.cs        three pure steps → CompileResult
   CompileResult.cs   CellEnergy, Terminal, EdgeOp, ShotOp, CompileResult
+  LatticeMask.cs     which slots EXIST — the lattice's shape (item 3, `lattice-ui.md` §1)
+  LatticeGeometry.cs where a cell sits: corners, centre, and point → cell
+  LatticeCamera.cs   fits a lattice into a rectangle; lattice space ↔ view space
 ```
+
+The last three are item 3's, but they are engine-free lattice knowledge, so they live here and
+are unit-tested here. Nothing in `Compiler` reads them.
 
 `CrystalDef` (a `[GlobalClass]` Resource: kind, color, element, texture) and everything
 else Godot lives *outside* `core/`.
@@ -73,8 +79,11 @@ an edge as "a cell and one of its in-neighbours" wherever it needs one.
 - **No input weights** (req. for the C# impl too). The core energy is split **equally** among
   the source cells: each gets `E_core / nSources`. There is no per-source weight.
 - The lattice is **non-uniform**: not every grid slot is a usable cell, the perimeter is a
-  contour, and size is not fixed (see `lattice-ui.md`). The core only sees the cells that exist
-  — shape is the UI's problem, compiled down to a set of `(row, col, kind)` placements.
+  contour, and size is not fixed (see `lattice-ui.md`). Shape is **authored** by the UI, as a
+  `LatticeMask` — a plain set of usable coordinates. A `Lattice` optionally carries one and
+  refuses to `Place` off it, so an off-mask crystal is no more expressible than an illegal
+  terminal; a lattice with no mask is the unrestricted grid the compiler's own tests use.
+  Compiling reads none of this: it still only sees the `(row, col, kind)` placements.
 
 ---
 

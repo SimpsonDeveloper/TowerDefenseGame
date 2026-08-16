@@ -13,8 +13,8 @@ is *how we build it*, not new mechanics — two compiler rules are detailed here
 up: the **ordered op list** (`upgrades/op-flow.md`) and **auto source/sink terminals + equal
 split** (`upgrades/compiler-core.md`).
 
-Status: items **1–2 built** (`scripts/towers/crystal/core/`, tests in
-`tests/CrystalCore.Tests/`); items 3–6 planning.
+Status: items **1–2 built** and **3 partly built** (`scripts/towers/crystal/core/` +
+`scripts/towers/crystal/ui/`, tests in `tests/CrystalCore.Tests/`); items 4–6 planning.
 
 ---
 
@@ -34,7 +34,7 @@ Status: items **1–2 built** (`scripts/towers/crystal/core/`, tests in
 |---|---|---|---|---|---|
 | 1 ✅ | upgrades | Compiler core (structure · energy · terminals · ops) | `upgrades/compiler-core.md` | — | M |
 | 2 ✅ | upgrades | Op-flow (ordered op list — port on top of the core) | `upgrades/op-flow.md` | 1 | S–M |
-| 3 | upgrades | Lattice UI + template editor | `upgrades/lattice-ui.md` | 2 | L |
+| 3 ◐ | upgrades | Lattice UI + template editor (renderer + editing in; template saving out) | `upgrades/lattice-ui.md` | 2 | L |
 | 4 | combat | First primitive op behaviors | `combat/primitives.md` | 2 | M |
 | 5 | combat | Enemy R + paths / roads / deviation | `combat/enemy-r.md` | 4 | XL |
 | 6 | — | Delivery shapes · impact cap · investment axes | *(later)* | 4 | — |
@@ -43,7 +43,9 @@ Size: S/M/L/XL rough effort. **Compiler core is item 1** — the engine (structu
 local-toll energy routing, auto crystal terminals, combo-op naming at leaf outs). **Op-flow is
 item 2** — the ordered op list (produce + collect + order by lattice position) on top; no
 consumption here. Both were validated in the playground first, which is the reference.
-**Item 3 is next**: the compiler is trustworthy headless, so the lattice UI can render it.
+**Item 3 is under way**: the lattice's shape, geometry and framing landed engine-free in
+`core/`, and `scripts/towers/crystal/ui/` renders and edits it live
+(`scenes/crystal_lattice_editor.tscn`). Template saving is what remains.
 
 ---
 
@@ -58,7 +60,9 @@ consumption here. Both were validated in the playground first, which is the refe
   reference to match. This fixes what each shot *carries*. (It was validated in the playground
   first — that is why it exists there ahead of the C# core; the C# build reverses the order.)
 - **3 (UI) after the compiler is trustworthy.** The UI's live preview *is* the core compiler
-  (+ payload) — render it only once headless tests pass.
+  (+ payload) — render it only once headless tests pass. The same discipline applied inside the
+  item: the mask, the triangle geometry and the click path went into the engine-free core with
+  tests, leaving the Godot classes holding little but draw calls.
 - **Then combat, 4 → 5.**
   - **4 (primitives)** is where compilation first *does something* visible in-game — it wires
     the op names flowing out of items 1–2 to real enemy effects.

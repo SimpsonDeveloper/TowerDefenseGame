@@ -56,7 +56,7 @@ public class LatticeTests
         lat.Place(1, 3, CrystalKind.Emerald);    // ▲
         lat.Place(1, 2, CrystalKind.Sapphire);   // ▽ merge
 
-        int[] position = new int[lat.Cells.Count];
+        Dictionary<int, int> position = new();   // Cell.Id → its place in the walk
         IReadOnlyList<Cell> order = lat.FlowOrder();
         for (int i = 0; i < order.Count; i++) position[order[i].Id] = i;
 

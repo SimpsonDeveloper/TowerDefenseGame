@@ -20,23 +20,64 @@ public sealed class Lattice
     private readonly Dictionary<CellCoord, Cell> _byCoord = new();
     private readonly List<Cell> _cells = new();
 
+    /// <summary>Ids are handed out once and never reused, so a removal cannot alias a live
+    /// <c>Cell.Id</c> still keyed in a cached <see cref="CompileResult"/>.</summary>
+    private int _nextId;
+
+    /// <param name="mask">
+    /// The shape this lattice is allowed to fill (`lattice-ui.md` §1). <c>null</c> means
+    /// unrestricted — the whole infinite grid — which is what the compiler's own tests want.
+    /// </param>
+    public Lattice(LatticeMask mask = null) => Mask = mask;
+
+    /// <summary>Which slots exist at all, or <c>null</c> for an unmasked lattice.</summary>
+    public LatticeMask Mask { get; }
+
     public IReadOnlyList<Cell> Cells => _cells;
 
-    /// <summary>Place a crystal. Throws if the slot is already taken.</summary>
+    /// <summary>
+    /// Whether a crystal may go here: the slot is on the mask and nothing is in it yet. The
+    /// predicate a UI asks before accepting a click — <see cref="Place"/> throws on the same
+    /// conditions, so an off-mask or double-placed crystal is not expressible.
+    /// </summary>
+    public bool CanPlace(int row, int col)
+    {
+        CellCoord coord = new CellCoord(row, col);
+        return IsUsable(coord) && !_byCoord.ContainsKey(coord);
+    }
+
+    /// <summary>Place a crystal. Throws if the slot is blocked or already taken.</summary>
     public Cell Place(int row, int col, CrystalKind kind)
     {
         CellCoord coord = new CellCoord(row, col);
+        if (!IsUsable(coord))
+            throw new InvalidOperationException($"Cell ({row},{col}) is not part of this lattice.");
         if (_byCoord.ContainsKey(coord))
             throw new InvalidOperationException($"Cell ({row},{col}) already holds a crystal.");
 
-        Cell cell = new Cell(_cells.Count, coord, kind);
+        Cell cell = new Cell(_nextId++, coord, kind);
         _byCoord[coord] = cell;
         _cells.Add(cell);
         return cell;
     }
 
+    /// <summary>
+    /// Take a crystal back out. Returns whether one was there. Its neighbours need no fixing up —
+    /// adjacency is read from the coordinates each time, so the graph simply loses those edges.
+    /// </summary>
+    public bool Remove(int row, int col)
+    {
+        if (!_byCoord.TryGetValue(new CellCoord(row, col), out Cell cell)) return false;
+
+        _byCoord.Remove(cell.Coord);
+        _cells.Remove(cell);
+        return true;
+    }
+
     public Cell At(int row, int col) =>
         _byCoord.TryGetValue(new CellCoord(row, col), out Cell cell) ? cell : null;
+
+    private bool IsUsable(CellCoord coord) => Mask == null || Mask.IsUsable(coord);
 
     // ---- topology -------------------------------------------------------------------------
 
