@@ -199,4 +199,12 @@ lattice"). A tower fires a compiled shot; a tower with no lattice fires as it al
   decides what opening one looks like. Today that is `CrystalLatticeEditor` full-screen with the
   tree **paused**, because reading a compile trace while a wave advances would make the tool a
   liability and the tower would fire a stale shot meanwhile.
+- ⚠️ **The editor hangs off the root viewport, not off `TowerPlacementUI`.** That UI lives inside
+  the pocket dimension's `SubViewport`, and a `SubViewport` gets input only because the
+  `SubViewportContainer` above it forwards it — which that container can only do while it is
+  processing input. Pausing the tree stops it, so anything hosted in there goes **deaf the moment
+  it pauses the game**, no matter what `ProcessMode` it sets on itself: `Always` decides whether an
+  event is handled, and here the event never arrives. A modal that outlives a pause must sit on the
+  viewport that reads the mouse. Its own `CanvasLayer` at 100 also puts it above the other
+  dimension's mini-view and the wave timer, which is what "full-screen" was supposed to mean.
 - **Open:** the R meter (`../combat/enemy-r.md`), and item 4 consuming the ordered ops.
