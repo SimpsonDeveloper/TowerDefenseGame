@@ -1,29 +1,17 @@
 namespace towerdefensegame.scripts.ui;
 
 /// <summary>
-/// Draw order for the root viewport's <c>CanvasLayer</c>s, in one place.
-///
-/// Godot has no sublayers: <c>CanvasLayer.layer</c> is a single absolute int per viewport
-/// (-128…128), and nesting layers does not compose — an inner layer's number is measured against
-/// every other layer in the viewport, not against its parent. So the only thing keeping two
-/// overlays from silently fighting is a convention, which is this file.
-///
-/// The bands mirror the scene's two halves (`main_scene_raycast_agent.tscn`):
+/// Every <c>CanvasLayer</c> number in the <b>root</b> viewport, in one place. Assign in
+/// <c>_Ready</c>, never in the <c>.tscn</c>.
 ///
 /// <list type="bullet">
-///   <item><b>0–99</b> — under <c>Pausable</c>. The game and its HUD.</item>
-///   <item><b>100+</b> — under <c>WhenPaused</c>. Modals that take over the screen: they have to
-///     out-draw everything below <i>and</i> get the mouse first, and a higher layer is picked
-///     first.</item>
+///   <item><b>0–99</b> — under <c>Pausable</c>. Game and HUD.</item>
+///   <item><b>100+</b> — under <c>WhenPaused</c>. Full-screen modals, which also need the mouse
+///     first (higher layer is picked first).</item>
 /// </list>
 ///
-/// Every one of these is assigned in <c>_Ready</c>, never in the <c>.tscn</c> — a number in the
-/// scene would just be overwritten at load, so this file is the only place to read or change one.
-///
-/// These numbers describe the <b>root</b> viewport only. Each <c>SubViewport</c> is its own
-/// independent ordering space, composited into its parent as a single Control, so a layer of 128
-/// inside the pocket dimension still draws under a layer of 1 out here. <c>TowerPlacementUI</c>'s
-/// layer lives in that other space and is deliberately absent below.
+/// A <c>SubViewport</c> is its own ordering space, so its layers belong elsewhere, not here —
+/// layer 128 inside one still draws under layer 1 out here.
 /// </summary>
 public static class UiLayer
 {
