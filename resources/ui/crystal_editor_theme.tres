@@ -1,0 +1,259 @@
+[gd_resource type="Theme" load_steps=15 format=3]
+
+; The crystal editor's chrome. Every colour here is deliberately in the same family as
+; CrystalVisuals so the panel does not fight the lattice drawn between the panels.
+;
+; Edit this in Godot: open it, and the Theme editor opens in the bottom panel with a live
+; preview of every control. Hand-authored art goes in later as StyleBoxTexture (9-patch)
+; swapped for these StyleBoxFlats -- the theme item names below do not change.
+
+; ── panels ───────────────────────────────────────────────────────────────────────
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+content_margin_left = 12.0
+content_margin_top = 12.0
+content_margin_right = 12.0
+content_margin_bottom = 12.0
+bg_color = Color(0.086, 0.106, 0.149, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.157, 0.196, 0.29, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+; ── buttons ──────────────────────────────────────────────────────────────────────
+; Five states, five styleboxes. Dropping "focus" is the classic mistake -- keyboard
+; navigation goes invisible and nothing looks broken until someone tabs.
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_normal"]
+content_margin_left = 10.0
+content_margin_top = 6.0
+content_margin_right = 10.0
+content_margin_bottom = 6.0
+bg_color = Color(0.11, 0.137, 0.2, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.22, 0.271, 0.373, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_hover"]
+content_margin_left = 10.0
+content_margin_top = 6.0
+content_margin_right = 10.0
+content_margin_bottom = 6.0
+bg_color = Color(0.145, 0.18, 0.259, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.318, 0.388, 0.522, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_pressed"]
+content_margin_left = 10.0
+content_margin_top = 6.0
+content_margin_right = 10.0
+content_margin_bottom = 6.0
+bg_color = Color(0.184, 0.231, 0.333, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.435, 0.522, 0.639, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_disabled"]
+content_margin_left = 10.0
+content_margin_top = 6.0
+content_margin_right = 10.0
+content_margin_bottom = 6.0
+bg_color = Color(0.082, 0.098, 0.133, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.145, 0.176, 0.239, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_focus"]
+content_margin_left = 10.0
+content_margin_top = 6.0
+content_margin_right = 10.0
+content_margin_bottom = 6.0
+draw_center = false
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.498, 0.561, 0.651, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+; ── crystal swatches ─────────────────────────────────────────────────────────────
+; A THEME TYPE VARIATION: a custom name whose base_type is Button, so these six style
+; independently of every other Button without a subclass. The per-kind colour cannot live
+; here (a theme is static, the roster is not) -- BuildPalette duplicates these and paints
+; them from CrystalVisuals.Tint. What the theme fixes is the shape, padding and states.
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_swatch_normal"]
+content_margin_left = 10.0
+content_margin_top = 7.0
+content_margin_right = 10.0
+content_margin_bottom = 7.0
+bg_color = Color(0.11, 0.137, 0.2, 1)
+border_width_left = 4
+border_color = Color(1, 1, 1, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_swatch_hover"]
+content_margin_left = 10.0
+content_margin_top = 7.0
+content_margin_right = 10.0
+content_margin_bottom = 7.0
+bg_color = Color(0.161, 0.2, 0.286, 1)
+border_width_left = 4
+border_color = Color(1, 1, 1, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_swatch_pressed"]
+content_margin_left = 10.0
+content_margin_top = 7.0
+content_margin_right = 10.0
+content_margin_bottom = 7.0
+bg_color = Color(0.216, 0.267, 0.373, 1)
+border_width_left = 4
+border_color = Color(1, 1, 1, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+; The selected swatch. Same geometry, but the kind's colour floods the whole plate instead
+; of just the left edge, so which crystal is armed is readable at a glance rather than by
+; comparing six near-identical rows.
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_swatch_sel_normal"]
+content_margin_left = 10.0
+content_margin_top = 7.0
+content_margin_right = 10.0
+content_margin_bottom = 7.0
+bg_color = Color(1, 1, 1, 1)
+border_width_left = 4
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_swatch_sel_hover"]
+content_margin_left = 10.0
+content_margin_top = 7.0
+content_margin_right = 10.0
+content_margin_bottom = 7.0
+bg_color = Color(1, 1, 1, 1)
+border_width_left = 4
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+; ── text entry ───────────────────────────────────────────────────────────────────
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_line_normal"]
+content_margin_left = 8.0
+content_margin_top = 5.0
+content_margin_right = 8.0
+content_margin_bottom = 5.0
+bg_color = Color(0.055, 0.067, 0.094, 1)
+border_width_bottom = 1
+border_color = Color(0.22, 0.271, 0.373, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_line_focus"]
+content_margin_left = 8.0
+content_margin_top = 5.0
+content_margin_right = 8.0
+content_margin_bottom = 5.0
+bg_color = Color(0.055, 0.067, 0.094, 1)
+border_width_bottom = 2
+border_color = Color(0.345, 0.627, 1, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+
+; ── separators ───────────────────────────────────────────────────────────────────
+
+[sub_resource type="StyleBoxLine" id="StyleBoxLine_separator"]
+color = Color(0.157, 0.196, 0.29, 1)
+thickness = 1
+
+[resource]
+default_font_size = 14
+Button/colors/font_color = Color(0.875, 0.902, 0.914, 1)
+Button/colors/font_disabled_color = Color(0.404, 0.443, 0.514, 1)
+Button/colors/font_hover_color = Color(1, 1, 1, 1)
+Button/colors/font_pressed_color = Color(1, 1, 1, 1)
+Button/styles/disabled = SubResource("StyleBoxFlat_btn_disabled")
+Button/styles/focus = SubResource("StyleBoxFlat_btn_focus")
+Button/styles/hover = SubResource("StyleBoxFlat_btn_hover")
+Button/styles/normal = SubResource("StyleBoxFlat_btn_normal")
+Button/styles/pressed = SubResource("StyleBoxFlat_btn_pressed")
+CheckBox/colors/font_color = Color(0.804, 0.843, 0.867, 1)
+CheckBox/colors/font_hover_color = Color(1, 1, 1, 1)
+CrystalSwatch/base_type = &"Button"
+CrystalSwatch/colors/font_color = Color(0.875, 0.902, 0.914, 1)
+CrystalSwatch/colors/font_hover_color = Color(1, 1, 1, 1)
+CrystalSwatch/colors/font_pressed_color = Color(1, 1, 1, 1)
+CrystalSwatch/styles/focus = SubResource("StyleBoxFlat_btn_focus")
+CrystalSwatch/styles/hover = SubResource("StyleBoxFlat_swatch_hover")
+CrystalSwatch/styles/normal = SubResource("StyleBoxFlat_swatch_normal")
+CrystalSwatch/styles/pressed = SubResource("StyleBoxFlat_swatch_pressed")
+CrystalSwatchSelected/base_type = &"Button"
+CrystalSwatchSelected/styles/focus = SubResource("StyleBoxFlat_btn_focus")
+CrystalSwatchSelected/styles/hover = SubResource("StyleBoxFlat_swatch_sel_hover")
+CrystalSwatchSelected/styles/normal = SubResource("StyleBoxFlat_swatch_sel_normal")
+CrystalSwatchSelected/styles/pressed = SubResource("StyleBoxFlat_swatch_sel_normal")
+HSeparator/constants/separation = 10
+HSeparator/styles/separator = SubResource("StyleBoxLine_separator")
+Label/colors/font_color = Color(0.875, 0.902, 0.914, 1)
+LineEdit/colors/caret_color = Color(0.345, 0.627, 1, 1)
+LineEdit/colors/font_color = Color(0.875, 0.902, 0.914, 1)
+LineEdit/colors/font_placeholder_color = Color(0.404, 0.443, 0.514, 1)
+LineEdit/styles/focus = SubResource("StyleBoxFlat_line_focus")
+LineEdit/styles/normal = SubResource("StyleBoxFlat_line_normal")
+Panel/styles/panel = SubResource("StyleBoxFlat_panel")
+PanelContainer/styles/panel = SubResource("StyleBoxFlat_panel")
+VBoxContainer/constants/separation = 6

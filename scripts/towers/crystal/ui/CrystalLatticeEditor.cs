@@ -37,6 +37,7 @@ public partial class CrystalLatticeEditor : Control
 
     private LatticeView _view;
     private Label _readout;
+    private readonly Dictionary<CrystalKind, Button> _swatches = new();
     private Button _selected;
     private LineEdit _templateName;
     private Label _status;
@@ -97,6 +98,10 @@ public partial class CrystalLatticeEditor : Control
 
     private void BuildUI()
     {
+        // One assignment styles the whole editor: a Theme cascades to every descendant, so the
+        // controls built below ask for nothing and inherit everything.
+        Theme = UiTheme.Load(UiTheme.CrystalEditor);
+
         ColorRect background = new ColorRect { Color = new Color("11141c") };
         background.SetAnchorsPreset(LayoutPreset.FullRect);
         AddChild(background);
@@ -144,12 +149,18 @@ public partial class CrystalLatticeEditor : Control
             Button button = new Button
             {
                 Text = $"{kind}  ({CrystalStats.Default.Cost(kind):0})",
-                Modulate = CrystalVisuals.Tint(kind),
+                Alignment = HorizontalAlignment.Left,
+                ThemeTypeVariation = UiTheme.Swatch,
             };
             button.Pressed += () => SelectKind(captured, button);
             panel.AddChild(button);
+            _swatches[kind] = button;
             if (kind == CrystalKind.Ruby) _selected = button;
         }
+
+        // Deferred: the theme's styleboxes are only reachable once these are in the tree, since
+        // GetThemeStylebox walks up to find the theme that owns them.
+        Callable.From(PaintSwatches).CallDeferred();
 
         panel.AddChild(new HSeparator());
 
@@ -284,9 +295,50 @@ public partial class CrystalLatticeEditor : Control
     private void SelectKind(CrystalKind kind, Button button)
     {
         _view.SelectedKind = kind;
-        if (_selected != null) _selected.Flat = false;
         _selected = button;
-        button.Flat = true;
+        PaintSwatches();
+    }
+
+    /// <summary>
+    /// Colour the palette from <see cref="CrystalVisuals"/>. The theme owns each swatch's shape,
+    /// padding and states; the roster's colours cannot live there, because a <c>Theme</c> is a
+    /// fixed set of keys and <see cref="CrystalKind"/> is not. So the styleboxes come out of the
+    /// theme, get duplicated, and are repainted per kind — the same split the lattice already
+    /// uses, where <c>CrystalVisuals</c> is the only place a crystal's colour is decided.
+    ///
+    /// Duplicating matters: a stylebox fetched from a theme is SHARED, so tinting it in place
+    /// would recolour all six.
+    /// </summary>
+    private void PaintSwatches()
+    {
+        foreach ((CrystalKind kind, Button button) in _swatches)
+        {
+            bool selected = button == _selected;
+            string variation = selected ? UiTheme.SwatchSelected : UiTheme.Swatch;
+            button.ThemeTypeVariation = variation;
+
+            Color tint = CrystalVisuals.Tint(kind);
+            foreach (string state in new[] { "normal", "hover", "pressed" })
+            {
+                // Clear last call's override FIRST. GetThemeStylebox checks the control's own
+                // overrides before the theme, so re-reading here would hand back the stylebox this
+                // method wrote a moment ago — and a swatch that had ever been selected would keep
+                // flooding itself with its colour no matter which variation it moved to.
+                button.RemoveThemeStyleboxOverride(state);
+                if (button.GetThemeStylebox(state, variation) is not StyleBoxFlat shared) continue;
+
+                StyleBoxFlat style = (StyleBoxFlat)shared.Duplicate();
+                style.BorderColor = tint;
+                if (selected) style.BgColor = tint;
+                button.AddThemeStyleboxOverride(state, style);
+            }
+
+            // On the selected swatch the text sits on the kind's own colour, so it needs the same
+            // brightness-picked ink the crystals use — white on Citrine is unreadable.
+            Color ink = selected ? CrystalVisuals.Ink(kind) : tint;
+            foreach (string slot in new[] { "font_color", "font_hover_color", "font_pressed_color" })
+                button.AddThemeColorOverride(slot, ink);
+        }
     }
 
     // ── state ────────────────────────────────────────────────────────────────────
