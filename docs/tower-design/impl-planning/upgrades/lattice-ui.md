@@ -83,11 +83,10 @@ Everything the builder does, plus **authoring the mask itself**:
   `LatticeView` — left click allows a slot, right click blocks it, and a band of off-mask grid is
   drawn around the contour so it can be grown outward.
 
-  Blocking a slot **also removes whatever stood there**. `LatticeMask.Block` itself is
-  non-destructive — the mask states what *may* be built, and a lattice can outlive a mask edit —
-  but as a *gesture* this one means "nothing can ever be here", so leaving the crystal behind
-  would contradict what the player just said. The layering is the point: the rule stays in the
-  core, the intent lives in the UI.
+  Blocking a slot **also removes whatever stood there**, via `Lattice.Block` — shape edits go
+  through the lattice, never the mask, so the two can never disagree. That makes a crystal on a
+  blocked slot as unexpressible as an off-mask `Place`, and nothing downstream needs to check for
+  one. `LatticeMask.Allow`/`Block` remain for *building* a mask, before a lattice owns it.
 - ✅ Save a `{ mask, default crystals }` bundle as a **template** (`CrystalTemplate`, a
   `[GlobalClass]` Resource). Name it, Save…/Load… to `res://resources/crystal_templates/`.
 

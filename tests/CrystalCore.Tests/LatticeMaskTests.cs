@@ -59,46 +59,42 @@ public class LatticeMaskTests
     }
 
     [Fact]
-    public void Block_LeavesAnAlreadyPlacedCrystalAlone()
+    public void Block_TakesOutTheCrystalStandingThere()
     {
-        // the mask says what MAY be built, not what is — un-painting a slot in the editor is
-        // not a demolition order
-        LatticeMask mask = new LatticeMask().Allow(0, 0);
-        Lattice lat = new Lattice(mask);
-        lat.Place(0, 0, CrystalKind.Ruby);
-
-        mask.Block(0, 0);
-
-        Assert.NotNull(lat.At(0, 0));
-        Assert.Single(lat.Cells);
-    }
-
-    [Fact]
-    public void OffMask_FindsCrystalsStrandedByAMaskEdit()
-    {
-        // Place cannot create one, but blocking an occupied slot can. Such a crystal still
-        // compiles, so nothing else would ever mention it — and it is exactly what stops a
-        // template saving.
+        // the whole point of routing shape edits through the lattice: a crystal on a blocked
+        // slot is never expressible, so nothing downstream has to check for one
         LatticeMask mask = new LatticeMask().Allow(0, 0).Allow(0, 1);
         Lattice lat = new Lattice(mask);
-        Cell stranded = lat.Place(0, 0, CrystalKind.Ruby);
+        lat.Place(0, 0, CrystalKind.Ruby);
         lat.Place(0, 1, CrystalKind.Sapphire);
 
-        Assert.Empty(lat.OffMask());
+        Assert.True(lat.Block(0, 0));
 
-        mask.Block(0, 0);
-
-        Assert.Equal(new[] { stranded }, lat.OffMask());
-        Assert.Contains(LatticeSnapshot.Of(lat).Problems(), p => p.Contains("outside the mask"));
+        Assert.Null(lat.At(0, 0));
+        Assert.Single(lat.Cells);
+        Assert.False(mask.IsUsable(0, 0));
+        Assert.Empty(LatticeSnapshot.Of(lat).Problems());
     }
 
     [Fact]
-    public void OffMask_IsEmptyWithoutAMask()
+    public void ShapeEdits_ReportWhetherAnythingChanged()
+    {
+        LatticeMask mask = new LatticeMask().Allow(0, 0);
+        Lattice lat = new Lattice(mask);
+
+        Assert.False(lat.Allow(0, 0));   // already open
+        Assert.True(lat.Block(0, 0));
+        Assert.False(lat.Block(0, 0));   // already closed
+        Assert.True(lat.Allow(0, 0));
+    }
+
+    [Fact]
+    public void ShapeEdits_ThrowWithoutAMask()
     {
         Lattice lat = new Lattice();
-        lat.Place(3, 9, CrystalKind.Ruby);
 
-        Assert.Empty(lat.OffMask());
+        Assert.Throws<InvalidOperationException>(() => lat.Block(0, 0));
+        Assert.Throws<InvalidOperationException>(() => lat.Allow(0, 0));
     }
 
     [Fact]

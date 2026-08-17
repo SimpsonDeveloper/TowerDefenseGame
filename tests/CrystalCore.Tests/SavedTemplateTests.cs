@@ -86,7 +86,6 @@ public class SavedTemplateTests
 
         Assert.Equal(31, lattice.Mask.Count);
         Assert.Equal(13, lattice.Cells.Count);
-        Assert.Empty(lattice.OffMask());
         Assert.True(lattice.Mask.IsUsable(1, -4));      // painting left of the origin survives
         Assert.Equal(CrystalKind.Sapphire, lattice.At(1, -3).Kind);
     }

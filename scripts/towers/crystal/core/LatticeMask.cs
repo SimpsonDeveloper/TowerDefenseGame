@@ -34,14 +34,18 @@ public sealed class LatticeMask
 
     public bool IsUsable(int row, int col) => IsUsable(new CellCoord(row, col));
 
-    /// <summary>Open a slot — painting the mask in the editor, or buying a cell in play.</summary>
+    /// <summary>Open a slot.</summary>
     public LatticeMask Allow(int row, int col)
     {
         _usable.Add(new CellCoord(row, col));
         return this;
     }
 
-    /// <summary>Close a slot. Does not touch any crystal already placed there.</summary>
+    /// <summary>
+    /// Close a slot. Knows nothing of crystals, so it cannot take one out — which is why this is
+    /// for building a mask, before a <see cref="Lattice"/> owns it. Once one does, edit the shape
+    /// through <see cref="Lattice.Block"/>, which keeps the two in step.
+    /// </summary>
     public LatticeMask Block(int row, int col)
     {
         _usable.Remove(new CellCoord(row, col));

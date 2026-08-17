@@ -84,6 +84,8 @@ an edge as "a cell and one of its in-neighbours" wherever it needs one.
   `LatticeMask` — a plain set of usable coordinates. A `Lattice` optionally carries one and
   refuses to `Place` off it, so an off-mask crystal is no more expressible than an illegal
   terminal; a lattice with no mask is the unrestricted grid the compiler's own tests use.
+  Editing the shape afterwards goes through `Lattice.Allow`/`Block`, which demolishes rather than
+  strand a crystal, so the invariant holds for the lattice's whole life and not just at `Place`.
   Compiling reads none of this: it still only sees the `(row, col, kind)` placements.
 
 ---

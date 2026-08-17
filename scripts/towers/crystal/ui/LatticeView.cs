@@ -45,7 +45,10 @@ public partial class LatticeView : Control
     [Export] public int PaintPadding { get; set; } = 2;
 
     public Lattice Lattice { get; private set; } = new Lattice();
-    public LatticeMask Mask { get; private set; }
+
+    /// <summary>The shape being drawn, or <c>null</c> for an unmasked lattice. Always the
+    /// lattice's own — the two cannot be pointed at different masks.</summary>
+    public LatticeMask Mask => Lattice.Mask;
     public CompileResult Result { get; private set; }
     public CrystalKind SelectedKind { get; set; } = CrystalKind.Ruby;
 
@@ -58,11 +61,10 @@ public partial class LatticeView : Control
         Rebuild();
     }
 
-    /// <summary>Point the view at a lattice. A null mask means the whole grid is buildable.</summary>
-    public void Setup(Lattice lattice, LatticeMask mask = null)
+    /// <summary>Point the view at a lattice. An unmasked one means the whole grid is buildable.</summary>
+    public void Setup(Lattice lattice)
     {
-        Lattice = lattice ?? new Lattice(mask);
-        Mask = mask ?? Lattice.Mask;
+        Lattice = lattice ?? new Lattice();
         Rebuild();
     }
 
@@ -146,20 +148,10 @@ public partial class LatticeView : Control
                 ? CrystalVisuals.Tint(cell.Kind)
                 : usable ? CrystalVisuals.EmptySlot : CrystalVisuals.BlockedSlot;
 
-            // Painting can no longer strand a crystal (Paint removes it) and Load refuses a file
-            // that contains one, so this is a guard for other callers of the view — anything that
-            // shrinks a mask under a lattice it does not own. It compiles, so nothing else would
-            // ever mention it.
-            bool orphan = cell != null && !usable;
-            Color outline = orphan ? CrystalVisuals.Orphan
-                : cell != null ? CrystalVisuals.CrystalOutline
-                : CrystalVisuals.SlotOutline;
+            Color outline = cell != null ? CrystalVisuals.CrystalOutline : CrystalVisuals.SlotOutline;
 
             DrawColoredPolygon(triangle, fill);
-            DrawPolyline(
-                triangle.Append(triangle[0]).ToArray(),
-                outline,
-                orphan ? 4f : usable ? 1.5f : 1f);
+            DrawPolyline(triangle.Append(triangle[0]).ToArray(), outline, usable ? 1.5f : 1f);
 
             if (cell == null) continue;
 
@@ -269,27 +261,11 @@ public partial class LatticeView : Control
     }
 
     /// <summary>
-    /// Template editor: sculpt the contour itself.
-    ///
-    /// Blocking a slot also takes out whatever stood there. <see cref="LatticeMask.Block"/> is
-    /// non-destructive on purpose — the mask states what may be built, and a lattice can outlive
-    /// a mask edit — but as a *gesture* this one means "nothing can ever be here", so leaving the
-    /// crystal behind would contradict what the player just said.
+    /// Template editor: sculpt the contour itself. Blocking takes out whatever stood there —
+    /// see <see cref="Lattice.Block"/>.
     /// </summary>
-    private bool Paint(CellCoord coord, bool usable)
-    {
-        if (Mask == null || Mask.IsUsable(coord) == usable) return false;
-
-        if (usable)
-        {
-            Mask.Allow(coord.Row, coord.Col);
-        }
-        else
-        {
-            Mask.Block(coord.Row, coord.Col);
-            Lattice.Remove(coord.Row, coord.Col);
-        }
-
-        return true;
-    }
+    private bool Paint(CellCoord coord, bool usable) =>
+        Mask != null && (usable
+            ? Lattice.Allow(coord.Row, coord.Col)
+            : Lattice.Block(coord.Row, coord.Col));
 }

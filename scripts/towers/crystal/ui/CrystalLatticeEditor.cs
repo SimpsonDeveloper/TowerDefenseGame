@@ -88,7 +88,7 @@ public partial class CrystalLatticeEditor : Control
 
         _coreSpin.Value = coreEnergy;      // fires ValueChanged → view.CoreEnergy + Rebuild
         _templateName.Text = title;
-        _view.Setup(lattice, lattice.Mask);
+        _view.Setup(lattice);
         _close.Visible = true;
         Refresh();
     }
@@ -253,7 +253,7 @@ public partial class CrystalLatticeEditor : Control
 
         Lattice lattice = snapshot.Restore();
         _templateName.Text = template.DisplayName;
-        _view.Setup(lattice, lattice.Mask);
+        _view.Setup(lattice);
         Refresh();
         Report($"loaded \"{template.DisplayName}\"");
     }
@@ -307,7 +307,7 @@ public partial class CrystalLatticeEditor : Control
         }
 
         LatticeMask mask = LatticeMask.Filled(MaskRows, MaskCols);
-        _view.Setup(new Lattice(mask), mask);
+        _view.Setup(new Lattice(mask));
         Refresh();
     }
 
@@ -320,10 +320,6 @@ public partial class CrystalLatticeEditor : Control
         CompileResult result = _view.Result;
         if (result == null) return;
 
-        // surfaced here as well as on the lattice, because it is the reason a Save will refuse
-        int orphans = _view.Lattice.OffMask().Count();
-        string warning = orphans == 0 ? "" : $"\n{orphans} crystal(s) outside the mask — cannot save";
-
         string shot = result.Shot.Count == 0
             ? "  (no combos yet)"
             : string.Join("\n", result.Shot.Select((ShotOp op, int i) => $"  {i + 1}. {op}"));
@@ -333,7 +329,7 @@ public partial class CrystalLatticeEditor : Control
             $"core       {result.CoreEnergy:0.#}",
             $"crystals   {_view.Lattice.Cells.Count}",
             $"cost       {result.UsedCost:0.#}" + (result.Over ? "   OVER BUDGET" : ""),
-            $"weapon     {result.WeaponEnergy:0.#}" + warning,
+            $"weapon     {result.WeaponEnergy:0.#}",
             "",
             $"sources  {string.Join(", ", result.Sources.Select(t => t.Label))}",
             $"sinks    {string.Join(", ", result.Sinks.Select(t => t.Label))}",

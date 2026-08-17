@@ -77,16 +77,44 @@ public sealed class Lattice
     public Cell At(int row, int col) =>
         _byCoord.TryGetValue(new CellCoord(row, col), out Cell cell) ? cell : null;
 
-    /// <summary>
-    /// Crystals standing outside the mask. <see cref="Place"/> cannot create one, but blocking an
-    /// occupied slot can — a mask edit says what may be built and deliberately does not demolish.
-    /// Such a crystal still compiles; what it cannot do is be saved, so a UI needs to show it.
-    /// </summary>
-    public IEnumerable<Cell> OffMask() => Mask == null
-        ? Enumerable.Empty<Cell>()
-        : _cells.Where(cell => !Mask.IsUsable(cell.Coord));
-
     private bool IsUsable(CellCoord coord) => Mask == null || Mask.IsUsable(coord);
+
+    // ---- shape ------------------------------------------------------------------------------
+
+    /// <summary>
+    /// Open a slot — sculpting a template's contour, or buying a cell in play. Returns whether
+    /// the shape changed.
+    /// </summary>
+    public bool Allow(int row, int col)
+    {
+        RequireMask();
+        if (Mask.IsUsable(row, col)) return false;
+        Mask.Allow(row, col);
+        return true;
+    }
+
+    /// <summary>
+    /// Close a slot, taking out whatever stood there. Returns whether the shape changed.
+    ///
+    /// The demolition is the point: <see cref="Mask"/> and the crystals in it are kept in step
+    /// here so a crystal on a blocked slot is never expressible, exactly as an off-mask
+    /// <see cref="Place"/> is not. Everything downstream — compiling, saving, drawing — can then
+    /// take the two as agreeing instead of each re-checking.
+    /// </summary>
+    public bool Block(int row, int col)
+    {
+        RequireMask();
+        if (!Mask.IsUsable(row, col)) return false;
+        Mask.Block(row, col);
+        Remove(row, col);
+        return true;
+    }
+
+    private void RequireMask()
+    {
+        if (Mask == null)
+            throw new InvalidOperationException("This lattice has no mask, so it has no shape to edit.");
+    }
 
     // ---- topology -------------------------------------------------------------------------
 
