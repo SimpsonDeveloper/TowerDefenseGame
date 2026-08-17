@@ -179,7 +179,7 @@ public partial class TerrainGen : Node2D, ISimplexGenConfigurable
         
         ValidateConfig();
         _noise = new FastNoiseLite();
-        _noise.Seed = -14731477; //(int)GD.Randi(); // trying to debug the polygons issue north with this seed
+        _noise.Seed = (int)GD.Randi(); // trying to debug the polygons issue north with this seed
         GD.Print("Init called");
         GD.Print($"Seed: {_noise.Seed}");
         _noise.NoiseType = FastNoiseLite.NoiseTypeEnum.Simplex;
