@@ -37,8 +37,6 @@ public partial class CrystalLatticeEditor : Control
 
     private LatticeView _view;
     private Label _readout;
-    private readonly Dictionary<CrystalKind, Button> _swatches = new();
-    private Button _selected;
     private LineEdit _templateName;
     private Label _status;
     private Label _hint;
@@ -136,13 +134,18 @@ public partial class CrystalLatticeEditor : Control
     private Control BuildPalette()
     {
         MarginContainer outer = new MarginContainer { CustomMinimumSize = new Vector2(172, 0) };
-        foreach (string side in new[] { "left", "right", "top", "bottom" })
-            outer.AddThemeConstantOverride($"margin_{side}", 10);
 
         VBoxContainer panel = new VBoxContainer();
         outer.AddChild(panel);
 
         panel.AddChild(new Label { Text = "Crystal" });
+
+        // A ButtonGroup keeps exactly one swatch pressed and un-presses the rest, so "which
+        // crystal is armed" is Godot's state to hold rather than this class's. That is the whole
+        // reason these are toggles: `pressed` is then the selected look, and every pixel of it
+        // comes from the theme.
+        ButtonGroup group = new ButtonGroup();
+
         foreach (CrystalKind kind in Enum.GetValues<CrystalKind>())
         {
             CrystalKind captured = kind;
@@ -150,17 +153,17 @@ public partial class CrystalLatticeEditor : Control
             {
                 Text = $"{kind}  ({CrystalStats.Default.Cost(kind):0})",
                 Alignment = HorizontalAlignment.Left,
-                ThemeTypeVariation = UiTheme.Swatch,
+                ToggleMode = true,
+                ButtonGroup = group,
+                ButtonPressed = kind == CrystalKind.Ruby,
+                ThemeTypeVariation = UiTheme.Swatch(kind),
             };
-            button.Pressed += () => SelectKind(captured, button);
+            button.Toggled += on => { if (on) _view.SelectedKind = captured; };
             panel.AddChild(button);
-            _swatches[kind] = button;
-            if (kind == CrystalKind.Ruby) _selected = button;
         }
 
-        // Deferred: the theme's styleboxes are only reachable once these are in the tree, since
-        // GetThemeStylebox walks up to find the theme that owns them.
-        Callable.From(PaintSwatches).CallDeferred();
+        foreach (CrystalKind kind in UiTheme.MissingSwatches(Theme))
+            GD.PushWarning($"[ui] theme has no {UiTheme.Swatch(kind)} — that swatch will look plain");
 
         panel.AddChild(new HSeparator());
 
@@ -279,8 +282,6 @@ public partial class CrystalLatticeEditor : Control
     {
         PanelContainer panel = new PanelContainer { CustomMinimumSize = new Vector2(230, 0) };
         MarginContainer margin = new MarginContainer();
-        foreach (string side in new[] { "left", "right", "top", "bottom" })
-            margin.AddThemeConstantOverride($"margin_{side}", 10);
         panel.AddChild(margin);
 
         _readout = new Label { VerticalAlignment = VerticalAlignment.Top };
@@ -292,54 +293,6 @@ public partial class CrystalLatticeEditor : Control
         ? "left click: add cell\nright click: remove cell"
         : "left click: place\nright click: remove";
 
-    private void SelectKind(CrystalKind kind, Button button)
-    {
-        _view.SelectedKind = kind;
-        _selected = button;
-        PaintSwatches();
-    }
-
-    /// <summary>
-    /// Colour the palette from <see cref="CrystalVisuals"/>. The theme owns each swatch's shape,
-    /// padding and states; the roster's colours cannot live there, because a <c>Theme</c> is a
-    /// fixed set of keys and <see cref="CrystalKind"/> is not. So the styleboxes come out of the
-    /// theme, get duplicated, and are repainted per kind — the same split the lattice already
-    /// uses, where <c>CrystalVisuals</c> is the only place a crystal's colour is decided.
-    ///
-    /// Duplicating matters: a stylebox fetched from a theme is SHARED, so tinting it in place
-    /// would recolour all six.
-    /// </summary>
-    private void PaintSwatches()
-    {
-        foreach ((CrystalKind kind, Button button) in _swatches)
-        {
-            bool selected = button == _selected;
-            string variation = selected ? UiTheme.SwatchSelected : UiTheme.Swatch;
-            button.ThemeTypeVariation = variation;
-
-            Color tint = CrystalVisuals.Tint(kind);
-            foreach (string state in new[] { "normal", "hover", "pressed" })
-            {
-                // Clear last call's override FIRST. GetThemeStylebox checks the control's own
-                // overrides before the theme, so re-reading here would hand back the stylebox this
-                // method wrote a moment ago — and a swatch that had ever been selected would keep
-                // flooding itself with its colour no matter which variation it moved to.
-                button.RemoveThemeStyleboxOverride(state);
-                if (button.GetThemeStylebox(state, variation) is not StyleBoxFlat shared) continue;
-
-                StyleBoxFlat style = (StyleBoxFlat)shared.Duplicate();
-                style.BorderColor = tint;
-                if (selected) style.BgColor = tint;
-                button.AddThemeStyleboxOverride(state, style);
-            }
-
-            // On the selected swatch the text sits on the kind's own colour, so it needs the same
-            // brightness-picked ink the crystals use — white on Citrine is unreadable.
-            Color ink = selected ? CrystalVisuals.Ink(kind) : tint;
-            foreach (string slot in new[] { "font_color", "font_hover_color", "font_pressed_color" })
-                button.AddThemeColorOverride(slot, ink);
-        }
-    }
 
     // ── state ────────────────────────────────────────────────────────────────────
 

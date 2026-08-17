@@ -1,81 +1,4 @@
-[gd_resource type="Theme" load_steps=15 format=3]
-
-; The crystal editor's chrome. Every colour here is deliberately in the same family as
-; CrystalVisuals so the panel does not fight the lattice drawn between the panels.
-;
-; Edit this in Godot: open it, and the Theme editor opens in the bottom panel with a live
-; preview of every control. Hand-authored art goes in later as StyleBoxTexture (9-patch)
-; swapped for these StyleBoxFlats -- the theme item names below do not change.
-
-; ── panels ───────────────────────────────────────────────────────────────────────
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
-content_margin_left = 12.0
-content_margin_top = 12.0
-content_margin_right = 12.0
-content_margin_bottom = 12.0
-bg_color = Color(0.086, 0.106, 0.149, 1)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.157, 0.196, 0.29, 1)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
-
-; ── buttons ──────────────────────────────────────────────────────────────────────
-; Five states, five styleboxes. Dropping "focus" is the classic mistake -- keyboard
-; navigation goes invisible and nothing looks broken until someone tabs.
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_normal"]
-content_margin_left = 10.0
-content_margin_top = 6.0
-content_margin_right = 10.0
-content_margin_bottom = 6.0
-bg_color = Color(0.11, 0.137, 0.2, 1)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.22, 0.271, 0.373, 1)
-corner_radius_top_left = 3
-corner_radius_top_right = 3
-corner_radius_bottom_right = 3
-corner_radius_bottom_left = 3
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_hover"]
-content_margin_left = 10.0
-content_margin_top = 6.0
-content_margin_right = 10.0
-content_margin_bottom = 6.0
-bg_color = Color(0.145, 0.18, 0.259, 1)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.318, 0.388, 0.522, 1)
-corner_radius_top_left = 3
-corner_radius_top_right = 3
-corner_radius_bottom_right = 3
-corner_radius_bottom_left = 3
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_pressed"]
-content_margin_left = 10.0
-content_margin_top = 6.0
-content_margin_right = 10.0
-content_margin_bottom = 6.0
-bg_color = Color(0.184, 0.231, 0.333, 1)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.435, 0.522, 0.639, 1)
-corner_radius_top_left = 3
-corner_radius_top_right = 3
-corner_radius_bottom_right = 3
-corner_radius_bottom_left = 3
+[gd_resource type="Theme" load_steps=28 format=3 uid="uid://ux8ce8y24jw3"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_disabled"]
 content_margin_left = 10.0
@@ -109,99 +32,344 @@ corner_radius_top_right = 3
 corner_radius_bottom_right = 3
 corner_radius_bottom_left = 3
 
-; ── crystal swatches ─────────────────────────────────────────────────────────────
-; A THEME TYPE VARIATION: a custom name whose base_type is Button, so these six style
-; independently of every other Button without a subclass. The per-kind colour cannot live
-; here (a theme is static, the roster is not) -- BuildPalette duplicates these and paints
-; them from CrystalVisuals.Tint. What the theme fixes is the shape, padding and states.
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_swatch_normal"]
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_hover"]
 content_margin_left = 10.0
-content_margin_top = 7.0
+content_margin_top = 6.0
 content_margin_right = 10.0
-content_margin_bottom = 7.0
-bg_color = Color(0.11, 0.137, 0.2, 1)
-border_width_left = 4
-border_color = Color(1, 1, 1, 1)
+content_margin_bottom = 6.0
+bg_color = Color(0.145, 0.18, 0.259, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.318, 0.388, 0.522, 1)
 corner_radius_top_left = 3
 corner_radius_top_right = 3
 corner_radius_bottom_right = 3
 corner_radius_bottom_left = 3
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_swatch_hover"]
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_normal"]
+content_margin_left = 10.0
+content_margin_top = 6.0
+content_margin_right = 10.0
+content_margin_bottom = 6.0
+bg_color = Color(0.11, 0.137, 0.2, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.22, 0.271, 0.373, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_pressed"]
+content_margin_left = 10.0
+content_margin_top = 6.0
+content_margin_right = 10.0
+content_margin_bottom = 6.0
+bg_color = Color(0.184, 0.231, 0.333, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.435, 0.522, 0.639, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_sw_amethyst_hover"]
 content_margin_left = 10.0
 content_margin_top = 7.0
 content_margin_right = 10.0
 content_margin_bottom = 7.0
 bg_color = Color(0.161, 0.2, 0.286, 1)
 border_width_left = 4
-border_color = Color(1, 1, 1, 1)
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.663, 0.455, 1, 1)
 corner_radius_top_left = 3
 corner_radius_top_right = 3
 corner_radius_bottom_right = 3
 corner_radius_bottom_left = 3
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_swatch_pressed"]
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_sw_amethyst_normal"]
 content_margin_left = 10.0
 content_margin_top = 7.0
 content_margin_right = 10.0
 content_margin_bottom = 7.0
-bg_color = Color(0.216, 0.267, 0.373, 1)
-border_width_left = 4
-border_color = Color(1, 1, 1, 1)
-corner_radius_top_left = 3
-corner_radius_top_right = 3
-corner_radius_bottom_right = 3
-corner_radius_bottom_left = 3
-
-; The selected swatch. Same geometry, but the kind's colour floods the whole plate instead
-; of just the left edge, so which crystal is armed is readable at a glance rather than by
-; comparing six near-identical rows.
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_swatch_sel_normal"]
-content_margin_left = 10.0
-content_margin_top = 7.0
-content_margin_right = 10.0
-content_margin_bottom = 7.0
-bg_color = Color(1, 1, 1, 1)
+bg_color = Color(0.11, 0.137, 0.2, 1)
 border_width_left = 4
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
-border_color = Color(1, 1, 1, 1)
+border_color = Color(0.663, 0.455, 1, 1)
 corner_radius_top_left = 3
 corner_radius_top_right = 3
 corner_radius_bottom_right = 3
 corner_radius_bottom_left = 3
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_swatch_sel_hover"]
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_sw_amethyst_pressed"]
 content_margin_left = 10.0
 content_margin_top = 7.0
 content_margin_right = 10.0
 content_margin_bottom = 7.0
-bg_color = Color(1, 1, 1, 1)
+bg_color = Color(0.663, 0.455, 1, 1)
 border_width_left = 4
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
-border_color = Color(1, 1, 1, 1)
+border_color = Color(0.663, 0.455, 1, 1)
 corner_radius_top_left = 3
 corner_radius_top_right = 3
 corner_radius_bottom_right = 3
 corner_radius_bottom_left = 3
 
-; ── text entry ───────────────────────────────────────────────────────────────────
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_line_normal"]
-content_margin_left = 8.0
-content_margin_top = 5.0
-content_margin_right = 8.0
-content_margin_bottom = 5.0
-bg_color = Color(0.055, 0.067, 0.094, 1)
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_sw_citrine_hover"]
+content_margin_left = 10.0
+content_margin_top = 7.0
+content_margin_right = 10.0
+content_margin_bottom = 7.0
+bg_color = Color(0.161, 0.2, 0.286, 1)
+border_width_left = 4
+border_width_top = 1
+border_width_right = 1
 border_width_bottom = 1
-border_color = Color(0.22, 0.271, 0.373, 1)
+border_color = Color(0.945, 0.769, 0.059, 1)
 corner_radius_top_left = 3
 corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_sw_citrine_normal"]
+content_margin_left = 10.0
+content_margin_top = 7.0
+content_margin_right = 10.0
+content_margin_bottom = 7.0
+bg_color = Color(0.11, 0.137, 0.2, 1)
+border_width_left = 4
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.945, 0.769, 0.059, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_sw_citrine_pressed"]
+content_margin_left = 10.0
+content_margin_top = 7.0
+content_margin_right = 10.0
+content_margin_bottom = 7.0
+bg_color = Color(0.945, 0.769, 0.059, 1)
+border_width_left = 4
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.945, 0.769, 0.059, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_sw_emerald_hover"]
+content_margin_left = 10.0
+content_margin_top = 7.0
+content_margin_right = 10.0
+content_margin_bottom = 7.0
+bg_color = Color(0.161, 0.2, 0.286, 1)
+border_width_left = 4
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.18, 0.8, 0.443, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_sw_emerald_normal"]
+content_margin_left = 10.0
+content_margin_top = 7.0
+content_margin_right = 10.0
+content_margin_bottom = 7.0
+bg_color = Color(0.11, 0.137, 0.2, 1)
+border_width_left = 4
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.18, 0.8, 0.443, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_sw_emerald_pressed"]
+content_margin_left = 10.0
+content_margin_top = 7.0
+content_margin_right = 10.0
+content_margin_bottom = 7.0
+bg_color = Color(0.18, 0.8, 0.443, 1)
+border_width_left = 4
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.18, 0.8, 0.443, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_sw_quartz_hover"]
+content_margin_left = 10.0
+content_margin_top = 7.0
+content_margin_right = 10.0
+content_margin_bottom = 7.0
+bg_color = Color(0.161, 0.2, 0.286, 1)
+border_width_left = 4
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.843, 0.882, 0.957, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_sw_quartz_normal"]
+content_margin_left = 10.0
+content_margin_top = 7.0
+content_margin_right = 10.0
+content_margin_bottom = 7.0
+bg_color = Color(0.11, 0.137, 0.2, 1)
+border_width_left = 4
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.843, 0.882, 0.957, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_sw_quartz_pressed"]
+content_margin_left = 10.0
+content_margin_top = 7.0
+content_margin_right = 10.0
+content_margin_bottom = 7.0
+bg_color = Color(0.843, 0.882, 0.957, 1)
+border_width_left = 4
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.843, 0.882, 0.957, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_sw_ruby_hover"]
+content_margin_left = 10.0
+content_margin_top = 7.0
+content_margin_right = 10.0
+content_margin_bottom = 7.0
+bg_color = Color(0.161, 0.2, 0.286, 1)
+border_width_left = 4
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.902, 0.224, 0.29, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_sw_ruby_normal"]
+content_margin_left = 10.0
+content_margin_top = 7.0
+content_margin_right = 10.0
+content_margin_bottom = 7.0
+bg_color = Color(0.11, 0.137, 0.2, 1)
+border_width_left = 4
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.902, 0.224, 0.29, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_sw_ruby_pressed"]
+content_margin_left = 10.0
+content_margin_top = 7.0
+content_margin_right = 10.0
+content_margin_bottom = 7.0
+bg_color = Color(0.902, 0.224, 0.29, 1)
+border_width_left = 4
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.902, 0.224, 0.29, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_sw_sapphire_hover"]
+content_margin_left = 10.0
+content_margin_top = 7.0
+content_margin_right = 10.0
+content_margin_bottom = 7.0
+bg_color = Color(0.161, 0.2, 0.286, 1)
+border_width_left = 4
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.227, 0.627, 1, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_sw_sapphire_normal"]
+content_margin_left = 10.0
+content_margin_top = 7.0
+content_margin_right = 10.0
+content_margin_bottom = 7.0
+bg_color = Color(0.11, 0.137, 0.2, 1)
+border_width_left = 4
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.227, 0.627, 1, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_sw_sapphire_pressed"]
+content_margin_left = 10.0
+content_margin_top = 7.0
+content_margin_right = 10.0
+content_margin_bottom = 7.0
+bg_color = Color(0.227, 0.627, 1, 1)
+border_width_left = 4
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.227, 0.627, 1, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxLine" id="StyleBoxLine_separator"]
+color = Color(0.157, 0.196, 0.29, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_line_focus"]
 content_margin_left = 8.0
@@ -214,11 +382,32 @@ border_color = Color(0.345, 0.627, 1, 1)
 corner_radius_top_left = 3
 corner_radius_top_right = 3
 
-; ── separators ───────────────────────────────────────────────────────────────────
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_line_normal"]
+content_margin_left = 8.0
+content_margin_top = 5.0
+content_margin_right = 8.0
+content_margin_bottom = 5.0
+bg_color = Color(0.055, 0.067, 0.094, 1)
+border_width_bottom = 1
+border_color = Color(0.22, 0.271, 0.373, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
 
-[sub_resource type="StyleBoxLine" id="StyleBoxLine_separator"]
-color = Color(0.157, 0.196, 0.29, 1)
-thickness = 1
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+content_margin_left = 12.0
+content_margin_top = 12.0
+content_margin_right = 12.0
+content_margin_bottom = 12.0
+bg_color = Color(0.086, 0.106, 0.149, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.157, 0.196, 0.29, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
 
 [resource]
 default_font_size = 14
@@ -233,19 +422,54 @@ Button/styles/normal = SubResource("StyleBoxFlat_btn_normal")
 Button/styles/pressed = SubResource("StyleBoxFlat_btn_pressed")
 CheckBox/colors/font_color = Color(0.804, 0.843, 0.867, 1)
 CheckBox/colors/font_hover_color = Color(1, 1, 1, 1)
-CrystalSwatch/base_type = &"Button"
-CrystalSwatch/colors/font_color = Color(0.875, 0.902, 0.914, 1)
-CrystalSwatch/colors/font_hover_color = Color(1, 1, 1, 1)
-CrystalSwatch/colors/font_pressed_color = Color(1, 1, 1, 1)
-CrystalSwatch/styles/focus = SubResource("StyleBoxFlat_btn_focus")
-CrystalSwatch/styles/hover = SubResource("StyleBoxFlat_swatch_hover")
-CrystalSwatch/styles/normal = SubResource("StyleBoxFlat_swatch_normal")
-CrystalSwatch/styles/pressed = SubResource("StyleBoxFlat_swatch_pressed")
-CrystalSwatchSelected/base_type = &"Button"
-CrystalSwatchSelected/styles/focus = SubResource("StyleBoxFlat_btn_focus")
-CrystalSwatchSelected/styles/hover = SubResource("StyleBoxFlat_swatch_sel_hover")
-CrystalSwatchSelected/styles/normal = SubResource("StyleBoxFlat_swatch_sel_normal")
-CrystalSwatchSelected/styles/pressed = SubResource("StyleBoxFlat_swatch_sel_normal")
+CrystalSwatchAmethyst/base_type = &"Button"
+CrystalSwatchAmethyst/colors/font_color = Color(0.663, 0.455, 1, 1)
+CrystalSwatchAmethyst/colors/font_hover_color = Color(1, 1, 1, 1)
+CrystalSwatchAmethyst/colors/font_pressed_color = Color(1, 1, 1, 1)
+CrystalSwatchAmethyst/styles/focus = SubResource("StyleBoxFlat_btn_focus")
+CrystalSwatchAmethyst/styles/hover = SubResource("StyleBoxFlat_sw_amethyst_hover")
+CrystalSwatchAmethyst/styles/normal = SubResource("StyleBoxFlat_sw_amethyst_normal")
+CrystalSwatchAmethyst/styles/pressed = SubResource("StyleBoxFlat_sw_amethyst_pressed")
+CrystalSwatchCitrine/base_type = &"Button"
+CrystalSwatchCitrine/colors/font_color = Color(0.945, 0.769, 0.059, 1)
+CrystalSwatchCitrine/colors/font_hover_color = Color(1, 1, 1, 1)
+CrystalSwatchCitrine/colors/font_pressed_color = Color(0.067, 0.078, 0.11, 1)
+CrystalSwatchCitrine/styles/focus = SubResource("StyleBoxFlat_btn_focus")
+CrystalSwatchCitrine/styles/hover = SubResource("StyleBoxFlat_sw_citrine_hover")
+CrystalSwatchCitrine/styles/normal = SubResource("StyleBoxFlat_sw_citrine_normal")
+CrystalSwatchCitrine/styles/pressed = SubResource("StyleBoxFlat_sw_citrine_pressed")
+CrystalSwatchEmerald/base_type = &"Button"
+CrystalSwatchEmerald/colors/font_color = Color(0.18, 0.8, 0.443, 1)
+CrystalSwatchEmerald/colors/font_hover_color = Color(1, 1, 1, 1)
+CrystalSwatchEmerald/colors/font_pressed_color = Color(1, 1, 1, 1)
+CrystalSwatchEmerald/styles/focus = SubResource("StyleBoxFlat_btn_focus")
+CrystalSwatchEmerald/styles/hover = SubResource("StyleBoxFlat_sw_emerald_hover")
+CrystalSwatchEmerald/styles/normal = SubResource("StyleBoxFlat_sw_emerald_normal")
+CrystalSwatchEmerald/styles/pressed = SubResource("StyleBoxFlat_sw_emerald_pressed")
+CrystalSwatchQuartz/base_type = &"Button"
+CrystalSwatchQuartz/colors/font_color = Color(0.843, 0.882, 0.957, 1)
+CrystalSwatchQuartz/colors/font_hover_color = Color(1, 1, 1, 1)
+CrystalSwatchQuartz/colors/font_pressed_color = Color(0.067, 0.078, 0.11, 1)
+CrystalSwatchQuartz/styles/focus = SubResource("StyleBoxFlat_btn_focus")
+CrystalSwatchQuartz/styles/hover = SubResource("StyleBoxFlat_sw_quartz_hover")
+CrystalSwatchQuartz/styles/normal = SubResource("StyleBoxFlat_sw_quartz_normal")
+CrystalSwatchQuartz/styles/pressed = SubResource("StyleBoxFlat_sw_quartz_pressed")
+CrystalSwatchRuby/base_type = &"Button"
+CrystalSwatchRuby/colors/font_color = Color(0.902, 0.224, 0.29, 1)
+CrystalSwatchRuby/colors/font_hover_color = Color(1, 1, 1, 1)
+CrystalSwatchRuby/colors/font_pressed_color = Color(1, 1, 1, 1)
+CrystalSwatchRuby/styles/focus = SubResource("StyleBoxFlat_btn_focus")
+CrystalSwatchRuby/styles/hover = SubResource("StyleBoxFlat_sw_ruby_hover")
+CrystalSwatchRuby/styles/normal = SubResource("StyleBoxFlat_sw_ruby_normal")
+CrystalSwatchRuby/styles/pressed = SubResource("StyleBoxFlat_sw_ruby_pressed")
+CrystalSwatchSapphire/base_type = &"Button"
+CrystalSwatchSapphire/colors/font_color = Color(0.227, 0.627, 1, 1)
+CrystalSwatchSapphire/colors/font_hover_color = Color(1, 1, 1, 1)
+CrystalSwatchSapphire/colors/font_pressed_color = Color(1, 1, 1, 1)
+CrystalSwatchSapphire/styles/focus = SubResource("StyleBoxFlat_btn_focus")
+CrystalSwatchSapphire/styles/hover = SubResource("StyleBoxFlat_sw_sapphire_hover")
+CrystalSwatchSapphire/styles/normal = SubResource("StyleBoxFlat_sw_sapphire_normal")
+CrystalSwatchSapphire/styles/pressed = SubResource("StyleBoxFlat_sw_sapphire_pressed")
 HSeparator/constants/separation = 10
 HSeparator/styles/separator = SubResource("StyleBoxLine_separator")
 Label/colors/font_color = Color(0.875, 0.902, 0.914, 1)
@@ -254,6 +478,10 @@ LineEdit/colors/font_color = Color(0.875, 0.902, 0.914, 1)
 LineEdit/colors/font_placeholder_color = Color(0.404, 0.443, 0.514, 1)
 LineEdit/styles/focus = SubResource("StyleBoxFlat_line_focus")
 LineEdit/styles/normal = SubResource("StyleBoxFlat_line_normal")
+MarginContainer/constants/margin_bottom = 10
+MarginContainer/constants/margin_left = 10
+MarginContainer/constants/margin_right = 10
+MarginContainer/constants/margin_top = 10
 Panel/styles/panel = SubResource("StyleBoxFlat_panel")
 PanelContainer/styles/panel = SubResource("StyleBoxFlat_panel")
 VBoxContainer/constants/separation = 6
