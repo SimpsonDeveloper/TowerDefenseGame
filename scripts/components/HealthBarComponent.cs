@@ -52,13 +52,13 @@ public partial class HealthBarComponent : Node2D
     public override void _Draw()
     {
         if (Health == null || Health.MaxHp <= 0) return;
-        float pct = Mathf.Clamp((float)Health.Hp / Health.MaxHp, 0f, 1f);
+        float pct = Mathf.Clamp((float)(Health.Hp / Health.MaxHp), 0f, 1f);
         Vector2 origin = new(-Size.X / 2f, 0f);
         DrawRect(new Rect2(origin, Size), BackgroundColor, true);
         DrawRect(new Rect2(origin, new Vector2(Size.X * pct, Size.Y)), FillColor, true);
     }
 
-    private void OnDamaged(int amount, int hp)
+    private void OnDamaged(double amount, double hp)
     {
         Visible = true;
         QueueRedraw();

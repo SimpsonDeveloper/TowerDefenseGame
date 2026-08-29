@@ -48,7 +48,7 @@ public partial class DamageFlashComponent : Node
             Health.Damaged -= OnDamaged;
     }
 
-    private void OnDamaged(int amount, int hp)
+    private void OnDamaged(double amount, double hp)
     {
         _tween?.Kill();
         _tween = CreateTween().SetParallel(true);
