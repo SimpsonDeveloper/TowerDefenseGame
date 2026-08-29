@@ -36,7 +36,7 @@ op list. Items 4–6 planning — **item 4 is what makes those ops do anything**
 | 1 ✅ | upgrades | Compiler core (structure · energy · terminals · ops) | `upgrades/compiler-core.md` | — | M |
 | 2 ✅ | upgrades | Op-flow (ordered op list — port on top of the core) | `upgrades/op-flow.md` | 1 | S–M |
 | 3 ✅ | upgrades | Lattice UI + template editor | `upgrades/lattice-ui.md` | 2 | L |
-| 4 | combat | First primitive op behaviors | `combat/primitives.md` | 2 | M |
+| 4 ◐ | combat | First primitive op behaviors | `combat/primitives.md` | 2 | M |
 | 5 | combat | Enemy R + paths / roads / deviation | `combat/enemy-r.md` | 4 | XL |
 | 6 | — | Delivery shapes · impact cap · investment axes | *(later)* | 4 | — |
 
@@ -47,7 +47,9 @@ consumption here. Both were validated in the playground first, which is the refe
 **Item 3 landed**: the lattice's shape, geometry, framing and save format engine-free in `core/`;
 `crystal/ui/` renders, edits and saves it live; and `TurretTower` owns one, loaded from a
 `CrystalTemplate` on its `TowerDef`. Everything through item 3 is plumbing — a shot carries an
-ordered op list that **nothing reads yet**. Item 4 is where compilation starts to matter.
+ordered op list that nothing reads. **Item 4 is where compilation starts to matter, and it is
+partly built (◐)**: the resolution pipeline runs end-to-end onto an enemy, with Burn written and
+the other six primitives no-ops until registered.
 
 ---
 

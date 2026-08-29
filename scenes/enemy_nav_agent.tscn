@@ -1,4 +1,4 @@
-[gd_scene load_steps=11 format=3 uid="uid://ct8oyhx38cldu"]
+[gd_scene load_steps=13 format=3 uid="uid://ct8oyhx38cldu"]
 
 [ext_resource type="Script" uid="uid://dxaxgggwt2dpn" path="res://scripts/world/enemies/EnemyNavController.cs" id="1_0mm51"]
 [ext_resource type="Texture2D" uid="uid://dgdo5kd2rf2li" path="res://assets/world_resources/sprites/enemies/pincer.png" id="3_ofjd3"]
@@ -8,6 +8,8 @@
 [ext_resource type="Script" uid="uid://chr0avfu2nwee" path="res://scripts/components/DetectionZone.cs" id="8_dz"]
 [ext_resource type="Script" uid="uid://lsgoewnytspv" path="res://scripts/components/DamageFlashComponent.cs" id="9_flash"]
 [ext_resource type="Script" uid="uid://c4ivmmmnav7xt" path="res://scripts/components/HealthBarComponent.cs" id="10_bar"]
+[ext_resource type="Script" path="res://scripts/combat/EnemyStateComponent.cs" id="11_states"]
+[ext_resource type="Script" path="res://scripts/combat/EnemyStateDebug.cs" id="12_statedbg"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_enemy"]
 
@@ -41,6 +43,10 @@ script = ExtResource("4_4btcy")
 script = ExtResource("6_health")
 MaxHp = 200
 
+[node name="EnemyStates" type="Node" parent="." node_paths=PackedStringArray("Health")]
+script = ExtResource("11_states")
+Health = NodePath("../HealthComponent")
+
 [node name="Attacker" type="Node2D" parent="." node_paths=PackedStringArray("HitBox")]
 script = ExtResource("7_atk")
 HitBox = NodePath("HitBox")
@@ -64,3 +70,8 @@ script = ExtResource("10_bar")
 Health = NodePath("../HealthComponent")
 Size = Vector2(32, 4)
 Offset = Vector2(0, -40)
+
+[node name="EnemyStateDebug" type="Node2D" parent="." node_paths=PackedStringArray("States")]
+script = ExtResource("12_statedbg")
+States = NodePath("../EnemyStates")
+Offset = Vector2(-16, -46)

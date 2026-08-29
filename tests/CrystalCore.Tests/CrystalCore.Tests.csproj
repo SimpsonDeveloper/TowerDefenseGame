@@ -13,6 +13,7 @@
        never grew a `using Godot`. -->
   <ItemGroup>
     <Compile Include="../../scripts/towers/crystal/core/**/*.cs" LinkBase="core" />
+    <Compile Include="../../scripts/combat/core/**/*.cs" LinkBase="combat" />
   </ItemGroup>
 
   <!-- Templates authored in the editor, frozen here as fixtures. Copies of real output, owned by

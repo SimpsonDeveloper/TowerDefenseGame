@@ -16,7 +16,10 @@ Combines two *applied* instances of a **carried state** — two towers stacking 
 Hex spreading states onto a neighbor that already has them (`../ops/interactives/hex.md`).
 The rule **varies by state shape**:
 
-- **Stack / ladder** (Chill, Burn, Corrode) → **sum** stacks (cap).
+- **Stack / ladder** (Chill, Burn, Corrode) → **sum** stacks, **uncapped**. What stops a pile
+  being dangerous forever is the op's own decay or spend curve, authored per op under
+  `../ops/primitives/`, not a ceiling here. Burn eats its stacks as it ticks; Corrode spends
+  them at a threshold.
 - **Timed flat** (Hexed) → **max** timer (refresh).
 - **Flat on/off** (Brittle, Mark, Shield-down) → **OR** (present wins).
 - **Meter** (R) → **n/a**: innate, per-enemy, only drained — never spread.

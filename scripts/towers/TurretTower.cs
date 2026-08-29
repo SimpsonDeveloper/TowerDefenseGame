@@ -1,5 +1,6 @@
 using System;
 using Godot;
+using towerdefensegame.scripts.combat;
 using towerdefensegame.scripts.components;
 using towerdefensegame.scripts.towers.crystal;
 using towerdefensegame.scripts.towers.crystal.core;
@@ -94,6 +95,11 @@ public partial class TurretTower : StaticBody2D, ITowerPlaceable
 	public override void _Ready()
 	{
 		AddToGroup("Towers");
+
+		// The combat side listens rather than the turret calling into it: everything about what
+		// a shot *does* lives behind this one subscription.
+		ShotLanded += ShotDelivery.ToEnemy;
+
 		_aimToleranceRad = Mathf.DegToRad(AimToleranceDeg);
 		if (TargetingZoneCollisionShape?.Shape is CircleShape2D circle)
 			circle.Radius = _targetRadius;
@@ -184,8 +190,8 @@ public partial class TurretTower : StaticBody2D, ITowerPlaceable
 			if (child is HealthComponent { IsDead: false} h)
 			{
 				h.TakeDamage(_damage);
-				// The compiled shot rides along. Nothing consumes it yet — resolving the ordered
-				// ops against the enemy is roadmap item 4.
+				// The compiled shot rides along; ShotDelivery is subscribed in _Ready and spends
+				// it on the enemy's states.
 				if (Shot != null) ShotLanded?.Invoke(Shot, _target);
 				break;
 			}
