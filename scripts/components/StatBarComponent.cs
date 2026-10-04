@@ -11,10 +11,15 @@ namespace towerdefensegame.scripts.components;
 /// colour and that is how the player tells it apart. Stacking is by <see cref="Offset"/>: each bar
 /// is an independent node and none of them knows what sits below it.
 ///
-/// <b>Pushed, never polled</b>, the same way <see cref="HealthBarComponent"/> works: a subclass
-/// subscribes to whatever announces a change and calls <see cref="Refresh"/>. No <c>_Process</c>
-/// runs, so an idle enemy costs nothing a frame, and two bars on one enemy update by the same
-/// mechanism instead of each having its own.
+/// <b>Pushed, never polled.</b> A subclass subscribes to whatever announces a change and calls
+/// <see cref="Refresh"/>. No <c>_Process</c> runs, so an idle unit costs nothing a frame, and every
+/// bar on one unit updates by the same mechanism instead of each inventing its own.
+///
+/// A subclass is expected to subscribe in <c>_Ready</c>, <see cref="Refresh"/> once for the
+/// starting value, and unsubscribe in <c>_ExitTree</c>. For that first read to be right, whatever
+/// it reads has to be correct before any <c>_Ready</c> runs — sibling order is not guaranteed. Both
+/// sources here manage it: <see cref="HealthComponent.Hp"/> reads full until something moves it,
+/// and an <c>EnemyState</c> is built on construction.
 /// </summary>
 public abstract partial class StatBarComponent : Node2D
 {

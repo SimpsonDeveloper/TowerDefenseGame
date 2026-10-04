@@ -148,7 +148,13 @@ Two things make that possible, and both are worth keeping as the pattern:
   `HealthComponent` gives its bar by being a node. Its `Vitals` arrive later, in `_Ready`.
 - **`Mind` is derived from damage taken**, not stored as a running total, so vitals arriving after
   construction still leave the meter full. Assigning `Vitals` raises `MindChanged` too, since the
-  meter is measured against `MaxMind`.
+  meter is measured against `MaxMind`. That shape suits Mind specifically — the drain is permanent
+  by design — and is **not** how HP works, which is a real two-way resource.
+
+`HealthBarComponent` is a `StatBarComponent` too, listening to `HealthComponent.Changed` rather
+than `Damaged`: a bar cares that HP moved, not that it hurt, so a future `Heal` is correct without
+touching the bar. `HealthComponent.Hp` reads full until something moves it, which removes the same
+`_Ready` race without making HP one-way.
 
 Worth having because states are otherwise invisible — Burn is a number in a dictionary bleeding a
 fraction of a point a second, and without a readout the only evidence it works is an HP bar moving

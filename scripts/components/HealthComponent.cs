@@ -19,16 +19,28 @@ public partial class HealthComponent : Node
 {
     [Export] public double MaxHp { get; set; } = 10;
 
+    /// <summary>Damage specifically. For the flash, hit feedback, anything that cares that it HURT.</summary>
     [Signal] public delegate void DamagedEventHandler(double amount, double hp);
+
+    /// <summary>
+    /// HP moved, for any reason. What a bar should listen to: a future <c>Heal</c> emits this and
+    /// the bar is correct without being told about healing.
+    /// </summary>
+    [Signal] public delegate void ChangedEventHandler(double hp);
+
     [Signal] public delegate void DestroyedEventHandler();
 
-    public double Hp { get; private set; }
-    public bool IsDead => Hp <= 0;
+    /// <summary>
+    /// Null until something moves it, which reads as full. <see cref="MaxHp"/> is applied after
+    /// construction (an enemy's type is applied before it enters the tree), so a stored Hp would
+    /// have to be filled in <c>_Ready</c> — and anything reading it from its own <c>_Ready</c>
+    /// would race that. Starting full by default removes the race without making HP one-way.
+    /// </summary>
+    private double? _hp;
 
-    public override void _Ready()
-    {
-        Hp = MaxHp;
-    }
+    public double Hp => _hp ?? MaxHp;
+
+    public bool IsDead => Hp <= 0;
 
     /// <summary>Apply damage. Non-positive amounts are ignored, and Destroyed
     /// fires at most once even if TakeDamage is called again post-mortem.</summary>
@@ -36,8 +48,9 @@ public partial class HealthComponent : Node
     {
         if (amount <= 0 || IsDead) return;
 
-        Hp = Mathf.Max(Hp - amount, 0);
+        _hp = Mathf.Max(Hp - amount, 0);
         EmitSignal(SignalName.Damaged, amount, Hp);
+        EmitSignal(SignalName.Changed, Hp);
 
         if (IsDead)
             EmitSignal(SignalName.Destroyed);
