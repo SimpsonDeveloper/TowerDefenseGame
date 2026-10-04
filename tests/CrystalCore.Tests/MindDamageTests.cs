@@ -9,6 +9,10 @@ namespace towerdefensegame.tests.crystal;
 /// <summary>
 /// Locks Mind-damage to docs/tower-design/effect-vocab/ops/primitives/mind-damage.md — damage
 /// routed to the Mind meter instead of HP, with the op's quantity as its magnitude.
+///
+/// The meter itself is a Godot <c>MindComponent</c>, so what is testable here is what the core
+/// does: turn energy into an amount and queue it. Flooring at zero and firing Broken belong to the
+/// component, out of reach of this project, exactly as HP's do.
 /// </summary>
 public class MindDamageTests
 {
@@ -33,13 +37,13 @@ public class MindDamageTests
 
         Hit(enemy, 130, rules);
 
-        Assert.Equal(100 - 6.5, enemy.Mind, Eps);
+        Assert.Equal(6.5, enemy.TakeMindDamage(), Eps);
     }
 
     [Fact]
-    public void ItTouchesNothingButR()
+    public void ItTouchesNothingButMind()
     {
-        // Not a state and not HP: nothing to stack, nothing to tick, nothing queued for the bar.
+        // Not a state and not HP: nothing to stack, nothing to tick, nothing owed to the HP bar.
         CombatRules rules = Rules();
         EnemyState enemy = Enemy();
 
@@ -50,80 +54,35 @@ public class MindDamageTests
     }
 
     [Fact]
-    public void DrainsFloorAtZero_AndNothingRefillsThem()
+    public void NothingIsQueuedForAnEmptyShot()
     {
         CombatRules rules = Rules();
         EnemyState enemy = Enemy();
 
-        Hit(enemy, 10000, rules);
-        Assert.Equal(0, enemy.Mind, Eps);
+        Hit(enemy, 0, rules);
 
-        enemy.Tick(60.0, rules);
-        Assert.Equal(0, enemy.Mind, Eps);   // the drain is permanent for the enemy's life
+        Assert.Equal(0, enemy.TakeMindDamage(), Eps);
     }
 
     [Fact]
-    public void DrainsAccumulateAcrossShots()
+    public void DrainsAccumulateUntilTheMeterTakesThem()
     {
+        // Queued like HP damage and for the same reason: four shots inside one frame reach the
+        // meter as a single drain, not four.
         CombatRules rules = Rules();
         EnemyState enemy = Enemy();
 
         for (int i = 0; i < 4; i++) Hit(enemy, 100, rules);
 
-        Assert.Equal(80, enemy.Mind, Eps);
+        Assert.Equal(20, enemy.TakeMindDamage(), Eps);
+        Assert.Equal(0, enemy.TakeMindDamage(), Eps);   // and the queue empties
     }
 
     [Fact]
-    public void VitalsArrivingLateStillStartTheMeterFull()
+    public void MagnitudeIsAbsolute_NotAShareOfTheMeter()
     {
-        // The owner builds the state on construction and learns the real numbers in _Ready, so a
-        // meter stored as a running total would be left holding the default's worth. Mind is
-        // derived from damage taken instead.
-        EnemyState enemy = new EnemyState();
-
-        enemy.Vitals = new EnemyVitals(MaxHp: 200, MaxMind: 400);
-
-        Assert.Equal(400, enemy.Mind, Eps);
-    }
-
-    [Fact]
-    public void ChangesRaiseMindChanged_SoBarsNeverPoll()
-    {
-        CombatRules rules = Rules();
-        EnemyState enemy = Enemy();
-        int raised = 0;
-        enemy.MindChanged += () => raised++;
-
-        enemy.Vitals = new EnemyVitals(MaxMind: 200);   // the meter is measured against this
-        Assert.Equal(1, raised);
-
-        Hit(enemy, 100, rules);
-        Assert.Equal(2, raised);
-
-        Hit(enemy, 0, rules);                            // nothing happened, nothing announced
-        Assert.Equal(2, raised);
-    }
-
-    [Fact]
-    public void OverkillIsNotBankedAgainstALaterBiggerPool()
-    {
-        // The meter is emptied, never put into debt: a huge drain cannot pre-pay for a mind that
-        // grows afterwards.
-        CombatRules rules = Rules();
-        EnemyState enemy = Enemy();
-
-        Hit(enemy, 100000, rules);
-        Assert.Equal(0, enemy.Mind, Eps);
-
-        enemy.Vitals = new EnemyVitals(MaxMind: 500);
-        Assert.Equal(400, enemy.Mind, Eps);   // the 100 it actually had, gone; the rest intact
-    }
-
-    [Fact]
-    public void ATougherMindTakesLongerToBreak()
-    {
-        // Mind is innate and per-enemy, so the same shot is worth proportionally less against a
-        // bigger meter. Magnitude is absolute, unlike Corrode's percentage.
+        // Unlike Corrode's percentage: the same shot is worth proportionally less against a bigger
+        // mind, which is what makes a tough one a real investment to break.
         CombatRules rules = Rules();
         EnemyState weak = Enemy(maxMind: 50);
         EnemyState tough = Enemy(maxMind: 400);
@@ -131,7 +90,7 @@ public class MindDamageTests
         Hit(weak, 200, rules);
         Hit(tough, 200, rules);
 
-        Assert.Equal(40, weak.Mind, Eps);
-        Assert.Equal(390, tough.Mind, Eps);
+        Assert.Equal(10, weak.TakeMindDamage(), Eps);
+        Assert.Equal(10, tough.TakeMindDamage(), Eps);
     }
 }

@@ -22,7 +22,14 @@ public interface IEnemyVitals
     /// <summary>The full health pool. What Chill's freeze threshold and Corrode's tick scale off.</summary>
     double MaxHp { get; }
 
-    /// <summary>Illusion resistance at full (<c>effect-vocab/vocab-overview/illusion.md</c>).</summary>
+    /// <summary>
+    /// Current illusion resistance (<c>effect-vocab/vocab-overview/illusion.md</c>). Live, and read
+    /// by ops: Numb scales the freeze threshold off it, so a mind-damage build silently makes a
+    /// freeze build cheaper.
+    /// </summary>
+    double Mind { get; }
+
+    /// <summary>Illusion resistance at full.</summary>
     double MaxMind { get; }
 
     /// <summary>Unmodified speed in px/s — what a slow scales <b>from</b>.</summary>

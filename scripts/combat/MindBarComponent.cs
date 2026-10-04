@@ -1,5 +1,4 @@
 using Godot;
-using towerdefensegame.scripts.combat.core;
 using towerdefensegame.scripts.components;
 
 namespace towerdefensegame.scripts.combat;
@@ -20,37 +19,44 @@ namespace towerdefensegame.scripts.combat;
 [GlobalClass]
 public partial class MindBarComponent : StatBarComponent
 {
-    [Export] public EnemyStateComponent States;
+    [Export] public MindComponent Mind;
+
+    /// <summary>Purple, set on the type rather than in each scene.</summary>
+    public MindBarComponent()
+    {
+        Size = new Vector2(32f, 3f);
+        Offset = new Vector2(0f, -46f);
+        FillColor = new Color("a974ff");
+    }
 
     public override void _Ready()
     {
         base._Ready();
 
-        if (States == null)
+        if (Mind == null)
         {
-            GD.PushWarning($"{Name}: States not assigned — the Mind bar will stay hidden.");
+            GD.PushWarning($"{Name}: Mind not assigned — the Mind bar will stay hidden.");
             return;
         }
 
-        // Safe in _Ready whatever order the siblings run in: EnemyStateComponent builds its state
-        // on construction, and assigning its vitals later raises MindChanged in its own right.
-        States.State.MindChanged += Refresh;
+        Mind.Changed += OnChanged;
         Refresh();
     }
 
     public override void _ExitTree()
     {
-        if (States != null) States.State.MindChanged -= Refresh;
+        if (Mind != null) Mind.Changed -= OnChanged;
     }
 
     protected override bool TryGetFraction(out float fraction)
     {
         fraction = 0f;
 
-        EnemyState state = States?.State;
-        if (state == null || state.Vitals.MaxMind <= 0) return false;
+        if (Mind == null || Mind.MaxMind <= 0) return false;
 
-        fraction = Mathf.Clamp((float)(state.Mind / state.Vitals.MaxMind), 0f, 1f);
+        fraction = Mathf.Clamp((float)(Mind.Mind / Mind.MaxMind), 0f, 1f);
         return true;
     }
+
+    private void OnChanged(double mind) => Refresh();
 }

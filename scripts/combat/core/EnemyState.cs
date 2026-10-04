@@ -5,7 +5,7 @@ namespace towerdefensegame.scripts.combat.core;
 
 /// <summary>
 /// Everything a shot can write on one enemy, and the only thing an op is handed to mutate:
-/// stacks, flat states, the Mind meter, and pending HP damage.
+/// stacks, flat states, and damage owed to the enemy's meters.
 ///
 /// <b>Engine-free by contract</b> — the same rule the compiler core follows. It never touches a
 /// <c>HealthComponent</c>; damage is queued here and taken by the Godot component that owns this
@@ -35,51 +35,19 @@ public sealed class EnemyState
     private readonly Dictionary<StateId, double> _tickTimers = new();
 
     private double _pendingHpDamage;
+    private double _pendingMindDamage;
 
     /// <summary>
     /// What ops may read about the enemy itself. Settable because the owner usually learns the real
-    /// numbers after construction; assigning it raises <see cref="MindChanged"/>, since the meter is
-    /// measured against <see cref="EnemyVitals.MaxMind"/>.
+    /// numbers after construction — in the running game it is the component that owns them.
     /// </summary>
     public IEnemyVitals Vitals
     {
         get => _vitals;
-        set
-        {
-            _vitals = value ?? new EnemyVitals();
-            MindChanged?.Invoke();
-        }
+        set => _vitals = value ?? new EnemyVitals();
     }
 
     private IEnemyVitals _vitals = new EnemyVitals();
-
-    /// <summary>How much mind-damage this enemy has taken, ever.</summary>
-    private double _mindDrained;
-
-    /// <summary>
-    /// Illusion resistance — the second bar, drained by mind-damage only (<c>illusion.md</c>).
-    /// Innate and per-enemy: never spread, never applied, and no op writes it up. Roadmap item 5
-    /// gives it behaviour; it lives here now so ops have somewhere to drain to.
-    ///
-    /// Derived from the damage taken rather than stored as a running total, so an enemy that learns
-    /// its real <see cref="EnemyVitals.MaxMind"/> after construction starts full either way. A
-    /// stored meter would have been left holding the default's worth.
-    /// </summary>
-    public double Mind
-    {
-        get
-        {
-            double left = Vitals.MaxMind - _mindDrained;
-            return left > 0 ? left : 0;
-        }
-    }
-
-    /// <summary>
-    /// Raised when <see cref="Mind"/> may have moved — a drain, or new vitals to measure it
-    /// against. Mirrors how <c>HealthComponent</c> tells its bar, so both bars on an enemy update
-    /// the same way and neither polls.
-    /// </summary>
-    public event Action MindChanged;
 
     public EnemyState(IEnemyVitals vitals = null)
     {
@@ -210,17 +178,18 @@ public sealed class EnemyState
         return owed;
     }
 
-    /// <summary>Drain the Mind meter. Floors at 0; what empty Mind *means* is item 5.</summary>
-    public void DrainMind(double amount)
+    /// <summary>Queue mind-damage. Queued like HP damage, and for the same batching reason.</summary>
+    public void DealMindDamage(double amount)
     {
-        if (amount <= 0 || Mind <= 0) return;
+        if (amount > 0) _pendingMindDamage += amount;
+    }
 
-        // Capped at the pool so a huge overkill drain cannot bank damage against a later, larger
-        // MaxMind — the meter is only ever emptied, never put into debt.
-        double capped = amount < Mind ? amount : Mind;
-        _mindDrained += capped;
-
-        MindChanged?.Invoke();
+    /// <summary>Take the mind-damage owed and reset the queue. The meter itself floors it at 0.</summary>
+    public double TakeMindDamage()
+    {
+        double owed = _pendingMindDamage;
+        _pendingMindDamage = 0;
+        return owed;
     }
 
     // ---- time -------------------------------------------------------------------------------

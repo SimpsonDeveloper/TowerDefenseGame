@@ -14,11 +14,19 @@ public sealed record EnemyVitals(double MaxHp = 100, double MaxMind = 100, doubl
     : IEnemyVitals
 {
     private readonly double? _hp;
+    private readonly double? _mind;
 
     /// <summary>Full unless a test says otherwise: <c>new EnemyVitals(MaxHp: 200) { Hp = 50 }</c>.</summary>
     public double Hp
     {
         get => _hp ?? MaxHp;
         init => _hp = value;
+    }
+
+    /// <summary>Full unless a test says otherwise.</summary>
+    public double Mind
+    {
+        get => _mind ?? MaxMind;
+        init => _mind = value;
     }
 }

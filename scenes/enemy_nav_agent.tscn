@@ -1,4 +1,4 @@
-[gd_scene load_steps=14 format=3 uid="uid://ct8oyhx38cldu"]
+[gd_scene load_steps=15 format=3 uid="uid://ct8oyhx38cldu"]
 
 [ext_resource type="Script" uid="uid://dxaxgggwt2dpn" path="res://scripts/world/enemies/EnemyNavController.cs" id="1_0mm51"]
 [ext_resource type="Texture2D" uid="uid://dgdo5kd2rf2li" path="res://assets/world_resources/sprites/enemies/pincer.png" id="3_ofjd3"]
@@ -11,6 +11,7 @@
 [ext_resource type="Script" path="res://scripts/combat/EnemyStateComponent.cs" id="11_states"]
 [ext_resource type="Script" path="res://scripts/combat/EnemyStateDebug.cs" id="12_statedbg"]
 [ext_resource type="Script" path="res://scripts/combat/MindBarComponent.cs" id="13_mindbar"]
+[ext_resource type="Script" path="res://scripts/combat/MindComponent.cs" id="14_mind"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_enemy"]
 
@@ -44,9 +45,14 @@ script = ExtResource("4_4btcy")
 script = ExtResource("6_health")
 MaxHp = 200
 
-[node name="EnemyStates" type="Node" parent="." node_paths=PackedStringArray("Health")]
+[node name="MindComponent" type="Node" parent="."]
+script = ExtResource("14_mind")
+MaxMind = 100.0
+
+[node name="EnemyStates" type="Node" parent="." node_paths=PackedStringArray("Health", "Mind")]
 script = ExtResource("11_states")
 Health = NodePath("../HealthComponent")
+Mind = NodePath("../MindComponent")
 
 [node name="Attacker" type="Node2D" parent="." node_paths=PackedStringArray("HitBox")]
 script = ExtResource("7_atk")
@@ -72,12 +78,9 @@ Health = NodePath("../HealthComponent")
 Size = Vector2(32, 4)
 Offset = Vector2(0, -40)
 
-[node name="MindBar" type="Node2D" parent="." node_paths=PackedStringArray("States")]
+[node name="MindBar" type="Node2D" parent="." node_paths=PackedStringArray("Mind")]
 script = ExtResource("13_mindbar")
-Size = Vector2(32, 3)
-Offset = Vector2(0, -46)
-FillColor = Color(0.663, 0.455, 1, 1)
-States = NodePath("../EnemyStates")
+Mind = NodePath("../MindComponent")
 
 [node name="EnemyStateDebug" type="Node2D" parent="." node_paths=PackedStringArray("States")]
 script = ExtResource("12_statedbg")

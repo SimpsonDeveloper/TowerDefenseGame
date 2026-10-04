@@ -19,8 +19,8 @@ public partial class EnemyStateComponent : Node, IEnemyVitals
     /// <summary>Where damage-over-time lands. Without it, states still run but nothing dies.</summary>
     [Export] public HealthComponent Health;
 
-    /// <summary>Illusion resistance, the second bar. Meaningful once roadmap item 5 lands.</summary>
-    [Export] public float MaxMind = 100f;
+    /// <summary>Where mind-damage lands. Without it, Am–Am shots resolve and drain nothing.</summary>
+    [Export] public MindComponent Mind;
 
     /// <summary>
     /// Built on construction, not in <c>_Ready</c>, so a sibling can subscribe to it in its own
@@ -44,7 +44,9 @@ public partial class EnemyStateComponent : Node, IEnemyVitals
 
     double IEnemyVitals.MaxHp => Health?.MaxHp ?? 0;
 
-    double IEnemyVitals.MaxMind => MaxMind;
+    double IEnemyVitals.Mind => Mind?.Mind ?? 0;
+
+    double IEnemyVitals.MaxMind => Mind?.MaxMind ?? 0;
 
     double IEnemyVitals.MoveSpeed => _baseMoveSpeed;
 
@@ -66,6 +68,9 @@ public partial class EnemyStateComponent : Node, IEnemyVitals
 
         if (Health == null)
             GD.PushWarning($"[combat] {GetParent()?.Name} has states but no HealthComponent — damage-over-time will go nowhere");
+
+        if (Mind == null)
+            GD.PushWarning($"[combat] {GetParent()?.Name} has states but no MindComponent — mind-damage will go nowhere");
     }
 
     /// <summary>
@@ -85,6 +90,8 @@ public partial class EnemyStateComponent : Node, IEnemyVitals
 
         // Pulled rather than pushed: EnemyState is engine-free and cannot reach a
         // HealthComponent, so it queues what it dealt and this drains it once a frame.
+        Mind?.Drain(State.TakeMindDamage());
+
         double damage = State.TakeHpDamage();
         if (damage <= 0) return;
 

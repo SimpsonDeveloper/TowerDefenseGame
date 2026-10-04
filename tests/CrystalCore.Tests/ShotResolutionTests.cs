@@ -72,11 +72,12 @@ public class ShotResolutionTests
     public void VitalsAreWhatAnOpMayReadAboutTheEnemy()
     {
         // Chill scales its freeze threshold off max HP and Corrode ticks a percentage of it, so
-        // the stat has to reach an op. Current HP deliberately does not — damage only goes out.
+        // the stats have to reach an op. Numb will read current Mind the same way.
         EnemyState enemy = new EnemyState(new EnemyVitals(MaxHp: 750, MaxMind: 40));
 
         Assert.Equal(750, enemy.Vitals.MaxHp);
-        Assert.Equal(40, enemy.Mind);   // the meter starts full, from the stat
+        Assert.Equal(40, enemy.Vitals.MaxMind);
+        Assert.Equal(40, enemy.Vitals.Mind);   // the record reads full unless told otherwise
     }
 
     /// <summary>A port whose HP moves, which a record cannot do.</summary>
@@ -84,6 +85,7 @@ public class ShotResolutionTests
     {
         public double Hp { get; set; } = 200;
         public double MaxHp => 200;
+        public double Mind { get; set; } = 100;
         public double MaxMind => 100;
         public double MoveSpeed => 220;
     }

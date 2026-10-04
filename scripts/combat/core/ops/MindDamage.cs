@@ -40,6 +40,6 @@ public sealed class MindDamage : IOp
     {
         if (quantity <= 0) return;
 
-        target.DrainMind(quantity * _tuning.MindPerEnergy);
+        target.DealMindDamage(quantity * _tuning.MindPerEnergy);
     }
 }
