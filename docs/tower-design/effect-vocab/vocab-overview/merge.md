@@ -6,9 +6,14 @@ Two separate operations share the word "merge." Keep them apart.
 
 ## Lattice merge (▽ — compile-time, on the tower)
 
-Merges **stream stats** — power, slow, rate, and the mind magnitude bound for R.
-**Always sum** (conservation routing). This is weapon-building, before anything touches
-an enemy.
+Merges **energy**. A ▽ sums what its two inputs hand up; **always sum** (conservation
+routing). This is weapon-building, before anything touches an enemy.
+
+There are no other stream stats. An earlier model had power, slow, rate and a mind
+magnitude riding the stream and merging alongside energy; the compiler never grew them
+(`../../impl-planning/upgrades/compiler-core.md`). Every op's magnitude is instead the
+**energy on the edge that produced it** — Burn's stacks, Corrode's stacks, Chill's
+stacks and Mind-damage's R drain all read the same number.
 
 ## State merge (runtime, on the enemy)
 
@@ -27,6 +32,7 @@ The rule **varies by state shape**:
 ## Don't conflate them
 
 They can coincide numerically (Chill state-merge sums; the lattice also sums) but they
-are **different operations in different spaces**. **R makes the split visible:** its
-magnitude *sums in the lattice* (it's a stat), yet R itself *does not spread between
-enemies* (state-merge n/a).
+are **different operations in different spaces**. **R makes the split visible:** the
+energy feeding an Am–Am edge *sums in the lattice* like any other, yet R itself *does not
+spread between enemies* (state-merge n/a). One is about building the weapon; the other is
+about what two weapons do to one enemy.

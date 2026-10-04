@@ -24,7 +24,8 @@ public sealed class CombatRules
         .Add(new Burn())
         .Add(new Corrode())
         .Add(new Chill())
-        .Add(new Frozen());
+        .Add(new Frozen())
+        .Add(new MindDamage());
 
     /// <summary>
     /// Register a primitive. Generic rather than two overloads because a primitive usually

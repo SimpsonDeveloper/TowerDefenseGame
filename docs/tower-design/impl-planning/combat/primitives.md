@@ -3,9 +3,10 @@
 Roadmap item **4** — where compilation first *does something* visible in-game. Depends on
 op-metadata flow (item 2, `../upgrades/op-flow.md`).
 
-**Status: pipeline built, 3 of 7 primitives written.** A shot compiled from a lattice now lands on
-an enemy and resolves. Burn, Corrode and Chill are implemented; the rest are registrations against
-the same handful of role interfaces.
+**Status: pipeline built, 4 of 7 primitives written.** A shot compiled from a lattice now lands on
+an enemy and resolves. Burn, Corrode, Chill and Mind-damage are implemented. Of the rest, Mark
+needs only numbers; Scramble waits on a shield system and Purify on an enemy-buff system, neither
+of which exists.
 
 | Primitive | Combo | Effect target | Behavior source | Built |
 |---|---|---|---|---|
@@ -13,7 +14,7 @@ the same handful of role interfaces.
 | Chill → Freeze | Sa | slow, then halt | `../../effect-vocab/ops/primitives/chill-freeze.md` | ✅ |
 | Corrode | Em | % max HP, in bouts | `../../effect-vocab/ops/primitives/corrode.md` | ✅ |
 | Scramble | Ci | disrupt behavior | `../../effect-vocab/ops/primitives/scramble.md` | |
-| Mind-damage | Am + Am | drain R | `../../effect-vocab/ops/primitives/mind-damage.md` | |
+| Mind-damage | Am + Am | drain R | `../../effect-vocab/ops/primitives/mind-damage.md` | ✅ |
 | Purify | Qz | strip states (catalyst) | `../../effect-vocab/ops/primitives/purify.md` | |
 | Mark | Am + Ru | enabler flag | `../../effect-vocab/ops/primitives/mark.md` | |
 
@@ -139,7 +140,12 @@ slightly faster than expected.
 - **Real visuals.** Nothing renders a burning enemy: no tint, no particles. The broader visual
   language is unsettled, so this is deferred with the rest of it rather than guessed at now — the
   debug readout above is the stand-in.
-- **The other four primitives** — Scramble, Mind-damage, Purify, Mark — and every interactive.
-  All are stubs beyond their one-line definitions.
-- **Balance.** `BurnTuning`, `CorrodeTuning` and `ChillTuning` hold placeholders that make each shape legible, not tuned
+- **The other three primitives.** Mark needs only a duration and a refresh rule, but its consumers
+  (Focus, Detonate) do not exist, so it would be unverifiable beyond the readout. Scramble needs a
+  **shield system** — a second bar, a per-enemy shield:HP split, and damage routing through it.
+  Purify needs an **enemy-buff system**, which is undesigned.
+- **Every interactive.** Several need machinery nothing has yet: multi-enemy reach for the arcs and
+  Hex's death-spread, a targeting hook for Focus, a tick-rate role for Accelerant, and a
+  state-removal event for Weather.
+- **Balance.** `BurnTuning`, `CorrodeTuning`, `ChillTuning` and `MindDamageTuning` hold placeholders that make each shape legible, not tuned
   numbers. The tests pin their own values so retuning never turns them red.
