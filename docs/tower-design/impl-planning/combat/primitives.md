@@ -3,17 +3,16 @@
 Roadmap item **4** — where compilation first *does something* visible in-game. Depends on
 op-metadata flow (item 2, `../upgrades/op-flow.md`).
 
-**Status: pipeline built, 4 of 7 primitives written.** A shot compiled from a lattice now lands on
-an enemy and resolves. Burn, Corrode, Chill and Mind-damage are implemented. Of the rest, Mark
-needs only numbers; Scramble waits on a shield system and Purify on an enemy-buff system, neither
-of which exists.
+**Status: pipeline built, 5 of 7 primitives written.** A shot compiled from a lattice now lands on
+an enemy and resolves. Burn, Corrode, Chill, Mind-damage and Scramble are implemented. Of the rest,
+Mark needs only numbers, and Purify waits on an enemy-buff system that does not exist.
 
 | Primitive | Combo | Effect target | Behavior source | Built |
 |---|---|---|---|---|
 | Burn | Ru | HP over time | `../../effect-vocab/ops/primitives/burn.md` | ✅ |
 | Chill → Freeze | Sa | slow, then halt | `../../effect-vocab/ops/primitives/chill-freeze.md` | ✅ |
 | Corrode | Em | % max HP, in bouts | `../../effect-vocab/ops/primitives/corrode.md` | ✅ |
-| Scramble | Ci | disrupt behavior | `../../effect-vocab/ops/primitives/scramble.md` | |
+| Scramble | Ci | switch a shield off | `../../effect-vocab/ops/primitives/scramble.md` | ✅ |
 | Mind-damage | Am + Am | drain Mind | `../../effect-vocab/ops/primitives/mind-damage.md` | ✅ |
 | Purify | Qz | strip states (catalyst) | `../../effect-vocab/ops/primitives/purify.md` | |
 | Mark | Am + Ru | enabler flag | `../../effect-vocab/ops/primitives/mark.md` | |
@@ -81,9 +80,9 @@ Traffic across the boundary is **stats in, effects out**.
   threshold scales off max HP; Corrode ticks a percentage of it) and a slow needs the unmodified
   speed to scale *from*. Tests pass the `EnemyVitals` record instead, which is the same port with
   fixed numbers.
-- **Out, damage** — queued and pulled by `EnemyStateComponent` once a frame, since the core cannot
-  see a `HealthComponent`. `HealthComponent.Hp` is a `double` so fractional ticks land as
-  themselves; nothing is rounded or banked anywhere.
+- **Out, damage** — queued and pulled by `EnemyStateComponent` once a frame, into
+  `HealthComponent`, `MindComponent` and `ShieldComponent`. `Hp` is a `double` so fractional ticks
+  land as themselves; nothing is rounded or banked anywhere.
 - **Out, movement** — `EnemyState.SpeedScale(rules)` is derived on demand and the component writes
   `base × scale` onto whatever implements `IMoveSpeed`, which both enemy controllers now do.
   Always from the base: scaling an already-scaled value compounds every frame.
@@ -96,6 +95,32 @@ Everything is readable, including current HP. An earlier version of this doc cla
 business reading it — but `../../effect-vocab/ops/interactives/short-circuit.md` already describes
 an "execute burst", and an execute reads current HP by definition. There is no principled line to
 draw, so the port draws none and ops simply read what they need.
+
+### The three meters
+
+| Meter | Component | Bar | Colour |
+|---|---|---|---|
+| HP | `HealthComponent` | `HealthBarComponent` | red |
+| Mind | `MindComponent` | `MindBarComponent` | purple |
+| Shield | `ShieldComponent` | `ShieldBarComponent` | light blue |
+
+All three read **full until something moves them**, so they are correct before any `_Ready` runs:
+the maxima are applied after construction, and a sibling reading a meter from its own `_Ready`
+would otherwise race whoever filled it. Every bar is a `StatBarComponent` listening to that
+meter's `Changed` — a bar cares that the value moved, not that it hurt, so a future `Heal` needs no
+change here. `DamageFlashComponent` keeps `Damaged`, which is the signal that genuinely means
+"it hurt".
+
+Damage routes **through** the shield: `HealthComponent.TakeDamage` offers the hit to its optional
+`Shield` first and applies whatever survives. A null shield leaves that component exactly as it
+was, which is how towers and unshielded enemies are untouched by any of it. `Damaged` fires for the
+whole hit even when the shield ate all of it; `Changed` fires only when HP actually moved.
+
+**`Shield-down` is mirrored, not written.** `EnemyStateComponent` derives it from the shield every
+frame, because the shield goes down two ways — emptied by damage, disabled by Scramble — and comes
+back on its own timer. Anything stored would need every one of those paths to remember it. The
+state exists so ops can read it, while the shield stays a plain component that knows nothing about
+the vocabulary.
 
 ## 4. Ticking
 
@@ -171,12 +196,13 @@ slightly faster than expected.
 - **Real visuals.** Nothing renders a burning enemy: no tint, no particles. The broader visual
   language is unsettled, so this is deferred with the rest of it rather than guessed at now — the
   debug readout above is the stand-in.
-- **The other three primitives.** Mark needs only a duration and a refresh rule, but its consumers
-  (Focus, Detonate) do not exist, so it would be unverifiable beyond the readout. Scramble needs a
-  **shield system** — a second bar, a per-enemy shield:HP split, and damage routing through it.
-  Purify needs an **enemy-buff system**, which is undesigned.
+- **The other two primitives.** Mark needs only a duration and a refresh rule, but its consumers
+  (Focus, Detonate) do not exist, so it would be unverifiable beyond the readout. Purify needs an
+  **enemy-buff system**, which is undesigned.
+- **Short-circuit**, which is what turns a stripped shield into a payoff rather than just letting
+  HP damage through.
 - **Every interactive.** Several need machinery nothing has yet: multi-enemy reach for the arcs and
   Hex's death-spread, a targeting hook for Focus, a tick-rate role for Accelerant, and a
   state-removal event for Weather.
-- **Balance.** `BurnTuning`, `CorrodeTuning`, `ChillTuning` and `MindDamageTuning` hold placeholders that make each shape legible, not tuned
+- **Balance.** Every `*Tuning` record holds placeholders that make each shape legible, not tuned
   numbers. The tests pin their own values so retuning never turns them red.

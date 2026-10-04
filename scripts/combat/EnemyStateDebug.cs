@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Godot;
 using towerdefensegame.scripts.combat.core;
+using towerdefensegame.scripts.components;
 
 namespace towerdefensegame.scripts.combat;
 
@@ -100,6 +101,12 @@ public partial class EnemyStateDebug : Node2D
         if (vitals.MaxMind > 0 && vitals.Mind < vitals.MaxMind)
         {
             lines.Add($"Mind {vitals.Mind:0.#}/{vitals.MaxMind:0.#}");
+            owners.Add(StateId.None);
+        }
+
+        if (States.Shield != null && States.Shield.HasShield)
+        {
+            lines.Add($"Shield {States.Shield.Shield:0.#}" + (States.Shield.IsDown ? " DOWN" : ""));
             owners.Add(StateId.None);
         }
 

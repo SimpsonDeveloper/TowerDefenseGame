@@ -19,6 +19,12 @@ public partial class HealthComponent : Node
 {
     [Export] public double MaxHp { get; set; } = 10;
 
+    /// <summary>
+    /// Optional layer in front of HP. Damage routes through it first; leave it null and nothing
+    /// about this component changes, which is how towers and unshielded enemies stay unaffected.
+    /// </summary>
+    [Export] public ShieldComponent Shield { get; set; }
+
     /// <summary>Damage specifically. For the flash, hit feedback, anything that cares that it HURT.</summary>
     [Signal] public delegate void DamagedEventHandler(double amount, double hp);
 
@@ -42,14 +48,24 @@ public partial class HealthComponent : Node
 
     public bool IsDead => Hp <= 0;
 
-    /// <summary>Apply damage. Non-positive amounts are ignored, and Destroyed
-    /// fires at most once even if TakeDamage is called again post-mortem.</summary>
+    /// <summary>
+    /// Apply damage, through the shield if there is one. Non-positive amounts are ignored, and
+    /// Destroyed fires at most once even if TakeDamage is called again post-mortem.
+    ///
+    /// <see cref="Damaged"/> carries the <b>whole</b> hit and fires even when the shield ate all of
+    /// it — it did hurt, and hit feedback should say so. <see cref="Changed"/> only fires when HP
+    /// actually moved, because that is what a bar cares about.
+    /// </summary>
     public void TakeDamage(double amount)
     {
         if (amount <= 0 || IsDead) return;
 
-        _hp = Mathf.Max(Hp - amount, 0);
+        double toHp = Shield != null ? Shield.Absorb(amount) : amount;
+
         EmitSignal(SignalName.Damaged, amount, Hp);
+        if (toHp <= 0) return;
+
+        _hp = Mathf.Max(Hp - toHp, 0);
         EmitSignal(SignalName.Changed, Hp);
 
         if (IsDead)

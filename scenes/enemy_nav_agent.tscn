@@ -1,4 +1,4 @@
-[gd_scene load_steps=15 format=3 uid="uid://ct8oyhx38cldu"]
+[gd_scene load_steps=17 format=3 uid="uid://ct8oyhx38cldu"]
 
 [ext_resource type="Script" uid="uid://dxaxgggwt2dpn" path="res://scripts/world/enemies/EnemyNavController.cs" id="1_0mm51"]
 [ext_resource type="Texture2D" uid="uid://dgdo5kd2rf2li" path="res://assets/world_resources/sprites/enemies/pincer.png" id="3_ofjd3"]
@@ -12,13 +12,15 @@
 [ext_resource type="Script" path="res://scripts/combat/EnemyStateDebug.cs" id="12_statedbg"]
 [ext_resource type="Script" path="res://scripts/combat/MindBarComponent.cs" id="13_mindbar"]
 [ext_resource type="Script" path="res://scripts/combat/MindComponent.cs" id="14_mind"]
+[ext_resource type="Script" path="res://scripts/components/ShieldComponent.cs" id="15_shield"]
+[ext_resource type="Script" path="res://scripts/combat/ShieldBarComponent.cs" id="16_shieldbar"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_enemy"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_attack"]
 radius = 24.0
 
-[node name="EnemyNavController" type="CharacterBody2D" node_paths=PackedStringArray("NavAgent", "Hitbox", "Health", "Attacker", "Sprite")]
+[node name="EnemyNavController" type="CharacterBody2D" node_paths=PackedStringArray("NavAgent", "Hitbox", "Health", "Mind", "Attacker", "Sprite")]
 collision_layer = 4
 collision_mask = 17
 script = ExtResource("1_0mm51")
@@ -27,6 +29,7 @@ Acceleration = 5.0
 NavAgent = NodePath("NavigationAgent2D")
 Hitbox = NodePath("CollisionShape2D")
 Health = NodePath("HealthComponent")
+Mind = NodePath("MindComponent")
 Attacker = NodePath("Attacker")
 Sprite = NodePath("EnemySprite")
 
@@ -41,18 +44,24 @@ scale = Vector2(2, 2)
 texture = ExtResource("3_ofjd3")
 script = ExtResource("4_4btcy")
 
-[node name="HealthComponent" type="Node" parent="."]
+[node name="ShieldComponent" type="Node" parent="."]
+script = ExtResource("15_shield")
+MaxShield = 0.0
+
+[node name="HealthComponent" type="Node" parent="." node_paths=PackedStringArray("Shield")]
 script = ExtResource("6_health")
 MaxHp = 200
+Shield = NodePath("../ShieldComponent")
 
 [node name="MindComponent" type="Node" parent="."]
 script = ExtResource("14_mind")
 MaxMind = 100.0
 
-[node name="EnemyStates" type="Node" parent="." node_paths=PackedStringArray("Health", "Mind")]
+[node name="EnemyStates" type="Node" parent="." node_paths=PackedStringArray("Health", "Mind", "Shield")]
 script = ExtResource("11_states")
 Health = NodePath("../HealthComponent")
 Mind = NodePath("../MindComponent")
+Shield = NodePath("../ShieldComponent")
 
 [node name="Attacker" type="Node2D" parent="." node_paths=PackedStringArray("HitBox")]
 script = ExtResource("7_atk")
@@ -81,6 +90,10 @@ Offset = Vector2(0, -40)
 [node name="MindBar" type="Node2D" parent="." node_paths=PackedStringArray("Mind")]
 script = ExtResource("13_mindbar")
 Mind = NodePath("../MindComponent")
+
+[node name="ShieldBar" type="Node2D" parent="." node_paths=PackedStringArray("Shield")]
+script = ExtResource("16_shieldbar")
+Shield = NodePath("../ShieldComponent")
 
 [node name="EnemyStateDebug" type="Node2D" parent="." node_paths=PackedStringArray("States")]
 script = ExtResource("12_statedbg")

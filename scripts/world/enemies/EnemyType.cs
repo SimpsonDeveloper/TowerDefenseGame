@@ -22,6 +22,16 @@ public partial class EnemyType : Resource
     [Export] public int MaxHp { get; set; } = 100;
     [Export] public float MoveSpeed { get; set; } = 220f;
 
+    /// <summary>
+    /// Shield pool in front of HP; 0 for an unshielded variant. This is the <b>shield : HP
+    /// split</b> that makes Scramble a bet on the wave rather than a flat tax
+    /// (<c>docs/tower-design/effect-vocab/vocab-overview/shield.md</c>).
+    /// </summary>
+    [Export] public float MaxShield { get; set; }
+
+    /// <summary>Illusion resistance at full — how long this variant resists being railroaded.</summary>
+    [Export] public float MaxMind { get; set; } = 100f;
+
     /// <summary>HP removed per attack tick (→ AttackerComponent.Damage).</summary>
     [ExportGroup("Attack")]
     [Export] public int Damage { get; set; } = 10;

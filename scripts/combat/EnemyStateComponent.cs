@@ -23,6 +23,12 @@ public partial class EnemyStateComponent : Node, IEnemyVitals
     [Export] public MindComponent Mind;
 
     /// <summary>
+    /// The shield in front of HP, if this enemy carries one. Most do not, and Scramble being
+    /// wasted on them is the design, not a gap.
+    /// </summary>
+    [Export] public ShieldComponent Shield;
+
+    /// <summary>
     /// Built on construction, not in <c>_Ready</c>, so a sibling can subscribe to it in its own
     /// <c>_Ready</c> whatever order the two run in — the same guarantee a <c>HealthComponent</c>
     /// gives its bar by being a node. Its <see cref="EnemyState.Vitals"/> arrive later.
@@ -91,12 +97,30 @@ public partial class EnemyStateComponent : Node, IEnemyVitals
         // Pulled rather than pushed: EnemyState is engine-free and cannot reach a
         // HealthComponent, so it queues what it dealt and this drains it once a frame.
         Mind?.Drain(State.TakeMindDamage());
+        Shield?.Disable(State.TakeShieldDisable());
+        MirrorShieldDown();
 
         double damage = State.TakeHpDamage();
         if (damage <= 0) return;
 
         DotDamageDealt += damage;
         Health?.TakeDamage(damage);
+    }
+
+    /// <summary>
+    /// Keep the <c>Shield-down</c> state in step with the shield itself. Derived every frame rather
+    /// than written once, because the shield goes down two ways and comes back up on its own
+    /// timer: anything stored would need every one of those paths to remember to update it.
+    ///
+    /// The state exists so ops can read it — Short-circuit consumes it — while the shield stays a
+    /// plain component that knows nothing about the vocabulary.
+    /// </summary>
+    private void MirrorShieldDown()
+    {
+        if (Shield == null) return;
+
+        if (Shield.IsDown) State.SetFlag(StateId.ShieldDown, 0);
+        else State.Clear(StateId.ShieldDown);
     }
 
     /// <summary>

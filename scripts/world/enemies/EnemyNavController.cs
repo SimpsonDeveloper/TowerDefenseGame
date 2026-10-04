@@ -1,4 +1,5 @@
 using Godot;
+using towerdefensegame.scripts.combat;
 using towerdefensegame.scripts.components;
 using towerdefensegame.scripts.world.enemies.targeting;
 
@@ -66,6 +67,9 @@ public partial class EnemyNavController : CharacterBody2D, IMoveSpeed
 
     [ExportGroup("Components")]
     [Export] public HealthComponent Health { get; set; }
+
+    /// <summary>The Mind meter, so a variant can set how hard it is to railroad.</summary>
+    [Export] public MindComponent Mind { get; set; }
     [Export] public AttackerComponent Attacker { get; set; }
     [Export] SpriteComponent Sprite { get; set; }
 
@@ -166,7 +170,12 @@ public partial class EnemyNavController : CharacterBody2D, IMoveSpeed
         if (type == null) return;
 
         MoveSpeed = type.MoveSpeed;
-        if (Health != null) Health.MaxHp = type.MaxHp;
+        if (Health != null)
+        {
+            Health.MaxHp = type.MaxHp;
+            if (Health.Shield != null) Health.Shield.MaxShield = type.MaxShield;
+        }
+        if (Mind != null) Mind.MaxMind = type.MaxMind;
         if (Sprite != null && type.Sprite != null) Sprite.Texture = type.Sprite;
         if (Attacker != null)
         {
