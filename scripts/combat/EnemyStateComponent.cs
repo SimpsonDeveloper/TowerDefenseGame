@@ -14,7 +14,7 @@ namespace towerdefensegame.scripts.combat;
 /// the HP component. Keeping the split here is what lets every op be tested without a scene.
 /// </summary>
 [GlobalClass]
-public partial class EnemyStateComponent : Node
+public partial class EnemyStateComponent : Node, IEnemyVitals
 {
     /// <summary>Where damage-over-time lands. Without it, states still run but nothing dies.</summary>
     [Export] public HealthComponent Health;
@@ -32,6 +32,22 @@ public partial class EnemyStateComponent : Node
     /// <summary>The owner, if it can be slowed. Null is fine — states just will not move it.</summary>
     private IMoveSpeed _movement;
 
+    /// <summary>
+    /// Speed before anything slowed it, captured once. Read back off the owner every frame and a
+    /// slow would compound against its own output.
+    /// </summary>
+    private float _baseMoveSpeed;
+
+    // ---- IEnemyVitals: the port ops read the enemy through ------------------------------------
+
+    double IEnemyVitals.Hp => Health?.Hp ?? 0;
+
+    double IEnemyVitals.MaxHp => Health?.MaxHp ?? 0;
+
+    double IEnemyVitals.MaxMind => MaxMind;
+
+    double IEnemyVitals.MoveSpeed => _baseMoveSpeed;
+
     /// <summary>Everything states have dealt over this enemy's life. Readouts only.</summary>
     public double DotDamageDealt { get; private set; }
 
@@ -42,8 +58,11 @@ public partial class EnemyStateComponent : Node
         // (EnemyNavController.ApplyType). Anything that later changes max HP reassigns
         // State.Vitals.
         _movement = GetParent() as IMoveSpeed;
+        _baseMoveSpeed = _movement?.MoveSpeed ?? 0f;
 
-        State.Vitals = new EnemyVitals(Health?.MaxHp ?? 100, MaxMind, _movement?.MoveSpeed ?? 0);
+        // The component IS the port: ops read through it and get live values, rather than a
+        // snapshot taken here that would be wrong the moment the enemy is shot.
+        State.Vitals = this;
 
         if (Health == null)
             GD.PushWarning($"[combat] {GetParent()?.Name} has states but no HealthComponent — damage-over-time will go nowhere");
@@ -82,6 +101,6 @@ public partial class EnemyStateComponent : Node
     {
         if (_movement == null) return;
 
-        _movement.MoveSpeed = (float)(State.Vitals.MoveSpeed * State.SpeedScale(CombatRules.Default));
+        _movement.MoveSpeed = (float)(_baseMoveSpeed * State.SpeedScale(CombatRules.Default));
     }
 }

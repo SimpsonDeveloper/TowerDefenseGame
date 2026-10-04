@@ -79,6 +79,30 @@ public class ShotResolutionTests
         Assert.Equal(40, enemy.Mind);   // the meter starts full, from the stat
     }
 
+    /// <summary>A port whose HP moves, which a record cannot do.</summary>
+    private sealed class LiveVitals : IEnemyVitals
+    {
+        public double Hp { get; set; } = 200;
+        public double MaxHp => 200;
+        public double MaxMind => 100;
+        public double MoveSpeed => 220;
+    }
+
+    [Fact]
+    public void VitalsAreAPort_SoOpsSeeValuesAsTheyMove()
+    {
+        // The point of the port over the old snapshot: an op reading HP mid-fight gets what the
+        // enemy has NOW. Nothing reads it yet, but short-circuit.md's "execute burst" will.
+        LiveVitals live = new LiveVitals();
+        EnemyState enemy = new EnemyState(live);
+
+        Assert.Equal(200, enemy.Vitals.Hp);
+
+        live.Hp = 35;
+
+        Assert.Equal(35, enemy.Vitals.Hp);
+    }
+
     [Fact]
     public void ACompiledLatticeLandsOnAnEnemy()
     {

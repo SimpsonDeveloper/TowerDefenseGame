@@ -41,7 +41,7 @@ public sealed class EnemyState
     /// numbers after construction; assigning it raises <see cref="MindChanged"/>, since the meter is
     /// measured against <see cref="EnemyVitals.MaxMind"/>.
     /// </summary>
-    public EnemyVitals Vitals
+    public IEnemyVitals Vitals
     {
         get => _vitals;
         set
@@ -51,7 +51,7 @@ public sealed class EnemyState
         }
     }
 
-    private EnemyVitals _vitals = new EnemyVitals();
+    private IEnemyVitals _vitals = new EnemyVitals();
 
     /// <summary>How much mind-damage this enemy has taken, ever.</summary>
     private double _mindDrained;
@@ -81,7 +81,7 @@ public sealed class EnemyState
     /// </summary>
     public event Action MindChanged;
 
-    public EnemyState(EnemyVitals vitals = null)
+    public EnemyState(IEnemyVitals vitals = null)
     {
         if (vitals != null) _vitals = vitals;
     }

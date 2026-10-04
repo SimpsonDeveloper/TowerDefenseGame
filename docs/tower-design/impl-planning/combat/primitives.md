@@ -75,12 +75,12 @@ It holds **state and time. It holds no policy.**
 
 Traffic across the boundary is **stats in, effects out**.
 
-- **In** — `EnemyState.Vitals`, an `EnemyVitals` record of innate numbers: max HP, max Mind, base
-  move speed. Ops read it because their curves are relative to the enemy (Chill's freeze threshold
-  scales off max HP; Corrode ticks a percentage of it) and because a slow needs the unmodified
-  speed to scale *from*. Set once in `EnemyStateComponent._Ready`, which is safe because a type is
-  applied *before* the enemy enters the tree — `EnemyNavController.ApplyType`. Grow it by adding a
-  parameter, and only when an op actually reads it.
+- **In** — `EnemyState.Vitals`, an **`IEnemyVitals` port**. `EnemyStateComponent` implements it by
+  reading whatever owns each number, so ops see **live** values rather than a snapshot: current HP,
+  max HP, max Mind, base move speed. Their curves are relative to the enemy (Chill's freeze
+  threshold scales off max HP; Corrode ticks a percentage of it) and a slow needs the unmodified
+  speed to scale *from*. Tests pass the `EnemyVitals` record instead, which is the same port with
+  fixed numbers.
 - **Out, damage** — queued and pulled by `EnemyStateComponent` once a frame, since the core cannot
   see a `HealthComponent`. `HealthComponent.Hp` is a `double` so fractional ticks land as
   themselves; nothing is rounded or banked anywhere.
@@ -88,8 +88,14 @@ Traffic across the boundary is **stats in, effects out**.
   `base × scale` onto whatever implements `IMoveSpeed`, which both enemy controllers now do.
   Always from the base: scaling an already-scaled value compounds every frame.
 
-**Current HP is deliberately not readable.** Max HP is a stat; current HP is a consequence, and an
-op reading the bar back would make effects depend on the order damage happened to land in a frame.
+**Reads are live, writes are queued**, and the asymmetry is about batching, not purity. A burn
+ticking six times a second through a write-through port fires six `Damaged` signals and six damage
+flashes; the queue collapses that into one `TakeDamage` a frame.
+
+Everything is readable, including current HP. An earlier version of this doc claimed ops had no
+business reading it — but `../../effect-vocab/ops/interactives/short-circuit.md` already describes
+an "execute burst", and an execute reads current HP by definition. There is no principled line to
+draw, so the port draws none and ops simply read what they need.
 
 ## 4. Ticking
 
