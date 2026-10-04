@@ -48,8 +48,8 @@ consumption here. Both were validated in the playground first, which is the refe
 `crystal/ui/` renders, edits and saves it live; and `TurretTower` owns one, loaded from a
 `CrystalTemplate` on its `TowerDef`. Everything through item 3 is plumbing — a shot carries an
 ordered op list that nothing reads. **Item 4 is where compilation starts to matter, and it is
-partly built (◐)**: the resolution pipeline runs end-to-end onto an enemy, with Burn written and
-the other six primitives no-ops until registered.
+partly built (◐)**: the resolution pipeline runs end-to-end onto an enemy, with Burn and Corrode
+written and the other five primitives no-ops until registered.
 
 ---
 

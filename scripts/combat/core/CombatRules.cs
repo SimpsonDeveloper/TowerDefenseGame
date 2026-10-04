@@ -19,7 +19,9 @@ public sealed class CombatRules
     private readonly Dictionary<StateId, ITickingState> _tickers = new();
 
     /// <summary>Everything currently implemented. Tests build their own to isolate one op.</summary>
-    public static CombatRules Default { get; } = new CombatRules().Add(new Burn());
+    public static CombatRules Default { get; } = new CombatRules()
+        .Add(new Burn())
+        .Add(new Corrode());
 
     /// <summary>
     /// Register a primitive. Generic rather than two overloads because a primitive usually

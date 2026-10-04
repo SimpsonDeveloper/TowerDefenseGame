@@ -91,3 +91,11 @@ lower, Frostburn higher, so Burn is applied first). At hit time:
 Net after the frame: the enemy carries Frostburn stacks — a state no single op in the list
 writes alone. Reorder the same two ops (Frostburn before Burn) and Frostburn finds no Burn to
 convert and is inert — which is exactly why the order is fixed by the lattice.
+
+## Vocabulary states vs. implementation states
+
+The table above is the **vocabulary** — what ops write and read of each other. The combat layer
+may carry extra states that are nobody's producer and nobody's consumer, used only as an op's own
+bookkeeping: `Corroding` is Corrode's bout countdown wearing a state's clothes
+(`../ops/primitives/corrode.md`). They show up in the debug readout and in `StateId`. They do not
+belong here, and nothing may consume one.

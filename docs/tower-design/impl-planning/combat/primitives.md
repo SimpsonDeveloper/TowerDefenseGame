@@ -3,15 +3,15 @@
 Roadmap item **4** — where compilation first *does something* visible in-game. Depends on
 op-metadata flow (item 2, `../upgrades/op-flow.md`).
 
-**Status: pipeline built, 1 of 7 primitives written.** A shot compiled from a lattice now lands on
-an enemy and resolves. Burn is implemented; the other six are registrations against the same two
-interfaces.
+**Status: pipeline built, 2 of 7 primitives written.** A shot compiled from a lattice now lands on
+an enemy and resolves. Burn and Corrode are implemented; the rest are registrations against the
+same two interfaces.
 
 | Primitive | Combo | Effect target | Behavior source | Built |
 |---|---|---|---|---|
 | Burn | Ru | HP over time | `../../effect-vocab/ops/primitives/burn.md` | ✅ |
 | Chill → Freeze | Sa | ladder → skip enemy turns | `../../effect-vocab/ops/primitives/chill-freeze.md` | |
-| Corrode | Em | HP / armor over time | `../../effect-vocab/ops/primitives/corrode.md` | |
+| Corrode | Em | % max HP, in bouts | `../../effect-vocab/ops/primitives/corrode.md` | ✅ |
 | Scramble | Ci | disrupt behavior | `../../effect-vocab/ops/primitives/scramble.md` | |
 | Mind-damage | Am + Am | drain R | `../../effect-vocab/ops/primitives/mind-damage.md` | |
 | Purify | Qz | strip states (catalyst) | `../../effect-vocab/ops/primitives/purify.md` | |
@@ -97,8 +97,11 @@ Four details are deliberate:
 - **The tick loop is a `while`, not an `if`.** One long frame owes more than one tick; dropping
   the extra would quietly make a lagging game cheaper for the enemy.
 
-An op needing private bookkeeping beyond a stack count — Corrode's bout countdown — has nowhere
-to put it yet. That is the next structural gap, not a numbers question.
+An op needing private bookkeeping beyond a stack count does not get scratch space here — it gets
+**its own `StateId`**. Corrode's bout is `StateId.Corroding`, whose stack count is the ticks
+remaining, so it ends itself through the ordinary `TakeStacks` path and prints in the debug readout
+unasked (`../../effect-vocab/ops/primitives/corrode.md`). The alternative, a scratch dictionary on
+`EnemyState`, is the thing every later op would reach for first and nothing would ever see.
 
 ## 5. Wiring an enemy
 
@@ -125,9 +128,9 @@ slightly faster than expected.
 - **Real visuals.** Nothing renders a burning enemy: no tint, no particles. The broader visual
   language is unsettled, so this is deferred with the rest of it rather than guessed at now — the
   debug readout above is the stand-in.
-- **The other six primitives**, and every interactive. Chill and Corrode are designed —
-  `../../effect-vocab/ops/primitives/chill-freeze.md`,
-  `../../effect-vocab/ops/primitives/corrode.md` — and both are blocked on ops
-  being able to see the enemy's HP.
-- **Balance.** `BurnTuning`'s defaults are placeholders that make the curve legible, not tuned
+- **The other five primitives**, and every interactive. Chill is designed —
+  `../../effect-vocab/ops/primitives/chill-freeze.md` — but needs base move speed in `EnemyVitals`
+  and some way for a state to affect movement, neither of which exists. The remaining four are
+  stubs.
+- **Balance.** `BurnTuning` and `CorrodeTuning` hold placeholders that make each shape legible, not tuned
   numbers. The tests pin their own values so retuning never turns them red.

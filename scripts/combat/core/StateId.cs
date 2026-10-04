@@ -20,6 +20,14 @@ public enum StateId
     Chill,
     Corrode,
 
+    /// <summary>
+    /// Corrode's bout, mid-burn: its stack count <b>is</b> the ticks of acid left. Bookkeeping
+    /// wearing a state's clothes — nothing consumes it and no combo writes it — but holding it
+    /// here means it ends itself through <see cref="EnemyState.TakeStacks"/> like any other pile,
+    /// and shows up in the debug readout for free (<c>effect-vocab/ops/primitives/corrode.md</c>).
+    /// </summary>
+    Corroding,
+
     // flats — on/off gates, some with a timer, some spent by one consumer
     Freeze,
     Brittle,
