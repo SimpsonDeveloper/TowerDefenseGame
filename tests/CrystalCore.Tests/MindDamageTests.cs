@@ -74,6 +74,52 @@ public class MindDamageTests
     }
 
     [Fact]
+    public void VitalsArrivingLateStillStartTheMeterFull()
+    {
+        // The owner builds the state on construction and learns the real numbers in _Ready, so a
+        // meter stored as a running total would be left holding the default's worth. Mind is
+        // derived from damage taken instead.
+        EnemyState enemy = new EnemyState();
+
+        enemy.Vitals = new EnemyVitals(MaxHp: 200, MaxMind: 400);
+
+        Assert.Equal(400, enemy.Mind, Eps);
+    }
+
+    [Fact]
+    public void ChangesRaiseMindChanged_SoBarsNeverPoll()
+    {
+        CombatRules rules = Rules();
+        EnemyState enemy = Enemy();
+        int raised = 0;
+        enemy.MindChanged += () => raised++;
+
+        enemy.Vitals = new EnemyVitals(MaxMind: 200);   // the meter is measured against this
+        Assert.Equal(1, raised);
+
+        Hit(enemy, 100, rules);
+        Assert.Equal(2, raised);
+
+        Hit(enemy, 0, rules);                            // nothing happened, nothing announced
+        Assert.Equal(2, raised);
+    }
+
+    [Fact]
+    public void OverkillIsNotBankedAgainstALaterBiggerPool()
+    {
+        // The meter is emptied, never put into debt: a huge drain cannot pre-pay for a mind that
+        // grows afterwards.
+        CombatRules rules = Rules();
+        EnemyState enemy = Enemy();
+
+        Hit(enemy, 100000, rules);
+        Assert.Equal(0, enemy.Mind, Eps);
+
+        enemy.Vitals = new EnemyVitals(MaxMind: 500);
+        Assert.Equal(400, enemy.Mind, Eps);   // the 100 it actually had, gone; the rest intact
+    }
+
+    [Fact]
     public void ATougherMindTakesLongerToBreak()
     {
         // Mind is innate and per-enemy, so the same shot is worth proportionally less against a

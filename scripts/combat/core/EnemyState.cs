@@ -37,22 +37,53 @@ public sealed class EnemyState
     private double _pendingHpDamage;
 
     /// <summary>
-    /// What ops may read about the enemy itself. Set once by the owner; reassigning it later does
-    /// not re-fill <see cref="Mind"/>, which is a live meter rather than a stat.
+    /// What ops may read about the enemy itself. Settable because the owner usually learns the real
+    /// numbers after construction; assigning it raises <see cref="MindChanged"/>, since the meter is
+    /// measured against <see cref="EnemyVitals.MaxMind"/>.
     /// </summary>
-    public EnemyVitals Vitals { get; set; }
+    public EnemyVitals Vitals
+    {
+        get => _vitals;
+        set
+        {
+            _vitals = value ?? new EnemyVitals();
+            MindChanged?.Invoke();
+        }
+    }
+
+    private EnemyVitals _vitals = new EnemyVitals();
+
+    /// <summary>How much mind-damage this enemy has taken, ever.</summary>
+    private double _mindDrained;
 
     /// <summary>
     /// Illusion resistance — the second bar, drained by mind-damage only (<c>illusion.md</c>).
     /// Innate and per-enemy: never spread, never applied, and no op writes it up. Roadmap item 5
     /// gives it behaviour; it lives here now so ops have somewhere to drain to.
+    ///
+    /// Derived from the damage taken rather than stored as a running total, so an enemy that learns
+    /// its real <see cref="EnemyVitals.MaxMind"/> after construction starts full either way. A
+    /// stored meter would have been left holding the default's worth.
     /// </summary>
-    public double Mind { get; private set; }
+    public double Mind
+    {
+        get
+        {
+            double left = Vitals.MaxMind - _mindDrained;
+            return left > 0 ? left : 0;
+        }
+    }
+
+    /// <summary>
+    /// Raised when <see cref="Mind"/> may have moved — a drain, or new vitals to measure it
+    /// against. Mirrors how <c>HealthComponent</c> tells its bar, so both bars on an enemy update
+    /// the same way and neither polls.
+    /// </summary>
+    public event Action MindChanged;
 
     public EnemyState(EnemyVitals vitals = null)
     {
-        Vitals = vitals ?? new EnemyVitals();
-        Mind = Vitals.MaxMind;
+        if (vitals != null) _vitals = vitals;
     }
 
     /// <summary>
@@ -182,8 +213,14 @@ public sealed class EnemyState
     /// <summary>Drain the Mind meter. Floors at 0; what empty Mind *means* is item 5.</summary>
     public void DrainMind(double amount)
     {
-        if (amount <= 0) return;
-        Mind = Mind - amount < 0 ? 0 : Mind - amount;
+        if (amount <= 0 || Mind <= 0) return;
+
+        // Capped at the pool so a huge overkill drain cannot bank damage against a later, larger
+        // MaxMind — the meter is only ever emptied, never put into debt.
+        double capped = amount < Mind ? amount : Mind;
+        _mindDrained += capped;
+
+        MindChanged?.Invoke();
     }
 
     // ---- time -------------------------------------------------------------------------------

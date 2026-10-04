@@ -22,7 +22,12 @@ public partial class EnemyStateComponent : Node
     /// <summary>Illusion resistance, the second bar. Meaningful once roadmap item 5 lands.</summary>
     [Export] public float MaxMind = 100f;
 
-    public EnemyState State { get; private set; }
+    /// <summary>
+    /// Built on construction, not in <c>_Ready</c>, so a sibling can subscribe to it in its own
+    /// <c>_Ready</c> whatever order the two run in — the same guarantee a <c>HealthComponent</c>
+    /// gives its bar by being a node. Its <see cref="EnemyState.Vitals"/> arrive later.
+    /// </summary>
+    public EnemyState State { get; } = new EnemyState();
 
     /// <summary>The owner, if it can be slowed. Null is fine — states just will not move it.</summary>
     private IMoveSpeed _movement;
@@ -38,7 +43,7 @@ public partial class EnemyStateComponent : Node
         // State.Vitals.
         _movement = GetParent() as IMoveSpeed;
 
-        State = new EnemyState(new EnemyVitals(Health?.MaxHp ?? 100, MaxMind, _movement?.MoveSpeed ?? 0));
+        State.Vitals = new EnemyVitals(Health?.MaxHp ?? 100, MaxMind, _movement?.MoveSpeed ?? 0);
 
         if (Health == null)
             GD.PushWarning($"[combat] {GetParent()?.Name} has states but no HealthComponent — damage-over-time will go nowhere");

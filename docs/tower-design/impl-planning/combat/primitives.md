@@ -137,9 +137,18 @@ two-rect bar that a subclass feeds a single fraction; the Shield bar will be ano
 carry no text, so **colour is the label**, and stacking is just each node's `Offset` — no bar knows
 what sits below it.
 
-`StatBarComponent` polls rather than subscribing, unlike `HealthBarComponent`: Mind is a plain
-number on a plain object with no change notification. The poll is one comparison and only a real
-move redraws.
+`StatBarComponent` is **pushed, never polled** — the same way `HealthBarComponent` works. A
+subclass subscribes to a change event and calls `Refresh()`; no `_Process` runs, so an idle enemy
+costs nothing a frame.
+
+Two things make that possible, and both are worth keeping as the pattern:
+
+- **`EnemyStateComponent.State` is built on construction, not in `_Ready`.** A sibling can then
+  subscribe in its own `_Ready` whatever order the two run in, which is the same guarantee a
+  `HealthComponent` gives its bar by being a node. Its `Vitals` arrive later, in `_Ready`.
+- **`Mind` is derived from damage taken**, not stored as a running total, so vitals arriving after
+  construction still leave the meter full. Assigning `Vitals` raises `MindChanged` too, since the
+  meter is measured against `MaxMind`.
 
 Worth having because states are otherwise invisible — Burn is a number in a dictionary bleeding a
 fraction of a point a second, and without a readout the only evidence it works is an HP bar moving

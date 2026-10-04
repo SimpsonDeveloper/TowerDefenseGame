@@ -11,9 +11,10 @@ namespace towerdefensegame.scripts.components;
 /// colour and that is how the player tells it apart. Stacking is by <see cref="Offset"/>: each bar
 /// is an independent node and none of them knows what sits below it.
 ///
-/// Polled rather than signalled, unlike <see cref="HealthBarComponent"/>: the values these track
-/// are plain numbers on a plain object with no change notification. The poll is a comparison, and a
-/// redraw only happens when the fraction actually moves.
+/// <b>Pushed, never polled</b>, the same way <see cref="HealthBarComponent"/> works: a subclass
+/// subscribes to whatever announces a change and calls <see cref="Refresh"/>. No <c>_Process</c>
+/// runs, so an idle enemy costs nothing a frame, and two bars on one enemy update by the same
+/// mechanism instead of each having its own.
 /// </summary>
 public abstract partial class StatBarComponent : Node2D
 {
@@ -40,16 +41,20 @@ public abstract partial class StatBarComponent : Node2D
     /// </summary>
     protected abstract bool TryGetFraction(out float fraction);
 
-    /// <summary>Last drawn fill, or -1 before the first poll. Only a change redraws.</summary>
+    /// <summary>Last drawn fill, or -1 before the first refresh.</summary>
     private float _shown = -1f;
 
     public override void _Ready() => Position = Offset;
 
-    public override void _Process(double delta)
+    /// <summary>
+    /// Re-read the stat and redraw if it moved. Subclasses call this from whatever change
+    /// notification they subscribe to, and once in <c>_Ready</c> for the starting value.
+    /// </summary>
+    protected void Refresh()
     {
         if (!TryGetFraction(out float fraction))
         {
-            if (Visible) Visible = false;
+            Visible = false;
             return;
         }
 

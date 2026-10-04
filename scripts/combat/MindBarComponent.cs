@@ -27,7 +27,20 @@ public partial class MindBarComponent : StatBarComponent
         base._Ready();
 
         if (States == null)
+        {
             GD.PushWarning($"{Name}: States not assigned — the Mind bar will stay hidden.");
+            return;
+        }
+
+        // Safe in _Ready whatever order the siblings run in: EnemyStateComponent builds its state
+        // on construction, and assigning its vitals later raises MindChanged in its own right.
+        States.State.MindChanged += Refresh;
+        Refresh();
+    }
+
+    public override void _ExitTree()
+    {
+        if (States != null) States.State.MindChanged -= Refresh;
     }
 
     protected override bool TryGetFraction(out float fraction)

@@ -48,6 +48,20 @@ public partial class EnemyStateDebug : Node2D
 
         if (States == null)
             GD.PushWarning($"{Name}: States not assigned — nothing to report.");
+
+        Subscribe();
+    }
+
+    /// <summary>
+    /// Safe in <c>_Ready</c> whatever order the siblings run in, since the state is built on
+    /// construction. Still guarded, because <see cref="Enabled"/> can unsubscribe and resubscribe.
+    /// </summary>
+    private void Subscribe()
+    {
+        if (_subscribed != null || States == null) return;
+
+        _subscribed = States.State;
+        _subscribed.Ticked += OnTicked;
     }
 
     public override void _ExitTree() => Unsubscribe();
@@ -62,15 +76,7 @@ public partial class EnemyStateDebug : Node2D
         }
 
         Visible = true;
-
-        // Subscribed here rather than in _Ready: EnemyState is built in the other component's
-        // _Ready, and sibling order decides which of the two runs first.
-        if (_subscribed == null && States?.State != null)
-        {
-            _subscribed = States.State;
-            _subscribed.Ticked += OnTicked;
-        }
-
+        Subscribe();
         DecayFlashes((float)delta);
         QueueRedraw();
     }
