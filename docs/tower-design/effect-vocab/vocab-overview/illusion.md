@@ -7,8 +7,7 @@ because they are fooled into thinking it is the only route.
 
 - **Mind** = a second health bar ("mind shield"), per enemy, set at spawn. Drawn **purple**,
   stacked above HP (`../../impl-planning/combat/primitives.md` §6). Note it reads the opposite way
-  round to every other bar: a **full** Mind is the dangerous case, an empty one is railroaded. It
-  hides at full anyway, like the HP bar — the bars behaving alike beat flagging the threat.
+  round to every other bar: a **full** Mind is the dangerous case, an empty one is railroaded.
 - Enemies **roll for deviation at set intervals**. Per-roll deviation chance is a
   function of current **Mind** (higher Mind → higher chance to break free).
 - More time alive = more rolls = higher cumulative chance to deviate.

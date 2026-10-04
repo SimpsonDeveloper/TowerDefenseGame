@@ -70,3 +70,4 @@ script = ExtResource("8_3pfxq")
 Health = NodePath("../HealthComponent")
 Size = Vector2(96, 8)
 Offset = Vector2(0, -80)
+HideUntilTouched = true

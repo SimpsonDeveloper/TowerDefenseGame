@@ -17,9 +17,16 @@ namespace towerdefensegame.scripts.components;
 ///
 /// A subclass is expected to subscribe in <c>_Ready</c>, <see cref="Refresh"/> once for the
 /// starting value, and unsubscribe in <c>_ExitTree</c>. For that first read to be right, whatever
-/// it reads has to be correct before any <c>_Ready</c> runs — sibling order is not guaranteed. Both
-/// sources here manage it: <see cref="HealthComponent.Hp"/> reads full until something moves it,
-/// and an <c>EnemyState</c> is built on construction.
+/// it reads has to be correct before any <c>_Ready</c> runs — sibling order is not guaranteed. The
+/// meters manage it by reading full until something moves them.
+///
+/// <b>A bar is visible whenever the unit has the stat</b>, and a unit without the stat shows
+/// nothing — an unshielded enemy draws no shield bar rather than an empty one.
+///
+/// <see cref="HideUntilTouched"/> is the exception, and it is off by default. A <i>stack</i> of
+/// bars that each hide at full is unreadable: they pop in and out as values cross their maximum,
+/// and a full bar looks the same as an absent one. A lone bar has neither problem, which is why a
+/// tower's HP bar still uses it to keep undamaged towers clean.
 /// </summary>
 public abstract partial class StatBarComponent : Node2D
 {
@@ -33,13 +40,6 @@ public abstract partial class StatBarComponent : Node2D
     [Export] public Color BackgroundColor { get; set; } = new(0f, 0f, 0f, 0.6f);
 
     /// <summary>
-    /// If true, the bar is hidden while the stat is untouched, so clean units stay clean. Right for
-    /// a bar where full means healthy; wrong for one where full means dangerous — see
-    /// <c>MindBarComponent</c>, which turns it off on the type.
-    /// </summary>
-    [Export] public bool HideWhenFull { get; set; } = true;
-
-    /// <summary>
     /// The bar's current fill, 0 to 1. Return false when there is nothing to show at all — no
     /// source wired, or a stat the enemy does not have — which hides the bar rather than drawing
     /// an empty one.
@@ -49,6 +49,15 @@ public abstract partial class StatBarComponent : Node2D
     /// <summary>Last drawn fill, or -1 before the first refresh.</summary>
     private float _shown = -1f;
 
+    /// <summary>
+    /// Stay hidden until the stat drops below full. Only sound for a unit carrying <b>one</b> bar;
+    /// see the note on the class.
+    /// </summary>
+    [Export] public bool HideUntilTouched { get; set; }
+
+    /// <summary>Whether this unit has the stat at all. An absent one never shows.</summary>
+    public bool HasStat { get; private set; }
+
     public override void _Ready() => Position = Offset;
 
     /// <summary>
@@ -57,15 +66,10 @@ public abstract partial class StatBarComponent : Node2D
     /// </summary>
     protected void Refresh()
     {
-        if (!TryGetFraction(out float fraction))
-        {
-            Visible = false;
-            return;
-        }
+        HasStat = TryGetFraction(out float fraction);
+        Visible = HasStat && !(HideUntilTouched && fraction >= 1f);
 
-        Visible = !(HideWhenFull && fraction >= 1f);
-
-        if (Mathf.IsEqualApprox(fraction, _shown)) return;
+        if (!HasStat || Mathf.IsEqualApprox(fraction, _shown)) return;
 
         _shown = fraction;
         QueueRedraw();

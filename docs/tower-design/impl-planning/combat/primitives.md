@@ -104,6 +104,14 @@ draw, so the port draws none and ops simply read what they need.
 | Mind | `MindComponent` | `MindBarComponent` | purple |
 | Shield | `ShieldComponent` | `ShieldBarComponent` | light blue |
 
+**An enemy's bars are always visible.** Hiding each at full made a stack of them unreadable —
+popping in and out as values crossed their maximum, with a full bar indistinguishable from an
+absent one. The only thing that hides an enemy bar is the unit not having that stat: an unshielded
+enemy draws no shield bar.
+
+`HideUntilTouched` keeps the old behaviour for a unit carrying a **single** bar, where neither
+problem applies — a tower's HP bar still stays hidden until something damages it.
+
 All three read **full until something moves them**, so they are correct before any `_Ready` runs:
 the maxima are applied after construction, and a sibling reading a meter from its own `_Ready`
 would otherwise race whoever filled it. Every bar is a `StatBarComponent` listening to that

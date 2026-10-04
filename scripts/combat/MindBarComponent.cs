@@ -13,8 +13,7 @@ namespace towerdefensegame.scripts.combat;
 ///
 /// <b>Worth knowing that this bar reads the opposite way round to the others.</b> A full Mind is
 /// the dangerous case — the enemy is most likely to see through the maze and break off the path —
-/// and an empty one is permanently railroaded. It hides at full anyway, like the HP bar: the bars
-/// behaving alike won over flagging the threat.
+/// and an empty one is permanently railroaded.
 /// </summary>
 [GlobalClass]
 public partial class MindBarComponent : StatBarComponent
