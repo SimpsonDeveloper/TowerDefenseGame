@@ -131,6 +131,16 @@ dealt. Each line flashes as its op ticks, driven by `EnemyState.Ticked`.
 It is a development readout, not a game visual: `Enabled = false` unsubscribes it and it costs
 nothing. Immediate-mode `_Draw` on a `Node2D`, so it never touches the UI theme.
 
+The one piece of this that **is** a game visual is the **Mind bar** — purple, stacked above the HP
+bar, matching Amethyst because Amethyst is what drains it. It is a `StatBarComponent`, an abstract
+two-rect bar that a subclass feeds a single fraction; the Shield bar will be another. Those bars
+carry no text, so **colour is the label**, and stacking is just each node's `Offset` — no bar knows
+what sits below it.
+
+`StatBarComponent` polls rather than subscribing, unlike `HealthBarComponent`: Mind is a plain
+number on a plain object with no change notification. The poll is one comparison and only a real
+move redraws.
+
 Worth having because states are otherwise invisible — Burn is a number in a dictionary bleeding a
 fraction of a point a second, and without a readout the only evidence it works is an HP bar moving
 slightly faster than expected.

@@ -1,4 +1,4 @@
-[gd_scene load_steps=13 format=3 uid="uid://ct8oyhx38cldu"]
+[gd_scene load_steps=14 format=3 uid="uid://ct8oyhx38cldu"]
 
 [ext_resource type="Script" uid="uid://dxaxgggwt2dpn" path="res://scripts/world/enemies/EnemyNavController.cs" id="1_0mm51"]
 [ext_resource type="Texture2D" uid="uid://dgdo5kd2rf2li" path="res://assets/world_resources/sprites/enemies/pincer.png" id="3_ofjd3"]
@@ -10,6 +10,7 @@
 [ext_resource type="Script" uid="uid://c4ivmmmnav7xt" path="res://scripts/components/HealthBarComponent.cs" id="10_bar"]
 [ext_resource type="Script" path="res://scripts/combat/EnemyStateComponent.cs" id="11_states"]
 [ext_resource type="Script" path="res://scripts/combat/EnemyStateDebug.cs" id="12_statedbg"]
+[ext_resource type="Script" path="res://scripts/combat/MindBarComponent.cs" id="13_mindbar"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_enemy"]
 
@@ -71,7 +72,14 @@ Health = NodePath("../HealthComponent")
 Size = Vector2(32, 4)
 Offset = Vector2(0, -40)
 
+[node name="MindBar" type="Node2D" parent="." node_paths=PackedStringArray("States")]
+script = ExtResource("13_mindbar")
+Size = Vector2(32, 3)
+Offset = Vector2(0, -46)
+FillColor = Color(0.663, 0.455, 1, 1)
+States = NodePath("../EnemyStates")
+
 [node name="EnemyStateDebug" type="Node2D" parent="." node_paths=PackedStringArray("States")]
 script = ExtResource("12_statedbg")
 States = NodePath("../EnemyStates")
-Offset = Vector2(-16, -46)
+Offset = Vector2(-16, -58)
