@@ -83,6 +83,24 @@ public sealed class EnemyState
     /// <summary>Seconds until this state's next tick, or 0 if nothing ticks it.</summary>
     public double TimeToNextTick(StateId state) => _tickTimers.TryGetValue(state, out double due) ? due : 0;
 
+    /// <summary>
+    /// What the enemy's speed should be multiplied by right now — 1 unhindered, 0 stopped dead.
+    /// Every active modifier's scale multiplied together, so two slows compound.
+    ///
+    /// Derived on every call and never stored. A state that expires stops slowing the enemy by
+    /// not being there, so nothing has to remember to undo itself.
+    /// </summary>
+    public double SpeedScale(CombatRules rules)
+    {
+        double scale = 1;
+
+        foreach (IMovementModifier modifier in (rules ?? CombatRules.Default).MovementModifiers)
+            if (IsActive(modifier.State))
+                scale *= modifier.SpeedScale(this);
+
+        return scale < 0 ? 0 : scale;
+    }
+
     // ---- stacks -----------------------------------------------------------------------------
 
     public int Stacks(StateId state) => _stacks.TryGetValue(state, out int stacks) ? stacks : 0;

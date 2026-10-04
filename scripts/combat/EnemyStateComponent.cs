@@ -24,6 +24,9 @@ public partial class EnemyStateComponent : Node
 
     public EnemyState State { get; private set; }
 
+    /// <summary>The owner, if it can be slowed. Null is fine — states just will not move it.</summary>
+    private IMoveSpeed _movement;
+
     /// <summary>Everything states have dealt over this enemy's life. Readouts only.</summary>
     public double DotDamageDealt { get; private set; }
 
@@ -33,7 +36,9 @@ public partial class EnemyStateComponent : Node
         // tree, precisely so component _Ready sees the final numbers
         // (EnemyNavController.ApplyType). Anything that later changes max HP reassigns
         // State.Vitals.
-        State = new EnemyState(new EnemyVitals(Health?.MaxHp ?? 100, MaxR));
+        _movement = GetParent() as IMoveSpeed;
+
+        State = new EnemyState(new EnemyVitals(Health?.MaxHp ?? 100, MaxR, _movement?.MoveSpeed ?? 0));
 
         if (Health == null)
             GD.PushWarning($"[combat] {GetParent()?.Name} has states but no HealthComponent — damage-over-time will go nowhere");
@@ -52,6 +57,8 @@ public partial class EnemyStateComponent : Node
     {
         State.Tick(delta, CombatRules.Default);
 
+        ApplyMovement();
+
         // Pulled rather than pushed: EnemyState is engine-free and cannot reach a
         // HealthComponent, so it queues what it dealt and this drains it once a frame.
         double damage = State.TakeHpDamage();
@@ -59,5 +66,17 @@ public partial class EnemyStateComponent : Node
 
         DotDamageDealt += damage;
         Health?.TakeDamage(damage);
+    }
+
+    /// <summary>
+    /// Rewrite the owner's speed from its captured base. Always from the base, never from the
+    /// current value: scaling what is already scaled compounds every frame and an enemy that was
+    /// chilled once would crawl forever.
+    /// </summary>
+    private void ApplyMovement()
+    {
+        if (_movement == null) return;
+
+        _movement.MoveSpeed = (float)(State.Vitals.MoveSpeed * State.SpeedScale(CombatRules.Default));
     }
 }

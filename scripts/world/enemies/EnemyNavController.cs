@@ -24,12 +24,28 @@ namespace towerdefensegame.scripts.world.enemies;
 /// exchange for NavAgent doing path-follow and smoothing for us.
 /// </summary>
 [GlobalClass]
-public partial class EnemyNavController : CharacterBody2D
+public partial class EnemyNavController : CharacterBody2D, IMoveSpeed
 {
     // ── Configuration ─────────────────────────────────────────────────────
 
     [ExportGroup("Movement")]
-    [Export] public float MoveSpeed { get; set; } = 160f;
+    /// <summary>
+    /// Speed in px/s. Writable from outside (<see cref="IMoveSpeed"/>) so a slowing state can
+    /// scale it; the agent's avoidance ceiling is kept in step here rather than only at _Ready,
+    /// or a slowed enemy would still dodge at full speed.
+    /// </summary>
+    [Export]
+    public float MoveSpeed
+    {
+        get => _moveSpeed;
+        set
+        {
+            _moveSpeed = value;
+            if (NavAgent != null) NavAgent.MaxSpeed = value;
+        }
+    }
+
+    private float _moveSpeed = 160f;
     [Export] public float Acceleration { get; set; } = 10f;
 
     [ExportGroup("Navigation")]

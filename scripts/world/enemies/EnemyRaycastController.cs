@@ -29,7 +29,7 @@ namespace towerdefensegame.scripts.world.enemies;
 /// (direct LoS check + active raycaster), plus RayCount steering queries every SteeringUpdateInterval.
 /// </summary>
 [GlobalClass]
-public partial class EnemyRaycastController : CharacterBody2D
+public partial class EnemyRaycastController : CharacterBody2D, IMoveSpeed
 {
     // ── State ──────────────────────────────────────────────────────────────
 

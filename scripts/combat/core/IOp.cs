@@ -61,3 +61,26 @@ public interface ITickingState
     /// </summary>
     void Tick(EnemyState enemy);
 }
+
+/// <summary>
+/// How a carried state changes the enemy's movement. The first role that is neither a shot nor a
+/// tick: Chill slows continuously while it is held, and Freeze stops movement outright.
+///
+/// <b>Derived, never stored.</b> The scale is recomputed from the enemy's current states every
+/// time it is asked for, so nothing has to remember to undo itself — a state that expires stops
+/// contributing by not being there. Writing a multiplier into a field instead is how an enemy ends
+/// up permanently slowed by a chill that wore off two seconds ago.
+///
+/// Scales from every active modifier are multiplied together, so two slows compound rather than
+/// one overwriting the other.
+/// </summary>
+public interface IMovementModifier
+{
+    StateId State { get; }
+
+    /// <summary>
+    /// Multiplier on base speed while this state is held. 1 is no effect, 0 is a full stop.
+    /// Reads the enemy because the amount usually depends on how much of the state is standing.
+    /// </summary>
+    double SpeedScale(EnemyState enemy);
+}

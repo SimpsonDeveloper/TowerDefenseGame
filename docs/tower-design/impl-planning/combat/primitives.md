@@ -3,14 +3,14 @@
 Roadmap item **4** — where compilation first *does something* visible in-game. Depends on
 op-metadata flow (item 2, `../upgrades/op-flow.md`).
 
-**Status: pipeline built, 2 of 7 primitives written.** A shot compiled from a lattice now lands on
-an enemy and resolves. Burn and Corrode are implemented; the rest are registrations against the
-same two interfaces.
+**Status: pipeline built, 3 of 7 primitives written.** A shot compiled from a lattice now lands on
+an enemy and resolves. Burn, Corrode and Chill are implemented; the rest are registrations against
+the same handful of role interfaces.
 
 | Primitive | Combo | Effect target | Behavior source | Built |
 |---|---|---|---|---|
 | Burn | Ru | HP over time | `../../effect-vocab/ops/primitives/burn.md` | ✅ |
-| Chill → Freeze | Sa | ladder → skip enemy turns | `../../effect-vocab/ops/primitives/chill-freeze.md` | |
+| Chill → Freeze | Sa | slow, then halt | `../../effect-vocab/ops/primitives/chill-freeze.md` | ✅ |
 | Corrode | Em | % max HP, in bouts | `../../effect-vocab/ops/primitives/corrode.md` | ✅ |
 | Scramble | Ci | disrupt behavior | `../../effect-vocab/ops/primitives/scramble.md` | |
 | Mind-damage | Am + Am | drain R | `../../effect-vocab/ops/primitives/mind-damage.md` | |
@@ -39,16 +39,23 @@ TurretTower.Fire
 any shot resolves end-to-end today. Nothing warns about the gap — "not built yet" is this table's
 expected state for the whole of item 4.
 
-## 2. The two interfaces
+## 2. The role interfaces
 
-A primitive is usually **one class implementing both**, so its numbers live in one file:
+A primitive is **one class implementing the roles it needs**, so its numbers live in one file.
+Chill implements all three; Burn and Corrode implement two.
 
 - `IOp.Apply(context, quantity, target)` — what a *shot* does. `quantity` is the energy that
   crossed the producing edge, floored at 0 by the compiler. Per **edge**, not per gem: a ▽ with
   two inputs produces two ops.
 - `ITickingState.Interval` / `.Tick(enemy)` — what a *carried state* does between shots.
+- `IMovementModifier.SpeedScale(enemy)` — how a state changes movement. **Derived on every read,
+  never stored**, so a state that expires stops slowing the enemy by not being there. Scales
+  multiply, so two slows compound.
 
-Both register through `CombatRules.Add`, and `CombatRules.Default` is the shipped set.
+All register through the same `CombatRules.Add<T>`, which pattern-matches each role, and
+`CombatRules.Default` is the shipped set. Adding a fourth role is one line there — the extension
+point is more small interfaces, not a fatter one, so no op ever stubs out a face it does not
+want.
 
 ## 3. What `EnemyState` owns — and what it deliberately does not
 
@@ -65,16 +72,20 @@ It holds **state and time. It holds no policy.**
   state and its clock.
 - **R** — an innate meter, drained only. Item 5 (`enemy-r.md`) gives it meaning.
 
-Traffic across the boundary is **stats in, damage out**.
+Traffic across the boundary is **stats in, effects out**.
 
-- **In** — `EnemyState.Vitals`, an `EnemyVitals` record of innate numbers: max HP, max R. Ops read
-  it because their curves are relative to the enemy (Chill's freeze threshold scales off max HP;
-  Corrode ticks a percentage of it). Set once in `EnemyStateComponent._Ready`, which is safe
-  because a type is applied *before* the enemy enters the tree — `EnemyNavController.ApplyType`.
-  Grow it by adding a parameter, and only when an op actually reads it.
-- **Out** — damage is queued and pulled by `EnemyStateComponent` once a frame, since the core
-  cannot see a `HealthComponent`. `HealthComponent.Hp` is a `double` so fractional ticks land as
+- **In** — `EnemyState.Vitals`, an `EnemyVitals` record of innate numbers: max HP, max R, base
+  move speed. Ops read it because their curves are relative to the enemy (Chill's freeze threshold
+  scales off max HP; Corrode ticks a percentage of it) and because a slow needs the unmodified
+  speed to scale *from*. Set once in `EnemyStateComponent._Ready`, which is safe because a type is
+  applied *before* the enemy enters the tree — `EnemyNavController.ApplyType`. Grow it by adding a
+  parameter, and only when an op actually reads it.
+- **Out, damage** — queued and pulled by `EnemyStateComponent` once a frame, since the core cannot
+  see a `HealthComponent`. `HealthComponent.Hp` is a `double` so fractional ticks land as
   themselves; nothing is rounded or banked anywhere.
+- **Out, movement** — `EnemyState.SpeedScale(rules)` is derived on demand and the component writes
+  `base × scale` onto whatever implements `IMoveSpeed`, which both enemy controllers now do.
+  Always from the base: scaling an already-scaled value compounds every frame.
 
 **Current HP is deliberately not readable.** Max HP is a stat; current HP is a consequence, and an
 op reading the bar back would make effects depend on the order damage happened to land in a frame.
@@ -128,9 +139,7 @@ slightly faster than expected.
 - **Real visuals.** Nothing renders a burning enemy: no tint, no particles. The broader visual
   language is unsettled, so this is deferred with the rest of it rather than guessed at now — the
   debug readout above is the stand-in.
-- **The other five primitives**, and every interactive. Chill is designed —
-  `../../effect-vocab/ops/primitives/chill-freeze.md` — but needs base move speed in `EnemyVitals`
-  and some way for a state to affect movement, neither of which exists. The remaining four are
-  stubs.
-- **Balance.** `BurnTuning` and `CorrodeTuning` hold placeholders that make each shape legible, not tuned
+- **The other four primitives** — Scramble, Mind-damage, Purify, Mark — and every interactive.
+  All are stubs beyond their one-line definitions.
+- **Balance.** `BurnTuning`, `CorrodeTuning` and `ChillTuning` hold placeholders that make each shape legible, not tuned
   numbers. The tests pin their own values so retuning never turns them red.

@@ -17,11 +17,14 @@ public sealed class CombatRules
 {
     private readonly Dictionary<OpId, IOp> _ops = new();
     private readonly Dictionary<StateId, ITickingState> _tickers = new();
+    private readonly Dictionary<StateId, IMovementModifier> _movement = new();
 
     /// <summary>Everything currently implemented. Tests build their own to isolate one op.</summary>
     public static CombatRules Default { get; } = new CombatRules()
         .Add(new Burn())
-        .Add(new Corrode());
+        .Add(new Corrode())
+        .Add(new Chill())
+        .Add(new Frozen());
 
     /// <summary>
     /// Register a primitive. Generic rather than two overloads because a primitive usually
@@ -32,6 +35,7 @@ public sealed class CombatRules
     {
         if (behavior is IOp op) _ops[op.Id] = op;
         if (behavior is ITickingState ticker) _tickers[ticker.State] = ticker;
+        if (behavior is IMovementModifier movement) _movement[movement.State] = movement;
         return this;
     }
 
@@ -43,4 +47,7 @@ public sealed class CombatRules
     /// so a tick that writes a second state cannot invalidate the loop it is running inside.
     /// </summary>
     public IReadOnlyCollection<ITickingState> Tickers => _tickers.Values;
+
+    /// <summary>Every state that changes movement. Walked fresh on each read, never cached.</summary>
+    public IReadOnlyCollection<IMovementModifier> MovementModifiers => _movement.Values;
 }
