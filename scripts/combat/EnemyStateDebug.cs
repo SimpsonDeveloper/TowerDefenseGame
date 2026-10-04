@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using Godot;
 using towerdefensegame.scripts.combat.core;
-using towerdefensegame.scripts.components;
 
 namespace towerdefensegame.scripts.combat;
 
@@ -95,21 +94,6 @@ public partial class EnemyStateDebug : Node2D
             owners.Add(state);
         }
 
-        // Mind is a meter, not a state, so it is not in ActiveStates. Read through the vitals
-        // port, which is where the core sees it now that the meter itself is a component.
-        IEnemyVitals vitals = States.State.Vitals;
-        if (vitals.MaxMind > 0 && vitals.Mind < vitals.MaxMind)
-        {
-            lines.Add($"Mind {vitals.Mind:0.#}/{vitals.MaxMind:0.#}");
-            owners.Add(StateId.None);
-        }
-
-        if (States.Shield != null && States.Shield.HasShield)
-        {
-            lines.Add($"Shield {States.Shield.Shield:0.#}" + (States.Shield.IsDown ? " DOWN" : ""));
-            owners.Add(StateId.None);
-        }
-
         if (States.DotDamageDealt > 0)
         {
             lines.Add($"dot {States.DotDamageDealt:0.#}");
@@ -138,14 +122,20 @@ public partial class EnemyStateDebug : Node2D
         }
     }
 
-    /// <summary>One line per state: stacks or seconds left, plus its countdown to the next tick.</summary>
+    /// <summary>
+    /// One line per state: stacks, or seconds left for a timed flat, plus a countdown to the next
+    /// tick where something ticks it. A flat state with no clock — Shield-down, which lasts as long
+    /// as the shield is off — gets its name and nothing else.
+    /// </summary>
     private static string Describe(EnemyState enemy, StateId state)
     {
         int stacks = enemy.Stacks(state);
-        string held = stacks > 0 ? $"x{stacks}" : $"{enemy.FlagTimeLeft(state):0.0}s";
+        double seconds = enemy.FlagTimeLeft(state);
 
+        string held = stacks > 0 ? $" x{stacks}" : seconds > 0 ? $" {seconds:0.0}s" : "";
         double due = enemy.TimeToNextTick(state);
-        return due > 0 ? $"{state} {held}  ({due:0.0})" : $"{state} {held}";
+
+        return due > 0 ? $"{state}{held}  ({due:0.0})" : $"{state}{held}";
     }
 
     private void DecayFlashes(float delta)

@@ -163,9 +163,13 @@ gun's own damage and nothing else — unwired, not broken.
 
 ## 6. Seeing what is happening
 
-`EnemyStateDebug` — a `Node2D` beside the HP bar — prints every carried state, its stacks or
-remaining seconds, its countdown to the next tick, and the running total of damage states have
-dealt. Each line flashes as its op ticks, driven by `EnemyState.Ticked`.
+`EnemyStateDebug` — a `Node2D` above the bars — prints every carried state, its stacks or remaining
+seconds, its countdown to the next tick, and the running total of damage states have dealt. Each
+line flashes as its op ticks, driven by `EnemyState.Ticked`.
+
+It does **not** print the meters. The bars show those, and a number beside a bar of the same value
+is just a second place to read the same thing. `Shield-down` still appears, as a state with no
+clock, which is how the readout shows a shield that is off while its points are intact.
 
 It is a development readout, not a game visual: `Enabled = false` unsubscribes it and it costs
 nothing. Immediate-mode `_Draw` on a `Node2D`, so it never touches the UI theme.
