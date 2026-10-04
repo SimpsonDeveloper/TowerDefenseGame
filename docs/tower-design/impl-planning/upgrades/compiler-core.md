@@ -235,4 +235,4 @@ lattice"). A tower fires a compiled shot; a tower with no lattice fires as it al
   absolute int per viewport and nesting `CanvasLayer`s does not compose — so a stated convention is
   the only mechanism there is. The band is also what makes "full-screen" true: before it, the other
   dimension's mini-view and the wave timer drew on top of the editor.
-- **Open:** the R meter (`../combat/enemy-r.md`), and item 4 consuming the ordered ops.
+- **Open:** the Mind meter (`../combat/enemy-mind.md`), and item 4 consuming the ordered ops.

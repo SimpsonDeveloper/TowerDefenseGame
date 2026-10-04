@@ -51,7 +51,7 @@ source of truth. These tables index files only.
 | Fire Arc | `interactives/fire-arc.md` | Burn (→ chains between burning enemies) |
 | Frost Arc | `interactives/frost-arc.md` | Chill (→ chains between chilled enemies) |
 | Acid Arc | `interactives/acid-arc.md` | Corrode (→ chains between corroded enemies) |
-| Numb | `interactives/numb.md` | R (→ lowers freeze threshold) |
+| Numb | `interactives/numb.md` | Mind (→ lowers freeze threshold) |
 | Accelerant | `interactives/accelerant.md` | any DoT (→ speeds its tick rate) |
 | Weather | `interactives/weather.md` | Freeze removal (→ escalating damage) |
 | Short-circuit | `interactives/short-circuit.md` | Shield-down (→ execute burst) |
@@ -65,5 +65,5 @@ source of truth. These tables index files only.
 | Corrode | `primitives/corrode.md` | Corrode |
 | Mark / Sigil | `primitives/mark.md` | Mark |
 | Scramble | `primitives/scramble.md` | Shield-down |
-| Mind-damage (Illusion) | `primitives/mind-damage.md` | drains R |
+| Mind-damage (Illusion) | `primitives/mind-damage.md` | drains Mind |
 | Purify | `primitives/purify.md` | strips enemy buffs *(pending buff system)* |

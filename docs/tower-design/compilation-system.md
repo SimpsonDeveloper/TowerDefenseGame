@@ -85,7 +85,7 @@ Two things ride the routing, both split by ▲ and summed by ▽:
   second** (leftmost first), anchored to the producing (downstream) gem. Full model in
   `impl-planning/upgrades/op-flow.md`.
 
-Everything else an op does — which enemy bar it hits (HP vs R — see §7), what state it
+Everything else an op does — which enemy bar it hits (HP vs Mind — see §7), what state it
 writes, **what it consumes**, how its quantity maps to effect — is **op behavior**, resolved
 on the enemy at **hit time** by walking the ordered list one op at a time
 (`effect-vocab/vocab-overview/states.md` → *Shot resolution*), and authored per-op under
@@ -154,8 +154,8 @@ What those ops *do* to enemies — states, consumers, bars, bounding, authoring 
 | Triads (producer → state → consumer), the two op classes, interactive test | `effect-vocab/vocab-overview/overview.md` |
 | States table · ladders vs flat · many-to-many · **state coupling** (runtime wiring ⟂ to the lattice) | `effect-vocab/vocab-overview/states.md` |
 | The **two merges** — lattice ▽ (compile-time) vs state merge (runtime) | `effect-vocab/vocab-overview/merge.md` |
-| Enemy bars (HP / R) · which bar an op hits | `effect-vocab/vocab-overview/damage.md` |
-| R (illusion resistance) mechanic · deviation `f(R)` | `effect-vocab/vocab-overview/illusion.md` |
+| Enemy bars (HP / Mind) · which bar an op hits | `effect-vocab/vocab-overview/damage.md` |
+| Mind (illusion resistance) mechanic · deviation `f(Mind)` | `effect-vocab/vocab-overview/illusion.md` |
 | Bounding — compile-time impact cap (product of fan-outs, over-budget = illegal) | `impl-planning/upgrades/compiler-core.md` |
 | Bounding — runtime recursion (delivery-layer concern) | `effect-vocab/vocab-overview/delivery.md` |
 | Authoring philosophy · investment axes (A / space / B) | `effect-vocab/vocab-overview/overview.md` · `legend.md` |

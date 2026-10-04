@@ -7,20 +7,20 @@ namespace towerdefensegame.scripts.combat.core.ops;
 /// <c>effect-vocab/ops/primitives/mind-damage.md</c> — that file is the source, this record is the
 /// port.
 /// </summary>
-/// <param name="RPerEnergy">R drained per unit of edge energy. The op's whole tuning surface:
+/// <param name="MindPerEnergy">Mind drained per unit of edge energy. The op's whole tuning surface:
 ///   there is no state, no curve and no duration to shape.</param>
-public sealed record MindDamageTuning(double RPerEnergy = 1.0 / 20.0);
+public sealed record MindDamageTuning(double MindPerEnergy = 1.0 / 20.0);
 
 /// <summary>
 /// <b>Mind-damage</b> (Amethyst · Amethyst) — damage routed to the second bar, per
 /// <c>effect-vocab/ops/primitives/mind-damage.md</c>.
 ///
 /// It takes a single crystal to carry mind and <b>two in sequence</b> to convert a stream to it,
-/// which is the whole reason this is an Am–Am combo and not an Amethyst property. To hit HP and R
+/// which is the whole reason this is an Am–Am combo and not an Amethyst property. To hit HP and Mind
 /// both, split the stream and route one branch through a pair — the energy divides, so reach into
 /// one bar is paid for out of the other.
 ///
-/// <b>Not a state.</b> R is an innate per-enemy meter, only ever drained: nothing stacks, nothing
+/// <b>Not a state.</b> Mind is an innate per-enemy meter, only ever drained: nothing stacks, nothing
 /// merges, nothing expires, and no tick restores it. The drain is permanent for the enemy's life.
 /// That makes this the simplest op in the vocabulary — one line of arithmetic and no second face.
 ///
@@ -40,6 +40,6 @@ public sealed class MindDamage : IOp
     {
         if (quantity <= 0) return;
 
-        target.DrainR(quantity * _tuning.RPerEnergy);
+        target.DrainMind(quantity * _tuning.MindPerEnergy);
     }
 }

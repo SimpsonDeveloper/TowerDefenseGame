@@ -5,7 +5,7 @@ namespace towerdefensegame.scripts.combat.core;
 
 /// <summary>
 /// Everything a shot can write on one enemy, and the only thing an op is handed to mutate:
-/// stacks, flat states, the R meter, and pending HP damage.
+/// stacks, flat states, the Mind meter, and pending HP damage.
 ///
 /// <b>Engine-free by contract</b> — the same rule the compiler core follows. It never touches a
 /// <c>HealthComponent</c>; damage is queued here and taken by the Godot component that owns this
@@ -38,7 +38,7 @@ public sealed class EnemyState
 
     /// <summary>
     /// What ops may read about the enemy itself. Set once by the owner; reassigning it later does
-    /// not re-fill <see cref="R"/>, which is a live meter rather than a stat.
+    /// not re-fill <see cref="Mind"/>, which is a live meter rather than a stat.
     /// </summary>
     public EnemyVitals Vitals { get; set; }
 
@@ -47,12 +47,12 @@ public sealed class EnemyState
     /// Innate and per-enemy: never spread, never applied, and no op writes it up. Roadmap item 5
     /// gives it behaviour; it lives here now so ops have somewhere to drain to.
     /// </summary>
-    public double R { get; private set; }
+    public double Mind { get; private set; }
 
     public EnemyState(EnemyVitals vitals = null)
     {
         Vitals = vitals ?? new EnemyVitals();
-        R = Vitals.MaxR;
+        Mind = Vitals.MaxMind;
     }
 
     /// <summary>
@@ -179,11 +179,11 @@ public sealed class EnemyState
         return owed;
     }
 
-    /// <summary>Drain the R meter. Floors at 0; what empty R *means* is item 5.</summary>
-    public void DrainR(double amount)
+    /// <summary>Drain the Mind meter. Floors at 0; what empty Mind *means* is item 5.</summary>
+    public void DrainMind(double amount)
     {
         if (amount <= 0) return;
-        R = R - amount < 0 ? 0 : R - amount;
+        Mind = Mind - amount < 0 ? 0 : Mind - amount;
     }
 
     // ---- time -------------------------------------------------------------------------------

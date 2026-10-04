@@ -14,7 +14,7 @@ of which exists.
 | Chill → Freeze | Sa | slow, then halt | `../../effect-vocab/ops/primitives/chill-freeze.md` | ✅ |
 | Corrode | Em | % max HP, in bouts | `../../effect-vocab/ops/primitives/corrode.md` | ✅ |
 | Scramble | Ci | disrupt behavior | `../../effect-vocab/ops/primitives/scramble.md` | |
-| Mind-damage | Am + Am | drain R | `../../effect-vocab/ops/primitives/mind-damage.md` | ✅ |
+| Mind-damage | Am + Am | drain Mind | `../../effect-vocab/ops/primitives/mind-damage.md` | ✅ |
 | Purify | Qz | strip states (catalyst) | `../../effect-vocab/ops/primitives/purify.md` | |
 | Mark | Am + Ru | enabler flag | `../../effect-vocab/ops/primitives/mark.md` | |
 
@@ -33,7 +33,7 @@ TurretTower.Fire
   → EnemyStateComponent.Receive            the Godot half: clock + HP hand-off
   → ShotResolver.Resolve                   walks the ordered list, one op at a time
   → CombatRules.Op(id)?.Apply(...)         null = no-op
-  → EnemyState                             stacks, flat states, R, queued damage
+  → EnemyState                             stacks, flat states, Mind, queued damage
 ```
 
 **A missing handler is a no-op, not an error.** Twenty-one ops are named and one is written, yet
@@ -71,11 +71,11 @@ It holds **state and time. It holds no policy.**
 - **Consumers** — `TakeStacks` returns what it actually got, which is all a consumer may convert
   (1-to-1 for now, `../../effect-vocab/vocab-overview/states.md`). Taking the last stack ends the
   state and its clock.
-- **R** — an innate meter, drained only. Item 5 (`enemy-r.md`) gives it meaning.
+- **Mind** — an innate meter, drained only. Item 5 (`enemy-mind.md`) gives it meaning.
 
 Traffic across the boundary is **stats in, effects out**.
 
-- **In** — `EnemyState.Vitals`, an `EnemyVitals` record of innate numbers: max HP, max R, base
+- **In** — `EnemyState.Vitals`, an `EnemyVitals` record of innate numbers: max HP, max Mind, base
   move speed. Ops read it because their curves are relative to the enemy (Chill's freeze threshold
   scales off max HP; Corrode ticks a percentage of it) and because a slow needs the unmodified
   speed to scale *from*. Set once in `EnemyStateComponent._Ready`, which is safe because a type is

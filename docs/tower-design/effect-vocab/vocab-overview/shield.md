@@ -14,8 +14,8 @@ Two ways to drop the shield, both producing the **Shield-down** state:
 - **Scramble** — disable it directly, no damage needed (`../ops/primitives/scramble.md`).
   Skips paying the shield bar down.
 
-While Shield-down, HP damage lands unblocked. Shield does **not** protect R —
-mind-damage routes to R regardless (armor, not a mind defense; see `damage.md` and
+While Shield-down, HP damage lands unblocked. Shield does **not** protect Mind —
+mind-damage routes to Mind regardless (armor, not a mind defense; see `damage.md` and
 `illusion.md`).
 
 ## Scramble's tradeoff

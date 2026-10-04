@@ -20,7 +20,7 @@ public partial class EnemyStateComponent : Node
     [Export] public HealthComponent Health;
 
     /// <summary>Illusion resistance, the second bar. Meaningful once roadmap item 5 lands.</summary>
-    [Export] public float MaxR = 100f;
+    [Export] public float MaxMind = 100f;
 
     public EnemyState State { get; private set; }
 
@@ -38,7 +38,7 @@ public partial class EnemyStateComponent : Node
         // State.Vitals.
         _movement = GetParent() as IMoveSpeed;
 
-        State = new EnemyState(new EnemyVitals(Health?.MaxHp ?? 100, MaxR, _movement?.MoveSpeed ?? 0));
+        State = new EnemyState(new EnemyVitals(Health?.MaxHp ?? 100, MaxMind, _movement?.MoveSpeed ?? 0));
 
         if (Health == null)
             GD.PushWarning($"[combat] {GetParent()?.Name} has states but no HealthComponent — damage-over-time will go nowhere");

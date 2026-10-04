@@ -18,7 +18,7 @@ namespace towerdefensegame.scripts.combat.core;
 /// actually reads it: a stat wired to a placeholder is worse than one that is missing.
 /// </summary>
 /// <param name="MaxHp">The enemy's full health pool.</param>
-/// <param name="MaxR">Illusion resistance at full (<c>effect-vocab/vocab-overview/illusion.md</c>).</param>
+/// <param name="MaxMind">Illusion resistance at full (<c>effect-vocab/vocab-overview/illusion.md</c>).</param>
 /// <param name="MoveSpeed">Unmodified speed in px/s — what a slow scales <b>from</b>. Captured
 ///   once, so writing a slowed value back onto the enemy cannot compound frame over frame.</param>
-public sealed record EnemyVitals(double MaxHp = 100, double MaxR = 100, double MoveSpeed = 0);
+public sealed record EnemyVitals(double MaxHp = 100, double MaxMind = 100, double MoveSpeed = 0);

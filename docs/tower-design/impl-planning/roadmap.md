@@ -37,7 +37,7 @@ op list. Items 4–6 planning — **item 4 is what makes those ops do anything**
 | 2 ✅ | upgrades | Op-flow (ordered op list — port on top of the core) | `upgrades/op-flow.md` | 1 | S–M |
 | 3 ✅ | upgrades | Lattice UI + template editor | `upgrades/lattice-ui.md` | 2 | L |
 | 4 ◐ | combat | First primitive op behaviors | `combat/primitives.md` | 2 | M |
-| 5 | combat | Enemy R + paths / roads / deviation | `combat/enemy-r.md` | 4 | XL |
+| 5 | combat | Enemy Mind + paths / roads / deviation | `combat/enemy-mind.md` | 4 | XL |
 | 6 | — | Delivery shapes · impact cap · investment axes | *(later)* | 4 | — |
 
 Size: S/M/L/XL rough effort. **Compiler core is item 1** — the engine (structural passes,
@@ -70,7 +70,7 @@ Chill and Mind-damage written and the other three primitives no-ops until regist
 - **Then combat, 4 → 5.**
   - **4 (primitives)** is where compilation first *does something* visible in-game — it wires
     the op names flowing out of items 1–2 to real enemy effects.
-  - **5 (enemy R)** is the largest scope: it needs the R meter **and** preset enemy paths
+  - **5 (enemy Mind)** is the largest scope: it needs the Mind meter **and** preset enemy paths
     **and** player-placed roads **and** deviation, integrated with tower placement. Last.
 
 ---

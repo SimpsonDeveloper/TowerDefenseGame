@@ -11,7 +11,7 @@ Quartz (the pure catalyst) **strips enemy buffs** — removing self-buffs an ene
 Standalone; a no-op on an unbuffed enemy.
 
 Not fully defined — blocked on the enemy-buff system, which does not exist. Candidate
-buffs to strip: +% move-speed · +% HP · +% attack · +% R (mind shield).
+buffs to strip: +% move-speed · +% HP · +% attack · +% Mind (mind shield).
 
 ## Open knobs
 - Strip all buffs or one (highest / newest)?

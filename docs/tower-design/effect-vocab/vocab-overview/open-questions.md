@@ -7,7 +7,7 @@ Part of the Effect Vocabulary overview — see `overview.md` for the index.
 - **Shatter** coefficients: `Cshatter` (per-stack burst) · `Nbrittle` (Brittle's flat
   charge) · `Tfreeze` · optional cap. (`../ops/interactives/shatter.md`)
 - **Enemy buffs** (undefined) — candidate set: +% move-speed · +% HP · +% attack ·
-  +% R (mind shield). **Purify** (quartz) strips them; define Purify fully once the
+  +% Mind (mind shield). **Purify** (quartz) strips them; define Purify fully once the
   buff system exists.
 - **Shield-down consumers** — bonus / execute-vs-shield-down ops are a good use for
   reserved combo cells (populate the matrix); author as they earn a triad. (`damage.md`)

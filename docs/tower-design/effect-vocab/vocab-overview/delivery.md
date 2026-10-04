@@ -9,7 +9,7 @@ the build.
 - Tower type = the delivery: single-shot, **nova**, **splash**, **field**, **arc**,
   **beam** (list not final).
 - Delivery is **state-blind** — a function of impact position only. It never reads
-  Burn/Freeze/R. Only crystal ops write state; only consumers read it.
+  Burn/Freeze/Mind. Only crystal ops write state; only consumers read it.
 - A delivery may read live position (e.g. nova measures how many enemies are near
   the impact) — that is a **query at hit-time**, not an authored state on the enemy.
   Density is computed, never stamped. This is why "Clustered" is not a status.

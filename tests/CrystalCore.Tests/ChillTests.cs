@@ -30,7 +30,7 @@ public class ChillTests
     private static CombatRules Rules() => new CombatRules().Add(new Chill(Tuning)).Add(new Frozen());
 
     private static EnemyState Enemy(double maxHp = 200) =>
-        new EnemyState(new EnemyVitals(maxHp, MaxR: 100, MoveSpeed: 220));
+        new EnemyState(new EnemyVitals(maxHp, MaxMind: 100, MoveSpeed: 220));
 
     private static void Hit(EnemyState enemy, double quantity, CombatRules rules) =>
         ShotResolver.Resolve(new List<ShotOp> { new ShotOp(OpId.ChillFreeze, quantity) }, enemy, rules);

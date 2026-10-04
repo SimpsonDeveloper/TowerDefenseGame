@@ -6,9 +6,9 @@ namespace towerdefensegame.scripts.combat.core;
 ///
 /// Naming only. A state's <b>shape</b> (ladder vs. flat) is not encoded here: it is decided by
 /// which <see cref="EnemyState"/> method writes it, and how it merges follows from that
-/// (<c>merge.md</c> — ladders sum with a cap, timed flats take the longer timer).
+/// (<c>merge.md</c> — stacks sum uncapped, timed flats take the longer timer).
 ///
-/// <b>R is not here.</b> It is an innate meter, not a written-and-consumed state, so it lives as
+/// <b>Mind is not here.</b> It is an innate meter, not a written-and-consumed state, so it lives as
 /// a field on <see cref="EnemyState"/> (<c>illusion.md</c>).
 /// </summary>
 public enum StateId

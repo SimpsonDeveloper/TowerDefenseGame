@@ -88,11 +88,11 @@ public partial class EnemyStateDebug : Node2D
             owners.Add(state);
         }
 
-        // R is a meter, not a state, so it is not in ActiveStates — but a drained mind bar is
+        // Mind is a meter, not a state, so it is not in ActiveStates — but a drained mind bar is
         // otherwise completely invisible, which is exactly what this readout is for.
-        if (States.State.R < States.State.Vitals.MaxR)
+        if (States.State.Mind < States.State.Vitals.MaxMind)
         {
-            lines.Add($"R {States.State.R:0.#}/{States.State.Vitals.MaxR:0.#}");
+            lines.Add($"Mind {States.State.Mind:0.#}/{States.State.Vitals.MaxMind:0.#}");
             owners.Add(StateId.None);
         }
 

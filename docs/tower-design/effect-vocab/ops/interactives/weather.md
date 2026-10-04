@@ -12,7 +12,7 @@ Weather tracks a per-enemy **freeze-count**: each time the enemy's **Freeze is r
 damage scaled by that count** — repeated freezing weathers its structure like freeze-thaw
 cracking rock. The count only grows; escalation is capped so it can't run away.
 
-The freeze-count is a per-enemy **counter/mechanic** (like R), not a written-and-consumed
+The freeze-count is a per-enemy **counter/mechanic** (like Mind), not a written-and-consumed
 state.
 
 ## Interactive

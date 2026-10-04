@@ -73,10 +73,10 @@ public class ShotResolutionTests
     {
         // Chill scales its freeze threshold off max HP and Corrode ticks a percentage of it, so
         // the stat has to reach an op. Current HP deliberately does not — damage only goes out.
-        EnemyState enemy = new EnemyState(new EnemyVitals(MaxHp: 750, MaxR: 40));
+        EnemyState enemy = new EnemyState(new EnemyVitals(MaxHp: 750, MaxMind: 40));
 
         Assert.Equal(750, enemy.Vitals.MaxHp);
-        Assert.Equal(40, enemy.R);   // the meter starts full, from the stat
+        Assert.Equal(40, enemy.Mind);   // the meter starts full, from the stat
     }
 
     [Fact]

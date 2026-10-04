@@ -13,7 +13,7 @@ There are no other stream stats. An earlier model had power, slow, rate and a mi
 magnitude riding the stream and merging alongside energy; the compiler never grew them
 (`../../impl-planning/upgrades/compiler-core.md`). Every op's magnitude is instead the
 **energy on the edge that produced it** — Burn's stacks, Corrode's stacks, Chill's
-stacks and Mind-damage's R drain all read the same number.
+stacks and Mind-damage's Mind drain all read the same number.
 
 ## State merge (runtime, on the enemy)
 
@@ -27,12 +27,12 @@ The rule **varies by state shape**:
   them at a threshold.
 - **Timed flat** (Hexed) → **max** timer (refresh).
 - **Flat on/off** (Brittle, Mark, Shield-down) → **OR** (present wins).
-- **Meter** (R) → **n/a**: innate, per-enemy, only drained — never spread.
+- **Meter** (Mind) → **n/a**: innate, per-enemy, only drained — never spread.
 
 ## Don't conflate them
 
 They can coincide numerically (Chill state-merge sums; the lattice also sums) but they
-are **different operations in different spaces**. **R makes the split visible:** the
-energy feeding an Am–Am edge *sums in the lattice* like any other, yet R itself *does not
+are **different operations in different spaces**. **Mind makes the split visible:** the
+energy feeding an Am–Am edge *sums in the lattice* like any other, yet Mind itself *does not
 spread between enemies* (state-merge n/a). One is about building the weapon; the other is
 about what two weapons do to one enemy.

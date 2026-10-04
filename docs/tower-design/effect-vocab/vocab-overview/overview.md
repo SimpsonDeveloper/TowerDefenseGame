@@ -11,7 +11,7 @@ definitions (prose) live one-per-file in `../ops/`; archived versions in
 |---|---|
 | `states.md` | the states table · reusable shapes · many-to-many · state coupling |
 | `merge.md` | the two merges — lattice ▽ (compile-time) vs state merge (runtime) |
-| `illusion.md` | illusion resistance (R) mechanic · deviation math `f(R)` |
+| `illusion.md` | illusion resistance (Mind) mechanic · deviation math `f(Mind)` |
 | `damage.md` | damage types & bars · hitting both bars |
 | `shield.md` | Shield defensive layer · Shield-down |
 | `combo-matrix.md` | crystal roster + the N×N combo → op matrix (source of truth) |

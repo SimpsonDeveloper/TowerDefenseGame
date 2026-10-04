@@ -19,7 +19,7 @@ each interactive op's **Interactive** section.
 | Shield-down | Scramble, damage-break | (HP damage bypasses shield — `shield.md`) |
 | Hexed | Hex | death-spread (`../ops/interactives/hex.md`) |
 
-**Illusion resistance (R)** is a **meter/mechanic, not a state** — an innate second HP
+**Illusion resistance (Mind)** is a **meter/mechanic, not a state** — an innate second HP
 bar drained by mind-damage, not something written and consumed. It lives in
 `illusion.md`.
 

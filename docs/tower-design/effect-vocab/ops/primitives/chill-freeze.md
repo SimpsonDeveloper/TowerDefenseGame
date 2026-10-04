@@ -69,5 +69,5 @@ face: nothing produces Freeze but Chill crossing its threshold.
 plus `Frozen` for the halt.
 
 Not built: **skipping deviation rolls**, the other half of what freezing means — deviation itself
-is roadmap item 5 (`../../../impl-planning/combat/enemy-r.md`). And no visual; `EnemyStateDebug`
+is roadmap item 5 (`../../../impl-planning/combat/enemy-mind.md`). And no visual; `EnemyStateDebug`
 prints `Chill x7` and `Freeze 1.4s`.
