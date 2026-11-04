@@ -17,9 +17,9 @@ namespace towerdefensegame.scripts.combat.core;
 /// (<c>effect-vocab/ops/</c>). What lives here is only what every state shares: the numbers
 /// themselves, and a tick clock per state.
 ///
-/// The traffic across the boundary is <b>stats in, damage out</b>: <see cref="Vitals"/> is what an
-/// op may know about the enemy, and it holds no current HP on purpose — see
-/// <see cref="EnemyVitals"/>.
+/// The traffic across the boundary is <b>stats in, damage out</b>: <see cref="Vitals"/> is the
+/// read port — live engine values, no snapshot — and everything written goes out through a queue
+/// (<see cref="IEnemyVitals"/>).
 /// </summary>
 public sealed class EnemyState
 {

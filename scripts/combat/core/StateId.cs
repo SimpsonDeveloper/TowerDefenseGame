@@ -31,6 +31,12 @@ public enum StateId
     // flats — on/off gates, some with a timer, some spent by one consumer
     Freeze,
     Brittle,
+
+    /// <summary>
+    /// A timed tag with no effect of its own, written by Mark and read by Focus and Detonate —
+    /// neither of which exists yet, so today it is carried and never cashed in. That is the
+    /// design: the op is the window, the consumer is the payoff.
+    /// </summary>
     Mark,
     ShieldDown,
     Hexed,

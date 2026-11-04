@@ -3,9 +3,9 @@
 Roadmap item **4** — where compilation first *does something* visible in-game. Depends on
 op-metadata flow (item 2, `../upgrades/op-flow.md`).
 
-**Status: pipeline built, 5 of 7 primitives written.** A shot compiled from a lattice now lands on
-an enemy and resolves. Burn, Corrode, Chill, Mind-damage and Scramble are implemented. Of the rest,
-Mark needs only numbers, and Purify waits on an enemy-buff system that does not exist.
+**Status: pipeline built, 6 of 7 primitives written.** A shot compiled from a lattice now lands on
+an enemy and resolves. Burn, Corrode, Chill, Mind-damage, Scramble and Mark are implemented. Only
+Purify is left, and it waits on an enemy-buff system that does not exist.
 
 | Primitive | Combo | Effect target | Behavior source | Built |
 |---|---|---|---|---|
@@ -15,7 +15,7 @@ Mark needs only numbers, and Purify waits on an enemy-buff system that does not 
 | Scramble | Ci | switch a shield off | `../../effect-vocab/ops/primitives/scramble.md` | ✅ |
 | Mind-damage | Am + Am | drain Mind | `../../effect-vocab/ops/primitives/mind-damage.md` | ✅ |
 | Purify | Qz | strip states (catalyst) | `../../effect-vocab/ops/primitives/purify.md` | |
-| Mark | Am + Ru | enabler flag | `../../effect-vocab/ops/primitives/mark.md` | |
+| Mark | Am + Ru | enabler flag | `../../effect-vocab/ops/primitives/mark.md` | ✅ |
 
 ---
 
@@ -208,9 +208,11 @@ slightly faster than expected.
 - **Real visuals.** Nothing renders a burning enemy: no tint, no particles. The broader visual
   language is unsettled, so this is deferred with the rest of it rather than guessed at now — the
   debug readout above is the stand-in.
-- **The other two primitives.** Mark needs only a duration and a refresh rule, but its consumers
-  (Focus, Detonate) do not exist, so it would be unverifiable beyond the readout. Purify needs an
-  **enemy-buff system**, which is undesigned.
+- **Mark's payoff.** The op is written and its flag is carried, but **Focus** and **Detonate** are
+  the only things that would read it and neither exists. A marked enemy is a line in the readout.
+  "Missing handler = no-op" cuts both ways: a state nobody consumes is as inert as an op nobody
+  implements, so this is the expected shape rather than a half-build.
+- **Purify**, the last primitive, which needs an **enemy-buff system** that is undesigned.
 - **Short-circuit**, which is what turns a stripped shield into a payoff rather than just letting
   HP damage through.
 - **Every interactive.** Several need machinery nothing has yet: multi-enemy reach for the arcs and
