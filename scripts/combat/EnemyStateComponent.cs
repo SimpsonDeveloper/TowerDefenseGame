@@ -104,6 +104,7 @@ public partial class EnemyStateComponent : Node, IEnemyVitals
         // HealthComponent, so it queues what it dealt and this drains it once a frame.
         Mind?.Drain(State.TakeMindDamage());
         Shield?.Disable(State.TakeShieldDisable());
+        Huddle?.Suppress(State.TakeBuffSuppress());
         MirrorShieldDown();
         MirrorRegenerating();
 
@@ -136,7 +137,9 @@ public partial class EnemyStateComponent : Node, IEnemyVitals
     /// has no source to kill, so anything stored would need every enemy's movement to remember to
     /// update it.
     ///
-    /// Purify is the op that reads it (<c>effect-vocab/ops/primitives/purify.md</c>).
+    /// Purify's shutdown is deliberately <b>not</b> mirrored alongside it. A state exists so ops
+    /// can read it, and no op asks how long is left on another op's timer — that is bookkeeping,
+    /// and it already has a home on the component. The debug readout reads it from there.
     /// </summary>
     private void MirrorRegenerating()
     {

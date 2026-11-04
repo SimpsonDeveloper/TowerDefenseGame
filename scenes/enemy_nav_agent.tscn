@@ -101,7 +101,8 @@ Mind = NodePath("../MindComponent")
 script = ExtResource("16_shieldbar")
 Shield = NodePath("../ShieldComponent")
 
-[node name="EnemyStateDebug" type="Node2D" parent="." node_paths=PackedStringArray("States")]
+[node name="EnemyStateDebug" type="Node2D" parent="." node_paths=PackedStringArray("States", "Huddle")]
 script = ExtResource("12_statedbg")
 States = NodePath("../EnemyStates")
+Huddle = NodePath("../HuddleRegen")
 Offset = Vector2(-16, -58)

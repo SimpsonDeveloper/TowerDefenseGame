@@ -1,7 +1,7 @@
 # Op: Purify
 
 **Kind:** primitive — utility (cleanse)
-**Affects:** enemy buffs · **State merge:** max (the longest shutdown wins)
+**Affects:** enemy buffs · **Applies:** nothing — a shutdown, not a state · **State merge:** max (the longest shutdown wins)
 
 ---
 
@@ -25,8 +25,28 @@ future buff will want too, since a buff worth having is a buff with a live sourc
 
 Duration is the only dimension, as with Mark: the shutdown has no magnitude.
 
+## Numbers
+
+| Knob | Value | Why |
+|---|---|---|
+| Seconds per energy | 1 / 24 | Qz–Qz off the 150-core starter turret pays Quartz's toll of 6 — the cheapest crystal there is — so 144 crosses, a 6s window |
+| Max seconds | 12 | Generous, because the window must outlast the time to actually kill the pack. A shutdown that expires first accomplished nothing |
+
+Duration is the only dimension; the shutdown has no magnitude. Quartz keeping nearly all the
+energy that reaches it is the catalyst earning its keep: pure utility, no damage, a long window
+for the toll of a rounding error.
+
+A second Purify **extends and never shortens** — max, like every timed flat (`../../vocab-overview/merge.md`).
+
+## Never wasted, unlike Scramble
+
+A shield is a property of the unit, so scrambling an unshielded enemy does nothing — that is the
+bet Scramble makes on the wave. Any enemy can end up in a crowd, so a shutdown landing on a lone
+one is a **pre-emptive cleanse** rather than a miss: it still holds when the pack re-forms inside
+the window.
+
+The neighbour count keeps running while suppressed, so the moment the shutdown lapses the buff is
+correct without waiting for a recount — and the readout still shows the pack.
+
 ## Open knobs
-- Seconds of shutdown per unit of edge energy, and the cap.
-- Whether a second Purify extends (max, like every other timed flat) — almost certainly yes, for
-  consistency.
 - Whether it should suppress *all* buffs or one, which stays academic while the roster is one.

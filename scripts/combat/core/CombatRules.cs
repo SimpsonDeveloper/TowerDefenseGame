@@ -9,9 +9,9 @@ namespace towerdefensegame.scripts.combat.core;
 /// lookup, so adding a primitive is a registration rather than a branch somewhere.
 ///
 /// <b>A missing entry is a no-op, not an error.</b> That is the load-bearing property: 21 ops are
-/// named (<see cref="OpId"/>) and 6 are written, yet a shot carrying any of them resolves
-/// end-to-end today. Nothing warns, because "not built yet" is the expected state of this table
-/// for the whole of roadmap item 4.
+/// named (<see cref="OpId"/>) and 7 — every primitive — are written, yet a shot carrying any of
+/// the 14 interactives still resolves end-to-end today. Nothing warns, because "not built yet" is
+/// the expected state of this table for the whole of roadmap item 4.
 ///
 /// The same holds in the other direction: a state nobody reads is as inert as an op nobody
 /// implements. Mark is registered and writes its flag, and no op consumes it yet.
@@ -30,7 +30,8 @@ public sealed class CombatRules
         .Add(new Frozen())
         .Add(new MindDamage())
         .Add(new Scramble())
-        .Add(new Mark());
+        .Add(new Mark())
+        .Add(new Purify());
 
     /// <summary>
     /// Register a primitive. Generic rather than two overloads because a primitive usually

@@ -6,6 +6,8 @@ namespace towerdefensegame.scripts.combat;
 
 /// <summary>
 /// Prints an enemy's carried states above its HP bar, and flashes each line as its op ticks.
+/// Below them, lower-cased, the couple of facts that are <i>not</i> states — the damage-over-time
+/// total and Purify's shutdown — read straight off the components that own them.
 /// A development readout, not a game visual: turn it off with <see cref="Enabled"/> and nothing
 /// about combat changes.
 ///
@@ -20,6 +22,15 @@ namespace towerdefensegame.scripts.combat;
 public partial class EnemyStateDebug : Node2D
 {
     [Export] public EnemyStateComponent States;
+
+    /// <summary>
+    /// Optional. The crowding buff, read only to print the seconds left on Purify's shutdown.
+    ///
+    /// Read from the component rather than from a mirrored state, because that is where the timer
+    /// lives and one fact wants one home. A state would exist so an <i>op</i> could read it, and no
+    /// op asks how long is left on another op's clock.
+    /// </summary>
+    [Export] public HuddleRegenComponent Huddle;
 
     /// <summary>Local offset from the owner. Negative Y places the readout above.</summary>
     [Export] public Vector2 Offset { get; set; } = new(0f, -48f);
@@ -98,6 +109,14 @@ public partial class EnemyStateDebug : Node2D
         {
             lines.Add($"dot {States.DotDamageDealt:0.#}");
             owners.Add(StateId.None);   // no state owns the total, so it never flashes
+        }
+
+        // Lower-case, like the dot total and unlike every state above it: the distinction is
+        // deliberate, and it is that these two are bookkeeping rather than anything an op reads.
+        if (Huddle != null && Huddle.IsSuppressed)
+        {
+            lines.Add($"purified {Huddle.SuppressedFor:0.0}s");
+            owners.Add(StateId.None);
         }
 
         if (lines.Count == 0) return;

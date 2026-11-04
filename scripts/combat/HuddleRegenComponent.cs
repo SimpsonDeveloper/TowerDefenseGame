@@ -50,14 +50,25 @@ public partial class HuddleRegenComponent : Node
     /// <summary>How many of its own kind are in range, as of the last count. Readouts and Purify.</summary>
     public int Neighbours { get; private set; }
 
+    /// <summary>
+    /// Switched off by Purify. Unlike a shield, every enemy can end up in a crowd, so this is
+    /// meaningful even on one currently travelling alone.
+    /// </summary>
+    public bool IsSuppressed => _suppressedFor > 0;
+
+    /// <summary>Seconds left on Purify's shutdown, 0 when none is running. Readouts.</summary>
+    public double SuppressedFor => _suppressedFor;
+
     /// <summary>Is the buff actually doing anything right now?</summary>
-    public bool IsRegenerating => Neighbours > 0 && Health != null && !Health.IsDead;
+    public bool IsRegenerating =>
+        Neighbours > 0 && !IsSuppressed && Health != null && !Health.IsDead;
 
     /// <summary>Everything this enemy has healed back over its life. Readouts only.</summary>
     public double Regenerated { get; private set; }
 
     private Node2D _body;
     private double _untilRecount;
+    private double _suppressedFor;
 
     public override void _Ready()
     {
@@ -70,8 +81,30 @@ public partial class HuddleRegenComponent : Node
             GD.PushWarning($"[combat] {GetParent()?.Name} huddles but has no HealthComponent — regen will go nowhere");
     }
 
+    /// <summary>
+    /// Hold the buff off for a time — Purify's cleanse. <b>Not a removal</b>: there is nothing
+    /// stored to remove, since the buff is recomputed from the enemy's neighbours every count.
+    /// Suppressing it is the only thing that can outlive a single frame
+    /// (<c>effect-vocab/ops/primitives/purify.md</c>).
+    ///
+    /// Longer wins, like any timed flat (<c>merge.md</c>), so a second Purify can extend a
+    /// standing shutdown but never cut it short.
+    /// </summary>
+    public void Suppress(double seconds)
+    {
+        if (seconds <= 0) return;
+
+        if (seconds > _suppressedFor) _suppressedFor = seconds;
+    }
+
     public override void _Process(double delta)
     {
+        if (_suppressedFor > 0)
+        {
+            _suppressedFor -= delta;
+            if (_suppressedFor < 0) _suppressedFor = 0;
+        }
+
         _untilRecount -= delta;
         if (_untilRecount <= 0)
         {
@@ -79,6 +112,8 @@ public partial class HuddleRegenComponent : Node
             _untilRecount = RecountInterval;
         }
 
+        // The count keeps running while suppressed: the readout should still show the pack, and
+        // the moment the shutdown lapses the buff must be correct without waiting for a recount.
         if (!IsRegenerating) return;
 
         int counted = Neighbours < MaxNeighbours ? Neighbours : MaxNeighbours;

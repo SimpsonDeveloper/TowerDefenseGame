@@ -37,6 +37,7 @@ public sealed class EnemyState
     private double _pendingHpDamage;
     private double _pendingMindDamage;
     private double _pendingShieldDisable;
+    private double _pendingBuffSuppress;
 
     /// <summary>
     /// What ops may read about the enemy itself. Settable because the owner usually learns the real
@@ -208,6 +209,28 @@ public sealed class EnemyState
     {
         double owed = _pendingShieldDisable;
         _pendingShieldDisable = 0;
+        return owed;
+    }
+
+    /// <summary>
+    /// Queue a buff shutdown, in seconds — Purify's cleanse (<c>buffs.md</c>). Queued out like the
+    /// shield's for the same reason: the buff is a component the core cannot see. Longest wins,
+    /// since this is a timed flat.
+    ///
+    /// <b>Suppression, not removal.</b> There is no <c>Clear</c> that would work here — the enemy's
+    /// buff is derived from its surroundings, so deleting it only lasts until the next frame
+    /// recomputes it (<c>effect-vocab/ops/primitives/purify.md</c>).
+    /// </summary>
+    public void DealBuffSuppress(double seconds)
+    {
+        if (seconds > _pendingBuffSuppress) _pendingBuffSuppress = seconds;
+    }
+
+    /// <summary>Take the buff shutdown owed and reset the queue.</summary>
+    public double TakeBuffSuppress()
+    {
+        double owed = _pendingBuffSuppress;
+        _pendingBuffSuppress = 0;
         return owed;
     }
 

@@ -48,4 +48,15 @@ because there is no stored buff to delete.
 **Suppresses, not strips.** Deleting a derived state is meaningless — it is recomputed next frame
 and the pack heals again. So Purify writes a timed shutdown that holds the regen off while
 neighbours are still near, which is the same shape as Scramble against a shield: switch it off
-without having to spend it. See `../ops/primitives/purify.md`.
+without having to spend it. 6s off a starter turret, capped at 12.
+
+**The shutdown is not a state.** A state exists so ops can read it, and no op asks how long is
+left on another op's timer — that is bookkeeping, and it lives on the component that owns the
+clock. `Regenerating` is in the table because it is a condition of the *enemy*, which the
+vocabulary could plausibly consume one day; "Purify landed 4 seconds ago" never is.
+
+So a suppressed enemy simply stops being `Regenerating`, and the debug readout prints the seconds
+left straight off the component — lower-cased, with the damage-over-time total, to mark both as
+bookkeeping rather than vocabulary.
+
+See `../ops/primitives/purify.md`.

@@ -6,8 +6,6 @@ Part of the Effect Vocabulary overview — see `overview.md` for the index.
   (`../ops/interactives/frostburn.md`)
 - **Shatter** coefficients: `Cshatter` (per-stack burst) · `Nbrittle` (Brittle's flat
   charge) · `Tfreeze` · optional cap. (`../ops/interactives/shatter.md`)
-- **Purify's numbers** — seconds of buff shutdown per unit of edge energy, and the cap.
-  (`../ops/primitives/purify.md`)
 - **Shield-down consumers** — bonus / execute-vs-shield-down ops are a good use for
   reserved combo cells (populate the matrix); author as they earn a triad. (`damage.md`)
 - **Hex spread balance** — spread radius (radial dump can be strong), full-vs-partial

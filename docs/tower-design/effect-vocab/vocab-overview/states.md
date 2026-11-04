@@ -17,6 +17,7 @@ each interactive op's **Interactive** section.
 | Brittle | Dissolve | Shatter |
 | Mark | Amethyst + Ruby | Focus, Detonate |
 | Shield-down | Scramble, damage-break | (HP damage bypasses shield — `shield.md`) |
+| Regenerating | standing near other enemies | (the enemy heals — `buffs.md`) |
 | Hexed | Hex | death-spread (`../ops/interactives/hex.md`) |
 
 **Illusion resistance (Mind)** is a **meter/mechanic, not a state** — an innate second HP

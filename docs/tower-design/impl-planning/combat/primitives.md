@@ -3,10 +3,14 @@
 Roadmap item **4** — where compilation first *does something* visible in-game. Depends on
 op-metadata flow (item 2, `../upgrades/op-flow.md`).
 
-**Status: pipeline built, 6 of 7 primitives written.** A shot compiled from a lattice now lands on
-an enemy and resolves. Burn, Corrode, Chill, Mind-damage, Scramble and Mark are implemented. Only
-Purify is left, and it is no longer blocked: the enemy-buff system it needed now exists as a single
-natural buff, **huddle regen** (`../../effect-vocab/vocab-overview/buffs.md`).
+**Status: done — all 7 primitives written.** A shot compiled from a lattice lands on an enemy and
+resolves, and every primitive op in the vocabulary has a behaviour behind it: Burn, Chill → Freeze,
+Corrode, Mind-damage, Scramble, Mark and Purify. Purify came last and needed an enemy-buff system
+to answer, which now exists as a single natural buff, **huddle regen**
+(`../../effect-vocab/vocab-overview/buffs.md`).
+
+What is **not** here is all 14 interactives — the consumers. Several need machinery nothing has
+yet; see *Not done here* below.
 
 | Primitive | Combo | Effect target | Behavior source | Built |
 |---|---|---|---|---|
@@ -15,7 +19,7 @@ natural buff, **huddle regen** (`../../effect-vocab/vocab-overview/buffs.md`).
 | Corrode | Em | % max HP, in bouts | `../../effect-vocab/ops/primitives/corrode.md` | ✅ |
 | Scramble | Ci | switch a shield off | `../../effect-vocab/ops/primitives/scramble.md` | ✅ |
 | Mind-damage | Am + Am | drain Mind | `../../effect-vocab/ops/primitives/mind-damage.md` | ✅ |
-| Purify | Qz | suppress enemy buffs | `../../effect-vocab/ops/primitives/purify.md` | |
+| Purify | Qz | suppress enemy buffs | `../../effect-vocab/ops/primitives/purify.md` | ✅ |
 | Mark | Am + Ru | enabler flag | `../../effect-vocab/ops/primitives/mark.md` | ✅ |
 
 ---
@@ -140,6 +144,18 @@ than through an `Area2D` to match `TowerPlacementManager` — no shape to wire i
 scene, and it honours the viewport split, which matters because the pocket dimension is a second
 world.
 
+**Purify suppresses rather than strips**, which falls out of the above: a derived buff has nothing
+stored to delete, so a `Clear` would be undone by the next recount and the op would visibly do
+nothing. It queues a timed shutdown instead — `DealBuffSuppress` out to
+`HuddleRegenComponent.Suppress`, exactly the path Scramble takes to the shield.
+
+**The shutdown is deliberately not a state.** It was one briefly, and it should not have been: a
+state exists so an op can read it, and no op asks how long is left on another op's clock. The
+timer already lives on the component, so a mirrored state was a second copy of one fact whose only
+reader was the readout — which now reads the component directly instead. `Shield-down` earns its
+place by having a named future consumer (Short-circuit) and `Corroding` by having nowhere else to
+put the bout counter; this had neither.
+
 This is also what finally needed `HealthComponent.Heal`. It emits `Changed` and not `Damaged`,
 which is exactly the split those two signals were separated for: every bar was already correct
 about healing without being told it exists.
@@ -226,10 +242,9 @@ slightly faster than expected.
   the only things that would read it and neither exists. A marked enemy is a line in the readout.
   "Missing handler = no-op" cuts both ways: a state nobody consumes is as inert as an op nobody
   implements, so this is the expected shape rather than a half-build.
-- **Purify**, the last primitive. No longer blocked — **huddle regen** is the buff it answers, and
-  `Regenerating` is already mirrored for it to read. What is left is its numbers and the decision
-  that it **suppresses rather than strips**, since a derived buff cannot be deleted (it is
-  recomputed next frame).
+- **Any consumer of `Mark`.** The flag is carried and nothing reads it; Focus and Detonate are the
+  readers and neither exists. "Missing handler = no-op" cuts both ways — a state nobody consumes is
+  as inert as an op nobody implements.
 - **Short-circuit**, which is what turns a stripped shield into a payoff rather than just letting
   HP damage through.
 - **Every interactive.** Several need machinery nothing has yet: multi-enemy reach for the arcs and
