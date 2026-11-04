@@ -6,9 +6,8 @@ Part of the Effect Vocabulary overview — see `overview.md` for the index.
   (`../ops/interactives/frostburn.md`)
 - **Shatter** coefficients: `Cshatter` (per-stack burst) · `Nbrittle` (Brittle's flat
   charge) · `Tfreeze` · optional cap. (`../ops/interactives/shatter.md`)
-- **Enemy buffs** (undefined) — candidate set: +% move-speed · +% HP · +% attack ·
-  +% Mind (mind shield). **Purify** (quartz) strips them; define Purify fully once the
-  buff system exists.
+- **Purify's numbers** — seconds of buff shutdown per unit of edge energy, and the cap.
+  (`../ops/primitives/purify.md`)
 - **Shield-down consumers** — bonus / execute-vs-shield-down ops are a good use for
   reserved combo cells (populate the matrix); author as they earn a triad. (`damage.md`)
 - **Hex spread balance** — spread radius (radial dump can be strong), full-vs-partial
@@ -23,6 +22,14 @@ Decisions taken while building the primitives (roadmap item 4,
 `../../impl-planning/combat/primitives.md`). Recorded here because each one closed a question that
 was open above.
 
+- **Enemy buffs: there is one, and it is natural.** The candidate set of four stat-boosters
+  (+% move-speed · +% HP · +% attack · +% Mind) is dropped — a stat-boost buff is a tougher enemy
+  with extra bookkeeping, and nothing reads it. What replaces it is **huddle regen**: enemies near
+  other enemies heal, with no source to kill and no duration to wait out (`buffs.md`). It unblocks
+  Purify, and it makes spacing a mechanic rather than flavour.
+- **Purify suppresses rather than strips.** A derived buff cannot be deleted — it is recomputed
+  next frame — so Purify writes a timed shutdown, the same shape as Scramble against a shield
+  (`../ops/primitives/purify.md`).
 - **State-merge caps: there are none.** Stacks merge by plain sum, uncapped, for Chill, Burn and
   Corrode alike. What stops a pile being dangerous forever is the op's own **decay or spend curve**,
   authored per op, not a ceiling in the merge rule (`merge.md`, `states.md`). This keeps stack count

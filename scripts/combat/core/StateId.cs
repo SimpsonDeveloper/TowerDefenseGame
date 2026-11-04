@@ -39,5 +39,14 @@ public enum StateId
     /// </summary>
     Mark,
     ShieldDown,
+
+    /// <summary>
+    /// This enemy is crowded by its own kind and healing for it — the one enemy <b>buff</b>
+    /// (<c>buffs.md</c>). Mirrored from the proximity count every frame rather than written by an
+    /// op, because it has no source to kill: it is true for exactly as long as the pack holds
+    /// together. Purify is what answers it.
+    /// </summary>
+    Regenerating,
+
     Hexed,
 }

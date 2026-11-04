@@ -29,6 +29,12 @@ public partial class EnemyStateComponent : Node, IEnemyVitals
     [Export] public ShieldComponent Shield;
 
     /// <summary>
+    /// The enemy's crowding buff, if it has one. Read-only from here — this node only mirrors it
+    /// into a state so ops can see it (<see cref="MirrorRegenerating"/>).
+    /// </summary>
+    [Export] public HuddleRegenComponent Huddle;
+
+    /// <summary>
     /// Built on construction, not in <c>_Ready</c>, so a sibling can subscribe to it in its own
     /// <c>_Ready</c> whatever order the two run in — the same guarantee a <c>HealthComponent</c>
     /// gives its bar by being a node. Its <see cref="EnemyState.Vitals"/> arrive later.
@@ -99,6 +105,7 @@ public partial class EnemyStateComponent : Node, IEnemyVitals
         Mind?.Drain(State.TakeMindDamage());
         Shield?.Disable(State.TakeShieldDisable());
         MirrorShieldDown();
+        MirrorRegenerating();
 
         double damage = State.TakeHpDamage();
         if (damage <= 0) return;
@@ -121,6 +128,22 @@ public partial class EnemyStateComponent : Node, IEnemyVitals
 
         if (Shield.IsDown) State.SetFlag(StateId.ShieldDown, 0);
         else State.Clear(StateId.ShieldDown);
+    }
+
+    /// <summary>
+    /// Keep <c>Regenerating</c> in step with the crowding buff, for the same reason
+    /// <see cref="MirrorShieldDown"/> exists: the buff is true for as long as the pack holds and
+    /// has no source to kill, so anything stored would need every enemy's movement to remember to
+    /// update it.
+    ///
+    /// Purify is the op that reads it (<c>effect-vocab/ops/primitives/purify.md</c>).
+    /// </summary>
+    private void MirrorRegenerating()
+    {
+        if (Huddle == null) return;
+
+        if (Huddle.IsRegenerating) State.SetFlag(StateId.Regenerating, 0);
+        else State.Clear(StateId.Regenerating);
     }
 
     /// <summary>

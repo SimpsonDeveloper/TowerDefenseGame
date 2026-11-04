@@ -14,6 +14,7 @@ definitions (prose) live one-per-file in `../ops/`; archived versions in
 | `illusion.md` | illusion resistance (Mind) mechanic · deviation math `f(Mind)` |
 | `damage.md` | damage types & bars · hitting both bars |
 | `shield.md` | Shield defensive layer · Shield-down |
+| `buffs.md` | enemy buffs — huddle regen · what Purify answers |
 | `combo-matrix.md` | crystal roster + the N×N combo → op matrix (source of truth) |
 | `delivery.md` | delivery is owned by the tower type (separate axis) |
 | `open-questions.md` | unresolved rulings & tuning knobs |

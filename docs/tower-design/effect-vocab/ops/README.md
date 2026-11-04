@@ -66,4 +66,4 @@ source of truth. These tables index files only.
 | Mark / Sigil | `primitives/mark.md` | Mark |
 | Scramble | `primitives/scramble.md` | Shield-down |
 | Mind-damage (Illusion) | `primitives/mind-damage.md` | drains Mind |
-| Purify | `primitives/purify.md` | strips enemy buffs *(pending buff system)* |
+| Purify | `primitives/purify.md` | suppresses enemy buffs (huddle regen) |

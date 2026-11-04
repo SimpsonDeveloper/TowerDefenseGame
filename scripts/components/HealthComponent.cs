@@ -71,4 +71,25 @@ public partial class HealthComponent : Node
         if (IsDead)
             EmitSignal(SignalName.Destroyed);
     }
+
+    /// <summary>
+    /// Give HP back, capped at <see cref="MaxHp"/>. Emits <see cref="Changed"/> and <b>not</b>
+    /// <see cref="Damaged"/> — that is the whole reason the two signals are separate, and why a bar
+    /// subscribed to Changed is already correct about healing without being told it exists.
+    ///
+    /// <b>No resurrection.</b> A dead component stays dead: <see cref="Destroyed"/> has already
+    /// fired and its owner is mid-teardown, so healing one back to its feet would leave an enemy
+    /// walking around that the rest of the game has written off.
+    /// </summary>
+    public void Heal(double amount)
+    {
+        if (amount <= 0 || IsDead) return;
+
+        double healed = Hp + amount;
+        if (healed > MaxHp) healed = MaxHp;
+        if (healed <= Hp) return;   // already full
+
+        _hp = healed;
+        EmitSignal(SignalName.Changed, Hp);
+    }
 }

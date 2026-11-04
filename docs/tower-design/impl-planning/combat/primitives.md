@@ -5,7 +5,8 @@ op-metadata flow (item 2, `../upgrades/op-flow.md`).
 
 **Status: pipeline built, 6 of 7 primitives written.** A shot compiled from a lattice now lands on
 an enemy and resolves. Burn, Corrode, Chill, Mind-damage, Scramble and Mark are implemented. Only
-Purify is left, and it waits on an enemy-buff system that does not exist.
+Purify is left, and it is no longer blocked: the enemy-buff system it needed now exists as a single
+natural buff, **huddle regen** (`../../effect-vocab/vocab-overview/buffs.md`).
 
 | Primitive | Combo | Effect target | Behavior source | Built |
 |---|---|---|---|---|
@@ -14,7 +15,7 @@ Purify is left, and it waits on an enemy-buff system that does not exist.
 | Corrode | Em | % max HP, in bouts | `../../effect-vocab/ops/primitives/corrode.md` | ✅ |
 | Scramble | Ci | switch a shield off | `../../effect-vocab/ops/primitives/scramble.md` | ✅ |
 | Mind-damage | Am + Am | drain Mind | `../../effect-vocab/ops/primitives/mind-damage.md` | ✅ |
-| Purify | Qz | strip states (catalyst) | `../../effect-vocab/ops/primitives/purify.md` | |
+| Purify | Qz | suppress enemy buffs | `../../effect-vocab/ops/primitives/purify.md` | |
 | Mark | Am + Ru | enabler flag | `../../effect-vocab/ops/primitives/mark.md` | ✅ |
 
 ---
@@ -130,6 +131,19 @@ back on its own timer. Anything stored would need every one of those paths to re
 state exists so ops can read it, while the shield stays a plain component that knows nothing about
 the vocabulary.
 
+`Regenerating` is mirrored the same way, from `HuddleRegenComponent`. Enemies standing near other
+enemies heal a fraction of max HP a second each — the one enemy **buff**
+(`../../effect-vocab/vocab-overview/buffs.md`), and the thing Purify answers. It has no source to
+kill, so there is nothing to store: the count is recomputed off the `enemies` group on a 0.25s
+interval, and the state is true for exactly as long as the pack holds. Scanned off the group rather
+than through an `Area2D` to match `TowerPlacementManager` — no shape to wire into every enemy
+scene, and it honours the viewport split, which matters because the pocket dimension is a second
+world.
+
+This is also what finally needed `HealthComponent.Heal`. It emits `Changed` and not `Damaged`,
+which is exactly the split those two signals were separated for: every bar was already correct
+about healing without being told it exists.
+
 ## 4. Ticking
 
 One clock, one call. `EnemyState.Tick` ages flat timers, then walks `CombatRules.Tickers` and
@@ -212,7 +226,10 @@ slightly faster than expected.
   the only things that would read it and neither exists. A marked enemy is a line in the readout.
   "Missing handler = no-op" cuts both ways: a state nobody consumes is as inert as an op nobody
   implements, so this is the expected shape rather than a half-build.
-- **Purify**, the last primitive, which needs an **enemy-buff system** that is undesigned.
+- **Purify**, the last primitive. No longer blocked — **huddle regen** is the buff it answers, and
+  `Regenerating` is already mirrored for it to read. What is left is its numbers and the decision
+  that it **suppresses rather than strips**, since a derived buff cannot be deleted (it is
+  recomputed next frame).
 - **Short-circuit**, which is what turns a stripped shield into a payoff rather than just letting
   HP damage through.
 - **Every interactive.** Several need machinery nothing has yet: multi-enemy reach for the arcs and
