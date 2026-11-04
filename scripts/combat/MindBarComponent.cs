@@ -5,7 +5,8 @@ namespace towerdefensegame.scripts.combat;
 
 /// <summary>
 /// The enemy's <b>Mind</b> meter — the second bar, drained by mind-damage
-/// (<c>effect-vocab/vocab-overview/illusion.md</c>).
+/// (<c>effect-vocab/vocab-overview/illusion.md</c>). Topmost of the three, furthest from the
+/// damage pools below it, because nothing that drains it touches HP.
 ///
 /// Purple, matching Amethyst, the crystal that drains it. Matched by hand: the lattice draws its
 /// crystals from <c>CrystalVisuals.Tint</c> and the editor's buttons from a theme, and neither is
@@ -24,7 +25,7 @@ public partial class MindBarComponent : StatBarComponent
     public MindBarComponent()
     {
         Size = new Vector2(32f, 3f);
-        Offset = new Vector2(0f, -46f);
+        Offset = new Vector2(0f, -52f);
         FillColor = new Color("a974ff");
     }
 
