@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Godot;
 using towerdefensegame.scripts.towers;
+using towerdefensegame.scripts.world.structures;
 
 namespace towerdefensegame.scripts.world.paths;
 
@@ -36,7 +37,7 @@ public partial class MiragePath : Node2D
     [Export] public Color Mirage { get; set; } = new("a974ff");
 
     /// <summary>The lit core of a ward the player placed.</summary>
-    [Export] public Color Core { get; set; } = new("6fd3ff");
+    [Export] public Color CoreDot { get; set; } = new("6fd3ff");
 
     /// <summary>A leg with nowhere to walk, and a ward that cannot be laid.</summary>
     [Export] public Color Blocked { get; set; } = new("ff5a4a");
@@ -66,8 +67,28 @@ public partial class MiragePath : Node2D
     /// </summary>
     [Export] public double RerouteInterval { get; set; } = 0.25;
 
-    /// <summary>The route, in placement order. Tiles, not pixels.</summary>
+    /// <summary>The route, in placement order. Tiles, not pixels. The core is not among them.</summary>
     public IReadOnlyList<Vector2I> Wards => _wards;
+
+    /// <summary>
+    /// The whole route in world space, <b>core first</b>, then each ward in placement order.
+    ///
+    /// The core is an implicit point 0 that the player never places and cannot lift: a route has
+    /// to end somewhere and it always ends there, so making it a ward would only invite laying one
+    /// that does not. Wards extend the route outward from it, and an enemy walks the list
+    /// backwards — from the far end inward to the core.
+    /// </summary>
+    public List<Vector2> RoutePoints()
+    {
+        List<Vector2> points = new();
+
+        Core core = Core.ForViewport(GetViewport());
+        if (core != null) points.Add(core.GlobalPosition);
+
+        foreach (Vector2I ward in _wards) points.Add(CentreOf(ward));
+
+        return points;
+    }
 
     /// <summary>True when any leg of the route has no walkable path. Readouts and placement.</summary>
     public bool IsBroken { get; private set; }
@@ -80,6 +101,7 @@ public partial class MiragePath : Node2D
     private Vector2I? _preview;
     private bool _previewValid;
     private Vector2[] _previewLeg = Array.Empty<Vector2>();
+    private Vector2? _previewFrom;
 
     private double _time;
     private double _untilReroute;
@@ -178,9 +200,19 @@ public partial class MiragePath : Node2D
         _preview = tile;
         _previewValid = valid;
         _previewLeg = Array.Empty<Vector2>();
+        _previewFrom = null;
 
-        if (tile.HasValue && _wards.Count > 0)
-            _previewLeg = Route(CentreOf(_wards[^1]), CentreOf(tile.Value));
+        if (tile.HasValue)
+        {
+            // Routed from the end of the route, which is the core itself when nothing is placed —
+            // so the very first ward previews its leg instead of appearing out of nowhere.
+            List<Vector2> points = RoutePoints();
+            if (points.Count > 0)
+            {
+                _previewFrom = points[^1];
+                _previewLeg = Route(points[^1], CentreOf(tile.Value));
+            }
+        }
 
         QueueRedraw();
     }
@@ -217,15 +249,20 @@ public partial class MiragePath : Node2D
         _legs.Clear();
         IsBroken = false;
 
-        for (int i = 0; i < _wards.Count - 1; i++)
+        _points = RoutePoints();
+
+        for (int i = 0; i < _points.Count - 1; i++)
         {
-            Vector2[] leg = Route(CentreOf(_wards[i]), CentreOf(_wards[i + 1]));
+            Vector2[] leg = Route(_points[i], _points[i + 1]);
             _legs.Add(leg);
             if (leg.Length == 0) IsBroken = true;
         }
 
         QueueRedraw();
     }
+
+    /// <summary>Cached alongside the legs so drawing never re-walks the scene for the core.</summary>
+    private List<Vector2> _points = new();
 
     private void Touch()
     {
@@ -254,18 +291,19 @@ public partial class MiragePath : Node2D
 
     public override void _Draw()
     {
-        for (int i = 0; i < _legs.Count; i++)
-            DrawLeg(_legs[i], CentreOf(_wards[i]), CentreOf(_wards[i + 1]), Mirage);
+        for (int i = 0; i < _legs.Count && i + 1 < _points.Count; i++)
+            DrawLeg(_legs[i], _points[i], _points[i + 1], Mirage);
 
-        foreach (Vector2I ward in _wards)
-            DrawRing(CentreOf(ward), lit: true, phase: _wards.IndexOf(ward), tint: Mirage);
+        // Rings mark wards only. The core draws itself and is not something the player placed.
+        for (int i = 0; i < _wards.Count; i++)
+            DrawRing(CentreOf(_wards[i]), lit: true, phase: i, tint: Mirage);
 
         if (!_preview.HasValue) return;
 
-        Color tint = _previewValid ? Core : Blocked;
+        Color tint = _previewValid ? CoreDot : Blocked;
 
-        if (_wards.Count > 0)
-            DrawLeg(_previewLeg, CentreOf(_wards[^1]), CentreOf(_preview.Value), tint);
+        if (_previewFrom.HasValue)
+            DrawLeg(_previewLeg, _previewFrom.Value, CentreOf(_preview.Value), tint);
 
         DrawRing(CentreOf(_preview.Value), lit: true, phase: 0, tint: tint);
     }
@@ -362,7 +400,7 @@ public partial class MiragePath : Node2D
         if (!lit) return;
 
         Box(o, 6, 6, 4, 4, Outline);
-        Box(o, 7, 7, 2, 2, Pulsing(phase) ? Colors.White : Core);
+        Box(o, 7, 7, 2, 2, Pulsing(phase) ? Colors.White : CoreDot);
     }
 
     /// <summary>Offset per ward, so a long route shimmers along its length instead of blinking as one.</summary>

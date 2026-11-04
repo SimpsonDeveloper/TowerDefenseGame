@@ -33,6 +33,17 @@ The route object is `MiragePath` (`scripts/world/paths/`) and the markers on it 
 naming follows the mechanic rather than the art: the wards are real things the player placed, and
 the path between them is the thing that is not there.
 
+### The core is point 0
+
+The route is **anchored at the core**, which is an implicit first point the player never places
+and cannot lift. A route has to end somewhere and it always ends there, so making it a ward would
+only invite laying one that does not. Wards extend the route *outward* from the core, and an
+enemy walks the list backwards — picking it up at the far end and following it inward.
+
+Two things fall out for free: a single ward already draws a leg, and the hover preview has
+something to route from before anything is placed, so the first ward shows its leg instead of
+appearing out of nowhere.
+
 ## 2. The look: ward sigils
 
 **The maze is psychological, not physical** (`../../effect-vocab/vocab-overview/illusion.md`).
@@ -214,9 +225,9 @@ was never cut out of the mesh at all. It now scans `Structures`, which is both.
 ## 8. Not done here
 
 - **Enemies do not follow the route.** They head for the core (§7) and ignore the wards entirely.
-  Walking the ward list is the next slice, and it is where the nav integration gets real: who owns
-  "which ward am I on", and what happens to an enemy mid-route when the player lifts the ward it
-  was walking toward.
+  Walking the ward list is the next slice. Anchoring at the core settles the direction of travel;
+  what is left is who owns "which ward am I on", how an enemy that spawns far from the route
+  joins it, and what happens mid-route when the player lifts the ward an enemy was walking toward.
 - **No lose condition.** The core raises `Fallen` and nothing listens.
 - **Deviation**, which needs the above plus the Mind roll (`enemy-mind.md` §4).
 - **More than one route.** One path, one spawn, one core. Branching is undesigned.
