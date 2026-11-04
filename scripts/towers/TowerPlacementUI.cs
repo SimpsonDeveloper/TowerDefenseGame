@@ -72,6 +72,10 @@ public partial class TowerPlacementUI : CanvasLayer
         destroyButton.Pressed += () => PlacementManager?.BeginDestroying();
         vbox.AddChild(destroyButton);
 
+        var wardButton = new Button { Text = "Lay Wards" };
+        wardButton.Pressed += () => PlacementManager?.BeginWarding();
+        vbox.AddChild(wardButton);
+
         var editButton = new Button { Text = "Edit Crystals" };
         editButton.Pressed += () => PlacementManager?.BeginEditing();
         vbox.AddChild(editButton);
