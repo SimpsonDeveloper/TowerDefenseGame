@@ -72,6 +72,7 @@ Huddle = NodePath("../HuddleRegen")
 [node name="Attacker" type="Node2D" parent="." node_paths=PackedStringArray("HitBox")]
 script = ExtResource("7_atk")
 HitBox = NodePath("HitBox")
+TargetGroup = "Structures"
 Damage = 10
 
 [node name="HitBox" type="Area2D" parent="Attacker"]

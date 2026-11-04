@@ -5,9 +5,11 @@ using towerdefensegame.scripts.towers;
 namespace towerdefensegame.scripts.world.enemies.targeting;
 
 /// <summary>
-/// Selects which tower the enemy walks toward and emits the navmesh-validated
+/// Selects which <b>structure</b> the enemy walks toward and emits the navmesh-validated
 /// approach point for an <see cref="EnemyNavController"/> (or any consumer) to
-/// follow.
+/// follow. Which structures are in play is <see cref="TargetGroup"/>: <c>Towers</c> to hunt
+/// turrets, <c>Core</c> to head for the core and let the attacker deal with whatever is in the
+/// way. The strategy below is identical either way, which is why there is one class.
 ///
 /// Targeting strategy (per retarget):
 ///   1. Snapshot scene-graph state on the main thread: enemy position,
@@ -23,9 +25,15 @@ namespace towerdefensegame.scripts.world.enemies.targeting;
 /// what to do with the destination.
 /// </summary>
 [GlobalClass]
-public partial class EnemyTowerTargeter : EnemyTargeter
+public partial class EnemyStructureTargeter : EnemyTargeter
 {
-    private const string TargetGroup = "Towers";
+    /// <summary>
+    /// Which group of structures to choose a target from. Set by the
+    /// <see cref="TargetingPattern"/> that built this. Every candidate must carry a footprint in
+    /// the <see cref="TowerFootprintTracker"/>, which is what the approach resolver stands a
+    /// target off from.
+    /// </summary>
+    public string TargetGroup { get; set; } = "Towers";
 
     /// <summary>
     /// Reach of the enemy's attack. Added to agentRadius to form the standoff

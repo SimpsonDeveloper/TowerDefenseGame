@@ -8,17 +8,17 @@ namespace towerdefensegame.scripts.world.enemies;
 /// <summary>
 /// Coordinator for an enemy that delegates pathfinding to Godot's built-in
 /// NavigationAgent2D. Owns the physical body and movement loop; selection of
-/// what to walk toward lives in a child <see cref="EnemyTowerTargeter"/>.
+/// what to walk toward lives in a child <see cref="EnemyStructureTargeter"/>.
 ///
 /// Per physics tick:
-///   1. Drives <see cref="EnemyTowerTargeter.Tick"/> so any pending pathfind
+///   1. Drives <see cref="EnemyStructureTargeter.Tick"/> so any pending pathfind
 ///      result is drained before movement consumes the destination.
 ///   2. If the NavAgent has a destination and isn't finished, follows the next
 ///      path waypoint via <c>MoveAndSlide</c>.
 ///
 /// Wiring: subscribes to the targeter's events and forwards them to NavAgent
-/// (<see cref="EnemyTowerTargeter.ApproachResolved"/> → <see cref="SetDestination"/>,
-/// <see cref="EnemyTowerTargeter.TargetCleared"/> → <see cref="Stop"/>).
+/// (<see cref="EnemyStructureTargeter.ApproachResolved"/> → <see cref="SetDestination"/>,
+/// <see cref="EnemyStructureTargeter.TargetCleared"/> → <see cref="Stop"/>).
 ///
 /// Note: NavAgent re-queries the navmesh internally when TargetPosition is set
 /// (in addition to the targeter's MapGetPath check). Accepted duplicate in

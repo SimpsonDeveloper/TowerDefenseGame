@@ -1,0 +1,58 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/world/structures/Core.cs" id="1_core"]
+[ext_resource type="Script" uid="uid://cojc8ew3rlmqr" path="res://scripts/components/HealthComponent.cs" id="2_health"]
+[ext_resource type="Script" uid="uid://c4ivmmmnav7xt" path="res://scripts/components/HealthBarComponent.cs" id="3_bar"]
+[ext_resource type="Script" uid="uid://lsgoewnytspv" path="res://scripts/components/DamageFlashComponent.cs" id="4_flash"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_core"]
+size = Vector2(192, 192)
+
+[node name="Core" type="StaticBody2D" node_paths=PackedStringArray("Health")]
+collision_layer = 16
+collision_mask = 0
+script = ExtResource("1_core")
+Health = NodePath("HealthComponent")
+SizePixels = Vector2i(192, 192)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_core")
+
+[node name="Base" type="Polygon2D" parent="."]
+color = Color(0.062, 0.086, 0.129, 1)
+polygon = PackedVector2Array(-96, -96, 96, -96, 96, 96, -96, 96)
+
+[node name="Plate" type="Polygon2D" parent="."]
+color = Color(0.11, 0.165, 0.267, 1)
+polygon = PackedVector2Array(-88, -88, 88, -88, 88, 88, -88, 88)
+
+[node name="Facet" type="Polygon2D" parent="."]
+color = Color(0.173, 0.29, 0.447, 1)
+polygon = PackedVector2Array(0, -76, 76, 0, 0, 76, -76, 0)
+
+[node name="Rim" type="Polygon2D" parent="."]
+color = Color(0.435, 0.827, 1, 1)
+polygon = PackedVector2Array(0, -48, 48, 0, 0, 48, -48, 0)
+
+[node name="Heart" type="Polygon2D" parent="."]
+color = Color(0.663, 0.455, 1, 1)
+polygon = PackedVector2Array(0, -26, 26, 0, 0, 26, -26, 0)
+
+[node name="Spark" type="Polygon2D" parent="."]
+color = Color(0.894, 0.831, 1, 1)
+polygon = PackedVector2Array(0, -9, 9, 0, 0, 9, -9, 0)
+
+[node name="HealthComponent" type="Node" parent="."]
+script = ExtResource("2_health")
+MaxHp = 2000.0
+
+[node name="DamageFlash" type="Node" parent="." node_paths=PackedStringArray("Health", "Targets")]
+script = ExtResource("4_flash")
+Health = NodePath("../HealthComponent")
+Targets = [NodePath("../Plate"), NodePath("../Facet"), NodePath("../Rim"), NodePath("../Heart"), NodePath("../Spark")]
+
+[node name="HealthBar" type="Node2D" parent="." node_paths=PackedStringArray("Health")]
+script = ExtResource("3_bar")
+Health = NodePath("../HealthComponent")
+Size = Vector2(80, 6)
+Offset = Vector2(0, -108)

@@ -43,7 +43,7 @@ public readonly struct ApproachResult
 /// <summary>
 /// Pure-data approach resolver. Iterates candidates in the supplied order
 /// (caller pre-sorts — typically by Euclidean distance to the enemy); for
-/// each, runs the dual-query strategy used by <see cref="EnemyTowerTargeter"/>
+/// each, runs the dual-query strategy used by <see cref="EnemyStructureTargeter"/>
 /// and short-circuits on the first candidate that yields an approach point.
 ///
 /// When a <see cref="PocketReachabilityIndex.Snapshot"/> is supplied, candidates

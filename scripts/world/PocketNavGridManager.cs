@@ -197,9 +197,11 @@ public partial class PocketNavGridManager : Node2D
 
         sourceData.AddTraversableOutline(expandedRect);
 
-        // Tower obstacles — scan "Towers" group and extract collision geometry.
-        // Handles both CollisionPolygon2D and CollisionShape2D (RectangleShape2D).
-        foreach (var node in GetTree().GetNodesInGroup("Towers"))
+        // Structure obstacles — scan "Structures" (towers AND the core) and extract collision
+        // geometry. Handles both CollisionPolygon2D and CollisionShape2D (RectangleShape2D).
+        // Not "Towers": that group means "a thing the player built and can edit", and the core is
+        // every bit as solid. Carving it is also what stops an enemy aiming at its centre.
+        foreach (var node in GetTree().GetNodesInGroup("Structures"))
         {
             if (node is not StaticBody2D body) continue;
             foreach (var child in body.GetChildren())

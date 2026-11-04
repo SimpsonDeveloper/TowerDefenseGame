@@ -10,7 +10,7 @@ namespace towerdefensegame.scripts.world.enemies.targeting;
 /// drives <see cref="Tick"/> once per physics step and subscribes to the events
 /// to steer the body.
 ///
-/// Concrete patterns (e.g. <see cref="EnemyTowerTargeter"/>) subclass this. A
+/// Concrete patterns (e.g. <see cref="EnemyStructureTargeter"/>) subclass this. A
 /// <see cref="TargetingPattern"/> resource builds the concrete node at spawn
 /// time, so <see cref="EnemyType"/> can swap strategies without the controller
 /// knowing which one it got.

@@ -95,6 +95,8 @@ public partial class TurretTower : StaticBody2D, ITowerPlaceable
 	public override void _Ready()
 	{
 		AddToGroup("Towers");
+		// "Structures" is what an enemy attacks; "Towers" is what the player built and can edit.
+		AddToGroup("Structures");
 
 		// The combat side listens rather than the turret calling into it: everything about what
 		// a shot *does* lives behind this one subscription.
