@@ -35,6 +35,13 @@ public partial class Core : StaticBody2D
 
     [Export] public HealthComponent Health { get; set; }
 
+    /// <summary>
+    /// The core's square in world space. Anything joining onto the core wants a point on this
+    /// edge rather than the centre, which is inside the hole the nav bake carves.
+    /// </summary>
+    public Rect2 FootprintRect =>
+        new(GlobalPosition - (Vector2)SizePixels * 0.5f, SizePixels);
+
     [Export] public CoordConfig Coords { get; set; }
 
     /// <summary>Registers the footprint so enemies can path to it and towers cannot overlap it.</summary>

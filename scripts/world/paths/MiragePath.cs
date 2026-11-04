@@ -83,11 +83,34 @@ public partial class MiragePath : Node2D
         List<Vector2> points = new();
 
         Core core = Core.ForViewport(GetViewport());
-        if (core != null) points.Add(core.GlobalPosition);
+        if (core != null)
+            points.Add(core.FootprintRect.GetCenter());
 
         foreach (Vector2I ward in _wards) points.Add(CentreOf(ward));
 
         return points;
+    }
+
+    /// <summary>
+    /// Where a leg should actually leave the core: the point on its edge facing
+    /// <paramref name="target"/>, snapped onto the mesh.
+    ///
+    /// Leaving from the centre looks broken and is: the centre is inside the hole the nav bake
+    /// carves out, so <c>MapGetPath</c> snaps it to whichever boundary point the triangulation
+    /// happens to call nearest — the <b>same</b> point every time, whatever direction the route
+    /// then goes. The thread appears to grow out of one fixed side of the core. This is the same
+    /// stand-off-from-the-footprint problem the enemy approach resolver solves, in a second place.
+    /// </summary>
+    private Vector2 AnchorOnCore(Vector2 centre, Vector2 target)
+    {
+        Core core = Core.ForViewport(GetViewport());
+        if (core == null) return centre;
+
+        Rect2 rect = core.FootprintRect;
+        Vector2 onEdge = target.Clamp(rect.Position, rect.End);
+
+        Rid map = NavMap;
+        return map.IsValid ? NavigationServer2D.MapGetClosestPoint(map, onEdge) : onEdge;
     }
 
     /// <summary>True when any leg of the route has no walkable path. Readouts and placement.</summary>
@@ -209,8 +232,15 @@ public partial class MiragePath : Node2D
             List<Vector2> points = RoutePoints();
             if (points.Count > 0)
             {
-                _previewFrom = points[^1];
-                _previewLeg = Route(points[^1], CentreOf(tile.Value));
+                Vector2 from = points[^1];
+
+                // With nothing placed the route is just the core, so the preview leaves its edge
+                // too — otherwise the first ward previews from a different place than it lands.
+                if (points.Count == 1 && HasCore)
+                    from = AnchorOnCore(from, CentreOf(tile.Value));
+
+                _previewFrom = from;
+                _previewLeg = Route(from, CentreOf(tile.Value));
             }
         }
 
@@ -220,6 +250,8 @@ public partial class MiragePath : Node2D
     // ── navigation ───────────────────────────────────────────────────────────────
 
     private Rid NavMap => GetViewport()?.World2D?.NavigationMap ?? default;
+
+    private bool HasCore => Core.ForViewport(GetViewport()) != null;
 
     /// <summary>The walked polyline between two points, or empty where there is no way through.</summary>
     private Vector2[] Route(Vector2 from, Vector2 to)
@@ -250,6 +282,12 @@ public partial class MiragePath : Node2D
         IsBroken = false;
 
         _points = RoutePoints();
+
+        // The first point is the core, and a leg leaves it from the side it is going, not from
+        // its middle. Done here rather than in RoutePoints because the edge depends on where the
+        // leg is headed, which only a pair of points knows.
+        if (_points.Count > 1 && HasCore)
+            _points[0] = AnchorOnCore(_points[0], _points[1]);
 
         for (int i = 0; i < _points.Count - 1; i++)
         {
