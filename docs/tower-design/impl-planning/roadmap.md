@@ -37,7 +37,8 @@ op list. Items 4–6 planning — **item 4 is what makes those ops do anything**
 | 2 ✅ | upgrades | Op-flow (ordered op list — port on top of the core) | `upgrades/op-flow.md` | 1 | S–M |
 | 3 ✅ | upgrades | Lattice UI + template editor | `upgrades/lattice-ui.md` | 2 | L |
 | 4 ✅ | combat | First primitive op behaviors | `combat/primitives.md` | 2 | M |
-| 5 | combat | Enemy Mind + paths / roads / deviation | `combat/enemy-mind.md` | 4 | XL |
+| 5 ◐ | combat | Enemy Mind + paths / roads / deviation | `combat/enemy-mind.md` | 4 | XL |
+| 5a ◐ | combat | Player-placed wards (paths, sub-item) | `combat/paths.md` | — | M |
 | 6 | — | Delivery shapes · impact cap · investment axes | *(later)* | 4 | — |
 
 Size: S/M/L/XL rough effort. **Compiler core is item 1** — the engine (structural passes,
