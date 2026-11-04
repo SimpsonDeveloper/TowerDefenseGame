@@ -30,8 +30,6 @@
 [ext_resource type="Script" uid="uid://dl4mma1ufub27" path="res://scripts/camera/PocketCameraController.cs" id="30_gnlsw"]
 [ext_resource type="Script" uid="uid://c7qj3sbk5vasn" path="res://scripts/towers/TowerFootprintTracker.cs" id="31_t2o3n"]
 [ext_resource type="Script" uid="uid://dqe7kydia2ros" path="res://scripts/towers/TowerPlacementManager.cs" id="32_p8dcq"]
-[ext_resource type="Script" path="res://scripts/world/paths/MiragePath.cs" id="51_mirage"]
-[ext_resource type="PackedScene" path="res://scenes/core.tscn" id="52_core"]
 [ext_resource type="Resource" uid="uid://c54gxd5gu86v1" path="res://assets/coord_config.tres" id="33_coordcfg"]
 [ext_resource type="Script" uid="uid://d4my3kkn7sesj" path="res://scripts/world/PocketNavGridManager.cs" id="33_esqqo"]
 [ext_resource type="Script" uid="uid://bnphhwegnok8r" path="res://scripts/world/PolygonTerrainManager.cs" id="34_polytm"]
@@ -46,6 +44,8 @@
 [ext_resource type="PackedScene" uid="uid://drutvmxnk4bx0" path="res://scenes/SpawnerPortal.tscn" id="41_lwwcw"]
 [ext_resource type="Script" uid="uid://cnndnd6o714x4" path="res://scripts/world/DebugEnemySpawner.cs" id="42_fghut"]
 [ext_resource type="Resource" uid="uid://y2qahljinvs4" path="res://assets/enemies/chonky_enemy.tres" id="43_4m6mh"]
+[ext_resource type="Script" uid="uid://tlhjdrc6ew80" path="res://scripts/world/paths/MiragePath.cs" id="51_mirage"]
+[ext_resource type="PackedScene" path="res://scenes/core.tscn" id="52_core"]
 
 [sub_resource type="Resource" id="Resource_ak604"]
 script = ExtResource("7_02d50")
@@ -238,7 +238,7 @@ CoordConfig = ExtResource("33_coordcfg")
 DebugDrawEnabled = true
 
 [node name="EnemyRaycastAgent" parent="Pausable/OverworldContainer/OverworldViewport" instance=ExtResource("28_7b1ka")]
-position = Vector2(800, 648)
+position = Vector2(1641, 698)
 
 [node name="PocketDimensionContainer" type="SubViewportContainer" parent="Pausable"]
 texture_filter = 1
@@ -291,7 +291,7 @@ MinZoom = 1.0
 script = ExtResource("31_t2o3n")
 Coords = ExtResource("33_coordcfg")
 
-[node name="Core" parent="Pausable/PocketDimensionContainer/PocketDimensionViewport/PocketDimension" instance=ExtResource("52_core") node_paths=PackedStringArray("FootprintTracker")]
+[node name="Core" parent="Pausable/PocketDimensionContainer/PocketDimensionViewport/PocketDimension" node_paths=PackedStringArray("FootprintTracker") instance=ExtResource("52_core")]
 position = Vector2(512, 512)
 Coords = ExtResource("33_coordcfg")
 FootprintTracker = NodePath("../TowerFootprintTracker")
@@ -348,7 +348,7 @@ PortalScene = ExtResource("41_lwwcw")
 EnemiesContainer = NodePath("../SpawnedEnemies")
 
 [node name="DebugEnemySpawner" type="Node2D" parent="Pausable/PocketDimensionContainer/PocketDimensionViewport/PocketDimension" node_paths=PackedStringArray("EnemiesContainer")]
-position = Vector2(1024, 1024)
+position = Vector2(1800, 1800)
 script = ExtResource("42_fghut")
 EnemyScene = ExtResource("40_s3172")
 EnemyType = ExtResource("43_4m6mh")
