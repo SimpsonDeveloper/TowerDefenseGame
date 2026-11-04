@@ -13,10 +13,14 @@ namespace towerdefensegame.scripts.world.enemies.targeting;
 /// behind it stands the enemy off from the target's <b>footprint</b> rather than aiming at its
 /// centre, which is the thing that cannot be re-derived cheaply and must not be re-written.
 ///
-/// <b>Towers are handled by not handling them.</b> An enemy's <c>AttackerComponent</c> already
-/// scans its own hitbox every physics frame and damages whatever structure is in it, with no help
-/// from a targeter. A tower gets chewed through because the enemy is standing next to it, not
-/// because anything chose it — which is the behaviour a maze wants.
+/// <b>Turrets pull it off course when they are close.</b> Past <c>AggroRadius</c> the enemy walks
+/// on by and its attacker chews through whatever it happens to brush; inside it, the turret
+/// becomes the objective until it falls. A turret near the route is therefore a turret that gets
+/// attacked, which is what makes placement a risk rather than a free choice.
+///
+/// Suppressed while the enemy is <b>railroaded</b>: an enemy following a route it believes in
+/// walks past the guns. Breaking the illusion is what frees it to turn on one
+/// (<c>impl-planning/combat/paths.md</c>).
 /// </summary>
 [GlobalClass]
 public partial class CoreTargetingPattern : TargetingPattern
@@ -24,6 +28,8 @@ public partial class CoreTargetingPattern : TargetingPattern
     public override EnemyTargeter Build(EnemyType enemyType) => new EnemyStructureTargeter
     {
         TargetGroup = Core.CoreGroup,
+        AggroGroup = "Towers",
+        AggroRadius = enemyType.AggroRadius,
         AttackRange = enemyType.AttackRange,
     };
 }

@@ -169,12 +169,37 @@ built and can edit" and which half the tower systems assume.
 `EnemyStructureTargeter` the tower pattern builds, pointed at the `Core` group instead of
 `Towers` — that is the whole difference between the two behaviours.
 
-**Towers are handled by not handling them.** `AttackerComponent` already scans its own hitbox
-every physics frame and damages whatever structure is in it, with no help from a targeter. So
-"head for the core, hitting towers on the way" is the targeter walking a nav line while the
-attacker does its own job: a tower gets chewed through because the enemy is standing next to it,
-not because anything chose it. That is the behaviour a maze wants — towers are an obstacle
-course, not a shopping list.
+### When a turret becomes the objective
+
+Three states, and which one an enemy is in is the whole rule:
+
+| State | Behaviour toward turrets |
+|---|---|
+| **Free** — no route laid for it | breaks off to kill any turret inside `AggroRadius` |
+| **Railroaded** — walking a route it believes in | walks straight past, whatever it passes |
+| **Deviating** — broke the illusion | free again; a turret beside it becomes the objective |
+
+So proximity aggro is gated on the enemy being free, and **breaking the illusion is what lets an
+enemy turn on the guns**. That is the payoff that makes Mind-drain cut both ways: it railroads an
+enemy *and* pacifies it, and a fully-drained wave walks the maze obediently past every turret.
+
+Aggro is sticky without a timer or a flag: the enemy is walking toward the thing that pulled it,
+so it stays inside the radius until the structure falls and only then does the core come back.
+Nothing oscillates at the edge of the circle.
+
+Below the radius, towers are still **handled by not handling them**. `AttackerComponent` scans
+its own hitbox every physics frame and damages whatever structure is in it with no help from a
+targeter, so a turret the enemy merely squeezes past gets chewed anyway — because the enemy is
+standing next to it, not because anything chose it.
+
+`Railroaded` exists on the targeter and nothing writes it yet, so every enemy is currently free.
+The path follower sets it; deviation clears it.
+
+**Seeing it:** `EnemyTargetDebug` on the enemy draws the aggro ring and a line to the current
+objective, coloured by state — aqua for the core, orange for a turret it broke off onto, grey for
+nothing reachable, and no ring at all while railroaded. It exists because the radius is a `float`
+compared against `DistanceSquaredTo` rather than a collision shape, so Godot's own shape debug
+cannot show it.
 
 **Reusing the approach resolver is the point.** It was tempting to write a simpler targeter for
 a single target that never moves — one `MapGetClosestPoint` and done. That is wrong, and visibly

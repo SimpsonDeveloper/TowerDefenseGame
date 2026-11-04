@@ -45,4 +45,11 @@ public partial class EnemyType : Resource
     /// node at spawn; null leaves the scene's default targeter in place.</summary>
     [ExportGroup("Targeting")]
     [Export] public TargetingPattern Targeting { get; set; }
+
+    /// <summary>
+    /// How close a turret has to be before this enemy breaks off the way to the core to kill it,
+    /// in pixels. Zero walks past everything. Ignored while the enemy is railroaded on a route it
+    /// believes in (<c>impl-planning/combat/paths.md</c>).
+    /// </summary>
+    [Export] public float AggroRadius { get; set; } = 240f;
 }

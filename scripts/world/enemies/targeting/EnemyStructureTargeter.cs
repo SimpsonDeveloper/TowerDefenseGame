@@ -36,6 +36,23 @@ public partial class EnemyStructureTargeter : EnemyTargeter
     public string TargetGroup { get; set; } = "Towers";
 
     /// <summary>
+    /// Structures the enemy will break off to attack when one comes within
+    /// <see cref="AggroRadius"/>. Empty means it never breaks off and walks past everything.
+    /// </summary>
+    public string AggroGroup { get; set; }
+
+    /// <summary>Pixels. Zero disables breaking off entirely.</summary>
+    public float AggroRadius { get; set; }
+
+    /// <summary>
+    /// While true the enemy cannot break off, whatever it walks past — it is following a route it
+    /// believes in. Set by the path follower once that exists; a <b>deviating</b> enemy clears it
+    /// and becomes free to turn on a turret beside it
+    /// (<c>impl-planning/combat/paths.md</c>). Nothing writes it yet, so every enemy is free.
+    /// </summary>
+    public bool Railroaded { get; set; }
+
+    /// <summary>
     /// Reach of the enemy's attack. Added to agentRadius to form the standoff
     /// distance from the tower footprint at which the approach path is cut
     /// short. Set to 0 for strict melee-on-contact.
@@ -120,14 +137,16 @@ public partial class EnemyStructureTargeter : EnemyTargeter
         if (_footprints == null || _owner == null) return;
 
         Viewport viewport = GetViewport();
-        List<ApproachCandidate> candidates = [];
-        foreach (Node node in GetTree().GetNodesInGroup(TargetGroup))
-        {
-            if (node is not Node2D n2d || n2d.GetViewport() != viewport) continue;
-            if (!_footprints.TryGetFootprint(n2d, out var footprint)) continue;
-            candidates.Add(new ApproachCandidate(n2d.GetInstanceId(), n2d.GlobalPosition, footprint));
-        }
         Vector2 enemyPos = _owner.GlobalPosition;
+
+        // Break off for something close before considering the real objective. Sticky by
+        // construction rather than by a flag: the enemy is walking toward the thing that pulled
+        // it, so it stays inside the radius until the structure falls, and only then does the
+        // objective come back. No aggro timer, no oscillation at the edge of the circle.
+        List<ApproachCandidate> candidates = Nearby(AggroGroup, enemyPos, viewport, AggroRadius);
+
+        if (candidates.Count == 0)
+            candidates = Nearby(TargetGroup, enemyPos, viewport, 0f);
         candidates.Sort((a, b) =>
             enemyPos.DistanceSquaredTo(a.TowerPosition)
                 .CompareTo(enemyPos.DistanceSquaredTo(b.TowerPosition)));
@@ -135,6 +154,32 @@ public partial class EnemyStructureTargeter : EnemyTargeter
         float standoff = Mathf.Max(GlobalEnemyConfig.AgentRadius, AttackRange);
         pathfindService.Submit(_owner.GetInstanceId(), enemyPos, snapshot.NavMap, standoff,
             candidates, snapshot.Reach);
+    }
+
+    /// <summary>
+    /// Candidates from a group, nearest first. A <paramref name="radius"/> of 0 means no limit.
+    /// Anything without a footprint is skipped — the approach resolver stands a target off from
+    /// its footprint, so a structure that never registered one cannot be approached.
+    /// </summary>
+    private List<ApproachCandidate> Nearby(string group, Vector2 from, Viewport viewport, float radius)
+    {
+        List<ApproachCandidate> found = [];
+
+        if (string.IsNullOrEmpty(group)) return found;
+        if (radius > 0 && Railroaded) return found;   // believing the route means walking past
+
+        float radiusSquared = radius * radius;
+
+        foreach (Node node in GetTree().GetNodesInGroup(group))
+        {
+            if (node is not Node2D n2d || n2d.GetViewport() != viewport) continue;
+            if (radius > 0 && from.DistanceSquaredTo(n2d.GlobalPosition) > radiusSquared) continue;
+            if (!_footprints.TryGetFootprint(n2d, out var footprint)) continue;
+
+            found.Add(new ApproachCandidate(n2d.GetInstanceId(), n2d.GlobalPosition, footprint));
+        }
+
+        return found;
     }
 
     private void DrainPendingPathResult()
