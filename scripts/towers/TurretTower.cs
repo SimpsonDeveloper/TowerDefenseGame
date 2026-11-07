@@ -132,10 +132,12 @@ public partial class TurretTower : StaticBody2D, ITowerPlaceable
 	/// <c>TowerRemoved</c>, then frees the node.</summary>
 	public void Destroy()
 	{
-		// Leave the Towers group before fan-out so the rebake triggered by
+		// Leave the groups before fan-out so the rebake triggered by
 		// TowerRemoved doesn't see this body's collision as an obstruction
-		// (QueueFree only takes effect at end of frame).
+		// (QueueFree only takes effect at end of frame). Structures is the one
+		// the nav bake scans; leaving only Towers re-carves the dying turret.
 		RemoveFromGroup("Towers");
+		RemoveFromGroup("Structures");
 		Destroyed?.Invoke(this);
 		QueueFree();
 	}
