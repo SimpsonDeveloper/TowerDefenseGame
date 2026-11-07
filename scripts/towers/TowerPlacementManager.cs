@@ -9,32 +9,24 @@ using towerdefensegame.scripts.world.enemies;
 namespace towerdefensegame.scripts.towers;
 
 /// <summary>
-/// Manages the tower placement state machine inside the pocket dimension.
+/// Manages the build-mode state machine inside the pocket dimension. Which mode is active is
+/// chosen by number key in <see cref="TowerPlacementUI"/>; this node owns what the mouse does in
+/// each.
 ///
-/// States:
-///   Idle        — no mode active; ghost is null.
-///   Placing     — a tower type is selected; ghost follows the snapped mouse,
-///                 left-click commits.
-///   Destroying  — left-click on a placed tower destroys it (routed through
-///                 <see cref="ITowerPlaceable.Destroy"/>).
-///   Editing     — left-click on a placed tower asks to open its crystal lattice
-///                 (<see cref="TowerEditRequested"/>); the UI decides what that looks like.
-///   Warding     — left-click lays a ward on the snapped tile, or lifts the one already there.
-///                 The route itself lives on <see cref="Path"/>; this node only routes clicks to
-///                 it (<c>impl-planning/combat/paths.md</c>).
+/// Modes (<see cref="BuildMode"/>):
+///   Pan      [1] — the mouse belongs to the camera: left-drag pans. Nothing here handles a click.
+///   Turrets  [2] — ghost follows the snapped mouse. Left-click places (and stays, for chaining);
+///                  right-click destroys the tower under the cursor.
+///   Edit     [3] — left-click on a tower asks to open its crystal lattice
+///                  (<see cref="TowerEditRequested"/>); the UI decides what that looks like.
+///   Wards    [4] — left-click lays a ward on the snapped tile; right-click lifts the one there.
+///                  The route itself lives on <see cref="Path"/>; this node only routes clicks to
+///                  it (<c>impl-planning/combat/paths.md</c>).
 ///
-/// Transitions:
-///   BeginPlacement(def)     → Placing     (TowerPlacementUI)
-///   BeginDestroying()       → Destroying  (TowerPlacementUI)
-///   BeginEditing()          → Editing     (TowerPlacementUI)
-///   BeginWarding()          → Warding     (TowerPlacementUI)
-///   Left-click (Placing)    → Placing     (commits, stays for chaining)
-///   Left-click (Destroying) → Destroying  (destroys tower under cursor, stays)
-///   Left-click (Editing)    → Editing     (raises TowerEditRequested, stays)
-///   Left-click (Warding)    → Warding     (adds or lifts a ward, stays for chaining)
-///   Right-click / Escape    → Idle        (cancel)
-///   DimensionSwapped(false) → Idle        (pocket became mini)
+/// Placing and destroying share a mode because they share a subject: the left button makes the
+/// thing and the right button unmakes it, in turrets and wards alike.
 ///
+/// Escape, and the pocket becoming the mini viewport, return to Pan.
 /// Input is ignored while the pocket dimension is the mini viewport (_inputEnabled = false).
 /// </summary>
 public partial class TowerPlacementManager : Node2D
@@ -56,9 +48,10 @@ public partial class TowerPlacementManager : Node2D
     /// around them for game feel.</summary>
     [Export] public float EnemyClearancePx { get; set; } = 20f;
 
-    private enum Mode { Idle, Placing, Destroying, Editing, Warding }
+    /// <summary>What the mouse does. Numbered as the keys that select them.</summary>
+    public enum BuildMode { Pan, Turrets, Edit, Wards }
 
-    private Mode     _mode;
+    private BuildMode _mode;
     private TowerDef _pending;
     private Node2D   _ghost;
     private bool     _inputEnabled; // true only when pocket dimension is the main viewport
@@ -66,10 +59,13 @@ public partial class TowerPlacementManager : Node2D
     private static readonly Color ValidColor   = new(1.0f, 1.0f, 1.0f, 0.6f);
     private static readonly Color InvalidColor = new(1.0f, 0.25f, 0.25f, 0.6f);
 
-    public bool IsPlacing    => _mode == Mode.Placing;
-    public bool IsDestroying => _mode == Mode.Destroying;
-    public bool IsEditing    => _mode == Mode.Editing;
-    public bool IsWarding    => _mode == Mode.Warding;
+    public BuildMode Mode => _mode;
+
+    /// <summary>The tower <see cref="BuildMode.Turrets"/> places, or null outside that mode.</summary>
+    public TowerDef PendingTower => _pending;
+
+    /// <summary>The mode or the pending tower changed. The mode hint redraws on it.</summary>
+    public event Action? ModeChanged;
 
     /// <summary>Fired after a tower is successfully committed. Carries the tile footprint.</summary>
     public event Action<IReadOnlyList<Vector2I>>? TowerPlaced;
@@ -85,16 +81,16 @@ public partial class TowerPlacementManager : Node2D
 
     // ── Public API ──────────────────────────────────────────────────────────────
 
-    /// <summary>Enter placing mode for the given tower definition.</summary>
+    /// <summary>Turret mode with the given tower: left-click places it, right-click destroys.</summary>
     public void BeginPlacement(TowerDef def)
     {
         if (def?.TowerScene == null) return;
-        Cancel();
+        Leave();
 
-        _mode    = Mode.Placing;
+        _mode    = BuildMode.Turrets;
         _pending = def;
 
-        var ghost = new Node2D { Modulate = ValidColor };
+        Node2D ghost = new() { Modulate = ValidColor };
         ghost.AddChild(new Sprite2D { Texture = def.PreviewTexture, Scale = new Vector2(2, 2) });
         if (def.TargetRadius > 0f)
             ghost.AddChild(BuildRadiusIndicator(def.TargetRadius));
@@ -103,55 +99,51 @@ public partial class TowerPlacementManager : Node2D
         AddChild(_ghost);
 
         if (Camera != null) Camera.EdgeScrollEnabled = true;
+        ModeChanged?.Invoke();
     }
 
-    /// <summary>Enter destroying mode. Left-click on a tower destroys it.</summary>
-    public void BeginDestroying()
-    {
-        Cancel();
-        _mode = Mode.Destroying;
-    }
-
-    /// <summary>Enter editing mode. Left-click on a tower asks to open its crystal lattice.</summary>
+    /// <summary>Edit mode. Left-click on a tower asks to open its crystal lattice.</summary>
     public void BeginEditing()
     {
-        Cancel();
-        _mode = Mode.Editing;
+        Leave();
+        _mode = BuildMode.Edit;
+        ModeChanged?.Invoke();
     }
 
-    /// <summary>
-    /// Enter ward mode. Left-click lays a ward on the tile under the cursor, or lifts the one
-    /// already there — one mode rather than a placing/destroying pair, because a ward is free and
-    /// removing one is as ordinary as laying it.
-    /// </summary>
+    /// <summary>Ward mode. Left-click lays a ward on the tile under the cursor; right-click lifts it.</summary>
     public void BeginWarding()
     {
-        Cancel();
         if (Path == null)
         {
             GD.PushWarning("[paths] no MiragePath assigned — ward mode does nothing");
             return;
         }
 
-        _mode = Mode.Warding;
+        Leave();
+        _mode = BuildMode.Wards;
         if (Camera != null) Camera.EdgeScrollEnabled = true;
+        ModeChanged?.Invoke();
     }
 
-    /// <summary>Return to Idle from any mode. Discards any active ghost.</summary>
+    /// <summary>Back to Pan from any mode. Discards any active ghost.</summary>
     public void Cancel()
+    {
+        BuildMode was = _mode;
+        Leave();
+        if (was != BuildMode.Pan) ModeChanged?.Invoke();
+    }
+
+    /// <summary>Tear down whatever the current mode put up, without announcing it.</summary>
+    private void Leave()
     {
         Path?.SetPreview(null, false);
         _ghost?.QueueFree();
         _ghost   = null;
         _pending = null;
-        _mode    = Mode.Idle;
+        _mode    = BuildMode.Pan;
 
         if (Camera != null) Camera.EdgeScrollEnabled = false;
     }
-
-    /// <summary>Back-compat alias — old call sites and the Cancel button still
-    /// use this name.</summary>
-    public void CancelPlacement() => Cancel();
 
     /// <summary>Programmatic destruction — UI, scripted events, and (eventually)
     /// enemy attack code all route through here. Safe to call on any tower that
@@ -167,23 +159,23 @@ public partial class TowerPlacementManager : Node2D
 
     public override void _Process(double delta)
     {
-        if (_mode == Mode.Warding)
+        if (_mode == BuildMode.Wards)
         {
             // The ghost for a ward is drawn by the path itself, not by a Node2D here: it has to
             // show the routed thread as well as the ring, and only the path can route.
             Vector2I hover = CoordHelper.WorldToTile(GetGlobalMousePosition(), Coords);
-            Path?.SetPreview(hover, Path.HasWard(hover) || Path.CanWard(hover));
+            Path?.SetPreview(hover, Path.CanWard(hover));
             return;
         }
 
-        if (_mode != Mode.Placing || _ghost == null || _pending == null) return;
+        if (_mode != BuildMode.Turrets || _ghost == null || _pending == null) return;
 
         Vector2 mouseWorld = GetGlobalMousePosition();
         Vector2 snapped    = TowerSnapHelper.SnapCenter(mouseWorld, _pending.SizePixels, Coords);
 
         _ghost.GlobalPosition = snapped;
 
-        var footprint = new List<Vector2I>(TowerSnapHelper.FootprintTiles(snapped, _pending.SizePixels, Coords));
+        List<Vector2I> footprint = new(TowerSnapHelper.FootprintTiles(snapped, _pending.SizePixels, Coords));
         bool valid = FootprintTracker.CanPlace(footprint)
                      && !AnyEnemyInFootprint(snapped, _pending.SizePixels)
                      && !AnyWardInFootprint(footprint);
@@ -192,22 +184,23 @@ public partial class TowerPlacementManager : Node2D
 
     public override void _UnhandledInput(InputEvent @event)
     {
-        if (!_inputEnabled || _mode == Mode.Idle) return;
+        // Pan leaves every click to the camera, which pans on a left-drag.
+        if (!_inputEnabled || _mode == BuildMode.Pan) return;
 
         if (@event is InputEventMouseButton mb && mb.Pressed)
         {
             switch (mb.ButtonIndex)
             {
                 case MouseButton.Left:
-                    if (_mode == Mode.Placing)         TryCommitPlacement();
-                    else if (_mode == Mode.Destroying) TryDestroyAtMouse();
-                    else if (_mode == Mode.Editing)    TryEditAtMouse();
-                    else if (_mode == Mode.Warding)    ToggleWardAtMouse();
+                    if (_mode == BuildMode.Turrets)    TryCommitPlacement();
+                    else if (_mode == BuildMode.Edit)  TryEditAtMouse();
+                    else if (_mode == BuildMode.Wards) LayWardAtMouse();
                     GetViewport().SetInputAsHandled();
                     break;
 
                 case MouseButton.Right:
-                    Cancel();
+                    if (_mode == BuildMode.Turrets)    TryDestroyAtMouse();
+                    else if (_mode == BuildMode.Wards) LiftWardAtMouse();
                     GetViewport().SetInputAsHandled();
                     break;
             }
@@ -222,18 +215,16 @@ public partial class TowerPlacementManager : Node2D
     // ── Private helpers ──────────────────────────────────────────────────────────
 
     /// <summary>
-    /// Lay a ward on the tile under the cursor, or lift the one already there. <see cref="MiragePath.Add"/>
-    /// refuses an occupied or unwalkable tile itself, so a click on one is simply ignored — the
-    /// preview has already been showing it red.
+    /// Lay a ward on the tile under the cursor. <see cref="MiragePath.Add"/> refuses an occupied,
+    /// unwalkable or already-warded tile itself, so a click on one is simply ignored — the preview
+    /// has already been showing it red.
     /// </summary>
-    private void ToggleWardAtMouse()
-    {
-        if (Path == null) return;
+    private void LayWardAtMouse() =>
+        Path?.Add(CoordHelper.WorldToTile(GetGlobalMousePosition(), Coords));
 
-        Vector2I tile = CoordHelper.WorldToTile(GetGlobalMousePosition(), Coords);
-
-        if (!Path.Remove(tile)) Path.Add(tile);
-    }
+    /// <summary>Lift the ward under the cursor, if there is one. The route rejoins over the gap.</summary>
+    private void LiftWardAtMouse() =>
+        Path?.Remove(CoordHelper.WorldToTile(GetGlobalMousePosition(), Coords));
 
     /// <summary>
     /// Would this tower sit on the player's route? A tower is solid and cuts the nav mesh away
@@ -255,14 +246,14 @@ public partial class TowerPlacementManager : Node2D
     {
         if (_pending == null || _ghost == null) return;
 
-        Vector2 snapped = _ghost.GlobalPosition;
-        var footprint   = new List<Vector2I>(TowerSnapHelper.FootprintTiles(snapped, _pending.SizePixels, Coords));
+        Vector2 snapped          = _ghost.GlobalPosition;
+        List<Vector2I> footprint = new(TowerSnapHelper.FootprintTiles(snapped, _pending.SizePixels, Coords));
 
         if (!FootprintTracker.CanPlace(footprint)) return;
         if (AnyEnemyInFootprint(snapped, _pending.SizePixels)) return;
         if (AnyWardInFootprint(footprint)) return;
 
-        var tower = _pending.TowerScene.Instantiate<Node2D>();
+        Node2D tower = _pending.TowerScene.Instantiate<Node2D>();
         tower.GlobalPosition = snapped;
         if (tower is ITowerPlaceable placeable)
         {
@@ -274,10 +265,7 @@ public partial class TowerPlacementManager : Node2D
         FootprintTracker.Register(tower, footprint);
         TowerPlaced?.Invoke(footprint);
 
-        // Stay in Placing mode so the user can chain placements of the same type.
-        var def = _pending;
-        Cancel();
-        BeginPlacement(def);
+        // The ghost stays up: turret mode chains placements of the same type.
     }
 
     /// <summary>True if any enemy's inflated collision circle overlaps the
@@ -307,7 +295,7 @@ public partial class TowerPlacementManager : Node2D
     {
         Vector2 worldPos = GetGlobalMousePosition();
         Vector2I tile    = CoordHelper.WorldToTile(worldPos, Coords);
-        if (FootprintTracker.TryGetTowerAt(tile, out var tower))
+        if (FootprintTracker.TryGetTowerAt(tile, out Node2D tower))
             DestroyTower(tower);
     }
 
@@ -316,7 +304,7 @@ public partial class TowerPlacementManager : Node2D
     {
         Vector2 worldPos = GetGlobalMousePosition();
         Vector2I tile    = CoordHelper.WorldToTile(worldPos, Coords);
-        if (FootprintTracker.TryGetTowerAt(tile, out var tower))
+        if (FootprintTracker.TryGetTowerAt(tile, out Node2D tower))
             TowerEditRequested?.Invoke(tower);
     }
 

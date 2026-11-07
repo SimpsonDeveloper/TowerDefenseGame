@@ -126,14 +126,15 @@ around corners rather than testing a straight line.
 
 ## 5. Placement
 
-A fifth mode on `TowerPlacementManager`, beside Placing / Destroying / Editing:
+Key **4** on `TowerPlacementManager`, after Pan / Turrets / Edit (1–3). Same clicks as turret
+mode: the left button makes the thing, the right unmakes it.
 
 | Input | Effect |
 |---|---|
 | Hover | preview: the ring where it would land, and the leg it would add, routed for real |
 | Left-click an empty tile | append a ward to the end of the route |
-| Left-click an existing ward | remove it; its neighbours join up |
-| Right-click / Escape | leave ward mode |
+| Right-click a ward | lift it; its neighbours join up |
+| 1 / Escape | back to Pan |
 
 The preview routes rather than guessing, so the player sees the thread bend around a tower
 **before** committing. A tile that cannot take a ward previews red and a click on it does nothing.

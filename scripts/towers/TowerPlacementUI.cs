@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Godot;
 using Godot.Collections;
 using towerdefensegame.scripts.towers.crystal.ui;
@@ -5,11 +6,22 @@ using towerdefensegame.scripts.towers.crystal.ui;
 namespace towerdefensegame.scripts.towers;
 
 /// <summary>
-/// Mock placement UI: a panel anchored to the right edge of the pocket dimension
-/// viewport with one button per available tower type and a Cancel button.
+/// Build-mode keys and the hint that shows them. Number keys pick what the mouse does:
+///
+///   1  Pan      — left-drag pans
+///   2  Turrets  — left-click places, right-click destroys
+///   3  Edit     — left-click a turret to open its crystals
+///   4  Wards    — left-click lays, right-click lifts
+///
+/// Escape is back to Pan. Pressing 2 while already in turret mode steps to the next tower in
+/// <see cref="AvailableTowers"/>. The modes themselves live on <see cref="TowerPlacementManager"/>;
+/// this node maps keys to them and keeps the hint in step through its <c>ModeChanged</c> event.
+///
+/// The hint is plain labels, the active row marked with a caret — no colour or font set from
+/// code, so the look stays in the theme.
 ///
 /// Visibility is tied to the pocket dimension being the main viewport via the
-/// WorldManager.DimensionSwapped signal.
+/// WorldManager.DimensionSwapped signal, and keys are ignored while hidden.
 /// </summary>
 public partial class TowerPlacementUI : CanvasLayer
 {
@@ -22,8 +34,13 @@ public partial class TowerPlacementUI : CanvasLayer
     /// </summary>
     [Export] public CrystalLatticeEditor LatticeEditor { get; set; }
 
-    private Button _cancelButton;
     private TurretTower _editing;
+
+    /// <summary>One row per mode, in key order.</summary>
+    private readonly Label[] _rows = new Label[4];
+
+    /// <summary>Which of <see cref="AvailableTowers"/> key 2 places.</summary>
+    private int _towerIndex;
 
     public override void _Ready()
     {
@@ -37,53 +54,108 @@ public partial class TowerPlacementUI : CanvasLayer
         }
 
         if (PlacementManager != null)
+        {
             PlacementManager.TowerEditRequested += OnTowerEditRequested;
+            PlacementManager.ModeChanged += RefreshHint;
+        }
+
+        RefreshHint();
     }
 
-    // ── UI construction ──────────────────────────────────────────────────────────
+    public override void _ExitTree()
+    {
+        if (PlacementManager != null)
+        {
+            PlacementManager.TowerEditRequested -= OnTowerEditRequested;
+            PlacementManager.ModeChanged -= RefreshHint;
+        }
+    }
+
+    // ── Keys ─────────────────────────────────────────────────────────────────────
+
+    public override void _UnhandledInput(InputEvent @event)
+    {
+        if (!Visible || PlacementManager == null) return;
+
+        if (@event.IsActionPressed("mode_pan") || @event.IsActionPressed("ui_cancel"))
+            PlacementManager.Cancel();
+        else if (@event.IsActionPressed("mode_turrets"))
+            SelectTurrets();
+        else if (@event.IsActionPressed("mode_edit"))
+            PlacementManager.BeginEditing();
+        else if (@event.IsActionPressed("mode_wards"))
+            PlacementManager.BeginWarding();
+        else
+            return;
+
+        GetViewport().SetInputAsHandled();
+    }
+
+    /// <summary>Turret mode; again while in it, the next tower.</summary>
+    private void SelectTurrets()
+    {
+        List<TowerDef> towers = Towers();
+        if (towers.Count == 0) return;
+
+        if (PlacementManager.Mode == TowerPlacementManager.BuildMode.Turrets)
+            _towerIndex = (_towerIndex + 1) % towers.Count;
+
+        _towerIndex = Mathf.Clamp(_towerIndex, 0, towers.Count - 1);
+        PlacementManager.BeginPlacement(towers[_towerIndex]);
+    }
+
+    private List<TowerDef> Towers()
+    {
+        List<TowerDef> towers = new();
+        foreach (TowerDef def in AvailableTowers)
+            if (def != null) towers.Add(def);
+        return towers;
+    }
+
+    // ── Mode hint ────────────────────────────────────────────────────────────────
 
     private void BuildUI()
     {
-        var panel = new PanelContainer();
-        // Anchor to the full right edge of the viewport.
-        panel.AnchorLeft     = 1f;
-        panel.AnchorRight    = 1f;
-        panel.AnchorTop      = 0f;
-        panel.AnchorBottom   = 1f;
-        panel.GrowHorizontal = Control.GrowDirection.Begin;
+        // Top-right, sized to its text. Layout only; the look is the theme's.
+        PanelContainer panel = new()
+        {
+            AnchorLeft     = 1f,
+            AnchorRight    = 1f,
+            GrowHorizontal = Control.GrowDirection.Begin,
+            MouseFilter    = Control.MouseFilterEnum.Ignore,
+        };
         AddChild(panel);
 
-        var vbox = new VBoxContainer();
-        panel.AddChild(vbox);
+        VBoxContainer rows = new() { MouseFilter = Control.MouseFilterEnum.Ignore };
+        panel.AddChild(rows);
 
-        var header = new Label { Text = "Place Tower" };
-        vbox.AddChild(header);
-
-        foreach (var def in AvailableTowers)
+        for (int i = 0; i < _rows.Length; i++)
         {
-            if (def == null) continue;
-            var captured = def; // avoid closure capture of loop variable
-            var btn = new Button { Text = captured.DisplayName };
-            btn.Pressed += () => PlacementManager?.BeginPlacement(captured);
-            vbox.AddChild(btn);
+            _rows[i] = new Label();
+            rows.AddChild(_rows[i]);
         }
-
-        var destroyButton = new Button { Text = "Destroy Mode" };
-        destroyButton.Pressed += () => PlacementManager?.BeginDestroying();
-        vbox.AddChild(destroyButton);
-
-        var wardButton = new Button { Text = "Lay Wards" };
-        wardButton.Pressed += () => PlacementManager?.BeginWarding();
-        vbox.AddChild(wardButton);
-
-        var editButton = new Button { Text = "Edit Crystals" };
-        editButton.Pressed += () => PlacementManager?.BeginEditing();
-        vbox.AddChild(editButton);
-
-        _cancelButton = new Button { Text = "Cancel" };
-        _cancelButton.Pressed += () => PlacementManager?.Cancel();
-        vbox.AddChild(_cancelButton);
     }
+
+    private void RefreshHint()
+    {
+        if (_rows[0] == null) return;
+
+        TowerPlacementManager.BuildMode mode =
+            PlacementManager?.Mode ?? TowerPlacementManager.BuildMode.Pan;
+
+        List<TowerDef> towers = Towers();
+        string turretName = towers.Count > 1
+            ? $"Turrets ({towers[Mathf.Clamp(_towerIndex, 0, towers.Count - 1)].DisplayName})"
+            : "Turrets";
+
+        SetRow(0, mode == TowerPlacementManager.BuildMode.Pan,     "1  Pan — drag to pan");
+        SetRow(1, mode == TowerPlacementManager.BuildMode.Turrets, $"2  {turretName} — LMB place · RMB destroy");
+        SetRow(2, mode == TowerPlacementManager.BuildMode.Edit,    "3  Edit — LMB open crystals");
+        SetRow(3, mode == TowerPlacementManager.BuildMode.Wards,   "4  Wards — LMB lay · RMB lift");
+    }
+
+    private void SetRow(int index, bool active, string text) =>
+        _rows[index].Text = (active ? "> " : "   ") + text;
 
     // ── Crystal lattice editing ──────────────────────────────────────────────────
 
@@ -130,7 +202,7 @@ public partial class TowerPlacementUI : CanvasLayer
         // the lattice was edited in place, so the tower already holds the new shot
         _editing?.Recompile();
         _editing = null;
-        PlacementManager?.Cancel();
+        // stays in edit mode: the next turret is one click away
     }
 
     // ── Signal handler ───────────────────────────────────────────────────────────
