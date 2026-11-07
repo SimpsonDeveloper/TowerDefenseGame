@@ -1,6 +1,6 @@
-[gd_resource type="Resource" script_class="CrystalTemplate" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="CrystalTemplate" load_steps=2 format=3 uid="uid://rxi6l8cvyd7n"]
 
-[ext_resource type="Script" path="res://scripts/towers/crystal/CrystalTemplate.cs" id="1_tpl"]
+[ext_resource type="Script" uid="uid://b78255w1yk6y2" path="res://scripts/towers/crystal/CrystalTemplate.cs" id="1_tpl"]
 
 [resource]
 script = ExtResource("1_tpl")

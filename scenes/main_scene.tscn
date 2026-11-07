@@ -238,7 +238,7 @@ CoordConfig = ExtResource("33_coordcfg")
 DebugDrawEnabled = true
 
 [node name="EnemyRaycastAgent" parent="Pausable/OverworldContainer/OverworldViewport" instance=ExtResource("28_7b1ka")]
-position = Vector2(1641, 698)
+position = Vector2(1147, 560)
 
 [node name="PocketDimensionContainer" type="SubViewportContainer" parent="Pausable"]
 texture_filter = 1
