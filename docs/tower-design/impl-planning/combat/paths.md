@@ -81,32 +81,28 @@ player which marks they can remove.
 
 ## 3. What is drawn is what would be walked
 
-Each leg between two wards is a real `NavPaths.Find` query (`scripts/world/NavPaths.cs`) — the
-same call an enemy's controller walks by — so the thread bends around a tower exactly where an
-enemy would. A straight line between wards would be a drawing that lies: it would cross towers and
+Each leg between two wards is a real `NavigationServer2D.MapGetPath` query — the same one an
+enemy's `NavigationAgent2D` makes — so the thread bends around a tower exactly where an enemy
+would. A straight line between wards would be a drawing that lies: it would cross towers and
 water, and the player would lay a route by it that nothing ever takes.
 
-### Why not `MapGetPath` straight
+### The pocket is one nav region
 
-Godot's path query is A* over nav *polygons*, then a funnel that pulls the line tight inside the
-strip of polygons A* chose. The funnel is exact; the strip is not — A* costs each polygon by one
-entry point on its edge, and with large triangles it can pick a strip that is not the shortest.
-The funnel then hugs that strip's corner faithfully.
+Legs used to kink for no reason. Godot's path query is A* over nav *polygons*, then a funnel that
+pulls the line tight inside the strip of polygons A* chose. The funnel is exact; the strip is not.
+The pocket was baked as a grid of separate 512px regions, each triangulated on its own, and a
+diagonal leg between two regions that touch only at a corner went round through a third, so the
+thread bent at the vertex where four regions meet.
 
-The pocket mesh makes this common. It is baked as a grid of separate 512px regions, each
-triangulated on its own into long fans, and the corners where four regions meet are exactly where
-a straight leg came out bent: a diagonal crossing between two regions that only touch at a corner
-went round through a third, and the thread kinked at the shared vertex.
+The fix is at the source: `CoordConfig.NavCellSizeChunks = 4`, one region over the whole 4×4-chunk
+pocket, so there are no seams to bend at. The grid existed so that placing a tower rebakes only one
+cell; a whole-pocket rebake measured **0.2–0.6 ms** with a dozen turrets down, so it bought nothing.
 
-`NavPaths` adds a **line-of-sight pass**: from each kept point, jump to the furthest later point it
-can see across the mesh, and drop the rest. "Can see" is sampled against the mesh itself, which is
-already eroded by the agent radius, so a shortcut is as safe as the corners it replaced. It only
-removes corners — never adds one, never routes anywhere the raw path could not go.
-
-It is why enemies no longer use a `NavigationAgent2D`: the agent paths with the raw query and
-offers no way to be handed a better one, and a thread that is straighter than the walk would be
-a drawing that lies. The controller follows the `NavPaths` polyline itself and re-finds it when
-the mesh rebakes. `EnemyTargetDebug` draws that path in place of the agent's debug line.
+Tried first and removed: a line-of-sight pass over the raw path. It worked, but it patched a
+symptom of the seams and cost enemies their `NavigationAgent2D`, since the agent cannot be handed a
+path. With one region the raw path is straight and the pass has nothing to do. If bends ever
+reappear inside a single region (Godot's A* is not exact with large triangles), that is the
+technique to bring back, and the first thing to check is whether the mesh has been split again.
 
 A leg with **no way through** is drawn as a bare red dash straight across. It is not a route and
 must not look like one; `IsBroken` says so in code.

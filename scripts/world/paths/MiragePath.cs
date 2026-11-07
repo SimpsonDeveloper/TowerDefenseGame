@@ -14,9 +14,10 @@ namespace towerdefensegame.scripts.world.paths;
 /// tiles; enemies already path over the baked nav mesh, so walking ward-to-ward is a sequence of
 /// destinations and the existing nav does every bit of the routing between them.
 ///
-/// <b>What is drawn is what would be walked.</b> Each leg is a real <see cref="NavPaths.Find"/>
-/// query, the same call an enemy's controller walks by, so the thread bends around a tower exactly
-/// where an enemy would. Drawing a straight line between wards instead would be a drawing that lies: it
+/// <b>What is drawn is what would be walked.</b> Each leg is a real
+/// <see cref="NavigationServer2D.MapGetPath(Rid, Vector2, Vector2, bool)"/> query, the same one an
+/// enemy's <c>NavigationAgent2D</c> makes, so the thread bends around a tower exactly where an
+/// enemy would. Drawing a straight line between wards instead would be a drawing that lies: it
 /// would run through towers and over water, and the player would lay a route by it that the
 /// enemies never take.
 ///
@@ -273,9 +274,7 @@ public partial class MiragePath : Node2D
         Rid map = NavMap;
         if (!map.IsValid) return Array.Empty<Vector2>();
 
-        // NavPaths rather than MapGetPath: the enemy walks NavPaths, so the thread must too, and
-        // the raw query bends at nav-region corners no one needs to go round.
-        Vector2[] points = NavPaths.Find(map, from, to);
+        Vector2[] points = NavigationServer2D.MapGetPath(map, from, to, true);
         return points is { Length: >= 2 } ? points : Array.Empty<Vector2>();
     }
 

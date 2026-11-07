@@ -23,7 +23,15 @@ public partial class CoordConfig : Resource
     /// <summary>Side-length of one chunk in tiles (NxN). Replaces ChunkManager.ChunkSize.</summary>
     [Export] public int ChunkSizeTiles { get; set; } = 32;
 
-    /// <summary>Side-length of one nav cell in chunks (NxN). Replaces NavGridManager.CellSizeChunks.</summary>
+    /// <summary>
+    /// Side-length of one nav cell in chunks (NxN). Replaces NavGridManager.CellSizeChunks.
+    ///
+    /// <b>Keep it at least as big as the pocket</b> (4 for a 4×4-chunk pocket), so the pocket is one
+    /// nav region. Separate regions are triangulated on their own, and Godot's polygon A* bends
+    /// paths at the corners where four of them meet: a straight route came out kinked at the
+    /// seam. A whole-pocket rebake measured 0.2–0.6 ms with turrets placed, so the per-cell
+    /// rebake the grid was built for buys nothing here (<c>impl-planning/combat/paths.md</c> §3).
+    /// </summary>
     [Export] public int NavCellSizeChunks { get; set; } = 1;
 
     /// <summary>

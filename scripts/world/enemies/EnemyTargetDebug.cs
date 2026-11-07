@@ -32,14 +32,6 @@ public partial class EnemyTargetDebug : Node2D
     /// <summary>Draw the line to the current target as well as the ring.</summary>
     [Export] public bool ShowTargetLine { get; set; } = true;
 
-    /// <summary>
-    /// Draw the path the enemy is actually walking, from where it stands. Stands in for the
-    /// NavigationAgent2D's own debug path, which went when the controller stopped using one.
-    /// </summary>
-    [Export] public bool ShowPath { get; set; } = true;
-
-    [Export] public Color PathColor { get; set; } = new(1f, 1f, 1f, 0.45f);
-
     [Export] public Color CoreColor { get; set; } = new(0.3f, 0.85f, 1f, 0.5f);
     [Export] public Color AggroColor { get; set; } = new(1f, 0.6f, 0.2f, 0.75f);
     [Export] public Color IdleColor { get; set; } = new(0.6f, 0.6f, 0.65f, 0.35f);
@@ -78,27 +70,10 @@ public partial class EnemyTargetDebug : Node2D
         if (!targeter.Railroaded && targeter.AggroRadius > 0)
             DrawRing(targeter.AggroRadius, color);
 
-        if (ShowPath) DrawWalkedPath();
-
         if (!ShowTargetLine) return;
 
         if (targeter.Waypoint is Vector2 ward) DrawObjective(ward, RouteColor);
         else if (target != null) DrawObjective(target.GlobalPosition, color);
-    }
-
-    /// <summary>The rest of the path: from the enemy to the point it is steering at, then onward.</summary>
-    private void DrawWalkedPath()
-    {
-        Vector2[] path = Controller.Path;
-        int from = Controller.PathIndex;
-        if (path.Length == 0 || from >= path.Length) return;
-
-        Vector2[] points = new Vector2[path.Length - from + 1];
-        points[0] = Vector2.Zero;
-        for (int i = from; i < path.Length; i++)
-            points[i - from + 1] = ToLocal(path[i]);
-
-        DrawPolyline(points, PathColor, 1f);
     }
 
     private void DrawObjective(Vector2 global, Color color)
