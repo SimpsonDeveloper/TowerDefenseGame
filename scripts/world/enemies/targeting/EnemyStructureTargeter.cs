@@ -50,7 +50,7 @@ public partial class EnemyStructureTargeter : EnemyTargeter
     /// </summary>
     public string AggroGroup { get; set; }
 
-    /// <summary>Pixels. Zero disables breaking off entirely.</summary>
+    /// <summary>Pixels, to the structure's nearest footprint edge. Zero disables breaking off entirely.</summary>
     public float AggroRadius { get; set; }
 
     /// <summary>
@@ -301,8 +301,11 @@ public partial class EnemyStructureTargeter : EnemyTargeter
         foreach (Node node in GetTree().GetNodesInGroup(group))
         {
             if (node is not Node2D n2d || n2d.GetViewport() != viewport) continue;
-            if (radius > 0 && from.DistanceSquaredTo(n2d.GlobalPosition) > radiusSquared) continue;
-            if (!_footprints.TryGetFootprint(n2d, out var footprint)) continue;
+            if (!_footprints.TryGetFootprint(n2d, out TowerFootprint footprint)) continue;
+
+            // Measured to the footprint's nearest edge, not the centre: a turret is 128px across,
+            // so a centre test let one sit visibly inside the ring and still be ignored.
+            if (radius > 0 && footprint.DistanceSqTo(from) > radiusSquared) continue;
 
             found.Add(new ApproachCandidate(n2d.GetInstanceId(), n2d.GlobalPosition, footprint));
         }

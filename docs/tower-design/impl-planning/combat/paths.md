@@ -205,7 +205,7 @@ Three states, and which one an enemy is in is the whole rule:
 
 | State | Behaviour toward turrets |
 |---|---|
-| **Free** — no route laid for it | breaks off to kill any turret inside `AggroRadius` |
+| **Free** — no route laid for it | breaks off to kill any turret whose edge comes inside `AggroRadius` |
 | **Railroaded** — walking a route it believes in | walks straight past, whatever it passes |
 | **Deviating** — broke the illusion | free again; a turret beside it becomes the objective |
 
