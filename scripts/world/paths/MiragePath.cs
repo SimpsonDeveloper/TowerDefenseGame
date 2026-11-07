@@ -11,13 +11,12 @@ namespace towerdefensegame.scripts.world.paths;
 /// Design: <c>docs/tower-design/impl-planning/combat/paths.md</c>.
 ///
 /// <b>A ward is a navigation waypoint, not a road tile.</b> This node owns an ordered list of
-/// tiles; enemies carry a <c>NavigationAgent2D</c> already, so walking ward-to-ward is a sequence
-/// of destinations and the existing nav does every bit of the routing between them.
+/// tiles; enemies already path over the baked nav mesh, so walking ward-to-ward is a sequence of
+/// destinations and the existing nav does every bit of the routing between them.
 ///
-/// <b>What is drawn is what would be walked.</b> Each leg is a real
-/// <see cref="NavigationServer2D.MapGetPath(Rid, Vector2, Vector2, bool)"/> query, the same call
-/// the enemies' own approach resolver makes, so the thread bends around a tower exactly where an
-/// enemy would. Drawing a straight line between wards instead would be a drawing that lies: it
+/// <b>What is drawn is what would be walked.</b> Each leg is a real <see cref="NavPaths.Find"/>
+/// query, the same call an enemy's controller walks by, so the thread bends around a tower exactly
+/// where an enemy would. Drawing a straight line between wards instead would be a drawing that lies: it
 /// would run through towers and over water, and the player would lay a route by it that the
 /// enemies never take.
 ///
@@ -28,6 +27,9 @@ namespace towerdefensegame.scripts.world.paths;
 [GlobalClass]
 public partial class MiragePath : Node2D
 {
+    /// <summary>How an enemy finds the route. One per viewport.</summary>
+    public const string Group = "MiragePath";
+
     [Export] public CoordConfig Coords { get; set; }
 
     /// <summary>Towers. Needed to refuse a ward on an occupied tile — nav alone would allow it.</summary>
@@ -129,12 +131,13 @@ public partial class MiragePath : Node2D
     private double _time;
     private double _untilReroute;
 
-    /// <summary>The route changed. The placement UI and, later, enemies in flight care.</summary>
+    /// <summary>The route changed. Enemies in flight re-sync their place on it.</summary>
     public event Action Changed;
 
     public override void _Ready()
     {
         ZIndex = -1;   // under towers and enemies: the path is ground marking, not an actor
+        AddToGroup(Group);
         if (Coords == null) GD.PushWarning($"{Name}: no CoordConfig — the path cannot place itself.");
     }
 
@@ -207,6 +210,17 @@ public partial class MiragePath : Node2D
         return CoordHelper.TileToWorld(tile, Coords) + new Vector2(size, size) * 0.5f;
     }
 
+    /// <summary>The route in this viewport, or null — the overworld has none.</summary>
+    public static MiragePath ForViewport(Viewport viewport)
+    {
+        if (viewport == null) return null;
+
+        foreach (Node node in viewport.GetTree().GetNodesInGroup(Group))
+            if (node is MiragePath path && path.GetViewport() == viewport) return path;
+
+        return null;
+    }
+
     // ── preview ──────────────────────────────────────────────────────────────────
 
     /// <summary>
@@ -259,7 +273,9 @@ public partial class MiragePath : Node2D
         Rid map = NavMap;
         if (!map.IsValid) return Array.Empty<Vector2>();
 
-        Vector2[] points = NavigationServer2D.MapGetPath(map, from, to, true);
+        // NavPaths rather than MapGetPath: the enemy walks NavPaths, so the thread must too, and
+        // the raw query bends at nav-region corners no one needs to go round.
+        Vector2[] points = NavPaths.Find(map, from, to);
         return points is { Length: >= 2 } ? points : Array.Empty<Vector2>();
     }
 

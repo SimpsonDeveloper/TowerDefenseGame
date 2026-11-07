@@ -3,7 +3,8 @@
 Roadmap item **5**, sub-item 3 (`enemy-mind.md` → *Player-placed roads*). Depends on nothing in
 item 4; it is the half of item 5 that can be built before the Mind deviation it exists to serve.
 
-**Status: placement, routing, preview and collision with towers built. Enemies do not follow it yet.**
+**Status: placement, routing, preview, collision with towers, and enemies walking it built.
+Deviation is not.**
 
 ---
 
@@ -11,8 +12,8 @@ item 4; it is the half of item 5 that can be built before the Mind deviation it 
 
 The player places **wards** — discrete markers, one per tile — and the path is the route through
 them in placement order. A ward is a **navigation destination**, and that is the whole of what it
-is: enemies already carry a `NavigationAgent2D` over a baked mesh, so going ward-to-ward needs no
-pathfinding of its own. The existing nav walks the ground between two wards; the player only says
+is: enemies already path over a baked mesh, so going ward-to-ward needs no pathfinding of its
+own. The existing nav walks the ground between two wards; the player only says
 which points to visit.
 
 Three things fall out of that, and they are the reason for the choice:
@@ -80,10 +81,32 @@ player which marks they can remove.
 
 ## 3. What is drawn is what would be walked
 
-Each leg between two wards is a real `NavigationServer2D.MapGetPath` query — the same call the
-enemies' own approach resolver makes — so the thread bends around a tower exactly where an enemy
-would. A straight line between wards would be a drawing that lies: it would cross towers and
+Each leg between two wards is a real `NavPaths.Find` query (`scripts/world/NavPaths.cs`) — the
+same call an enemy's controller walks by — so the thread bends around a tower exactly where an
+enemy would. A straight line between wards would be a drawing that lies: it would cross towers and
 water, and the player would lay a route by it that nothing ever takes.
+
+### Why not `MapGetPath` straight
+
+Godot's path query is A* over nav *polygons*, then a funnel that pulls the line tight inside the
+strip of polygons A* chose. The funnel is exact; the strip is not — A* costs each polygon by one
+entry point on its edge, and with large triangles it can pick a strip that is not the shortest.
+The funnel then hugs that strip's corner faithfully.
+
+The pocket mesh makes this common. It is baked as a grid of separate 512px regions, each
+triangulated on its own into long fans, and the corners where four regions meet are exactly where
+a straight leg came out bent: a diagonal crossing between two regions that only touch at a corner
+went round through a third, and the thread kinked at the shared vertex.
+
+`NavPaths` adds a **line-of-sight pass**: from each kept point, jump to the furthest later point it
+can see across the mesh, and drop the rest. "Can see" is sampled against the mesh itself, which is
+already eroded by the agent radius, so a shortcut is as safe as the corners it replaced. It only
+removes corners — never adds one, never routes anywhere the raw path could not go.
+
+It is why enemies no longer use a `NavigationAgent2D`: the agent paths with the raw query and
+offers no way to be handed a better one, and a thread that is straighter than the walk would be
+a drawing that lies. The controller follows the `NavPaths` polyline itself and re-finds it when
+the mesh rebakes. `EnemyTargetDebug` draws that path in place of the agent's debug line.
 
 A leg with **no way through** is drawn as a bare red dash straight across. It is not a route and
 must not look like one; `IsBroken` says so in code.
@@ -203,12 +226,13 @@ its own hitbox every physics frame and damages whatever structure is in it with 
 targeter, so a turret the enemy merely squeezes past gets chewed anyway — because the enemy is
 standing next to it, not because anything chose it.
 
-`Railroaded` exists on the targeter and nothing writes it yet, so every enemy is currently free.
-The path follower sets it; deviation clears it.
+`Railroaded` on the targeter is derived from the route cursor (§8): true while the enemy is
+walking wards or on the last leg home, false when no route is laid. Deviation will be the other
+way off the route.
 
 **Seeing it:** `EnemyTargetDebug` on the enemy draws the aggro ring and a line to the current
-objective, coloured by state — aqua for the core, orange for a turret it broke off onto, grey for
-nothing reachable, and no ring at all while railroaded. It exists because the radius is a `float`
+objective, coloured by state — aqua for the core, orange for a turret it broke off onto, purple for
+the ward it is walking toward, grey for nothing reachable, and no ring at all while railroaded. It exists because the radius is a `float`
 compared against `DistanceSquaredTo` rather than a collision shape, so Godot's own shape debug
 cannot show it.
 
@@ -222,14 +246,53 @@ towers, and it is not cheap to re-derive. One class, one group setting.
 The bake was the other half: it scanned the `Towers` group, so the core — deliberately not in it —
 was never cut out of the mesh at all. It now scans `Structures`, which is both.
 
-## 8. Not done here
+## 8. Walking the route
 
-- **Enemies do not follow the route.** They head for the core (§7) and ignore the wards entirely.
-  Walking the ward list is the next slice. Anchoring at the core settles the direction of travel;
-  what is left is who owns "which ward am I on", how an enemy that spawns far from the route
-  joins it, and what happens mid-route when the player lifts the ward an enemy was walking toward.
+An enemy built by `CoreTargetingPattern` follows the route when one is laid. The targeter it
+already has does the walking — one more mode beside "choose a structure", not a second node — and
+emits each ward as a plain destination, so the controller never learns there is a route at all.
+
+**Which ward am I on** belongs to `RouteCursor<T>` (`scripts/world/paths/core/`), engine-free and
+covered by `RouteCursorTests`. It has three stages:
+
+| Stage | Meaning | Railroaded |
+|---|---|---|
+| **Free** | no wards laid | no |
+| **Following** | walking toward a ward | yes |
+| **Home** | past the last ward, on the leg into the core | yes |
+
+The rules, each answering one of the questions this section used to leave open:
+
+- **Joining is at the far end**, wherever the enemy spawned. The last ward placed is the entrance;
+  joining at the *nearest* ward instead would let an enemy that spawns beside the middle of a maze
+  skip everything behind it, and the maze would be only as long as the nearest spawn allows.
+- **Appending moves nobody.** The route is stored core-outward, so a ward added at the far end
+  shifts no index, and enemies already walking carry on.
+- **Lifting the ward an enemy is walking toward** sends it to the next surviving ward *inward*. The
+  route rejoins over the gap (§5), so the enemy does too. The cursor tracks its target by
+  **identity**, not index: lifting a ward behind an enemy shifts every index above it, and an index
+  alone would silently point it at the wrong ward.
+- **Lifting every ward** leaves no route, so the enemy is free — and turns on any turret in range.
+- **Home ignores new wards.** An enemy on its last leg is not dragged back out to a far end laid
+  after it passed.
+- **An unreachable ward is skipped.** Placement keeps towers off the route (§4), so the only way a
+  ward is unreachable is terrain — an island the enemy cannot get to. Walking at it forever would
+  stall the wave, so it moves on inward.
+
+A ward is reached inside one tile of its centre. Tighter, and a crowd jostling round one ward could
+hold an enemy off it forever.
+
+Known rough edges:
+
+- An enemy hunting a turret when the first ward is laid drops the turret and walks to the far end.
+  Defensible — the route is what it now believes — but it reads as abrupt.
+- With no Mind roll there is no deviation, so every enemy on a laid route walks all of it.
+
+## 9. Not done here
+
 - **No lose condition.** The core raises `Fallen` and nothing listens.
-- **Deviation**, which needs the above plus the Mind roll (`enemy-mind.md` §4).
+- **Deviation**, which needs the Mind roll (`enemy-mind.md` §4) and a fourth cursor stage for an
+  enemy that has stepped off the route and must not rejoin it.
 - **More than one route.** One path, one spawn, one core. Branching is undesigned.
 - **Persistence.** The route lives in the scene tree and dies with it; nothing saves it beside a
   `CrystalTemplate`.

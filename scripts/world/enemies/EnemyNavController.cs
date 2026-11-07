@@ -6,23 +6,25 @@ using towerdefensegame.scripts.world.enemies.targeting;
 namespace towerdefensegame.scripts.world.enemies;
 
 /// <summary>
-/// Coordinator for an enemy that delegates pathfinding to Godot's built-in
-/// NavigationAgent2D. Owns the physical body and movement loop; selection of
-/// what to walk toward lives in a child <see cref="EnemyStructureTargeter"/>.
+/// Coordinator for an enemy that walks the baked nav mesh. Owns the physical body and movement
+/// loop; selection of what to walk toward lives in a child <see cref="EnemyStructureTargeter"/>.
 ///
 /// Per physics tick:
 ///   1. Drives <see cref="EnemyStructureTargeter.Tick"/> so any pending pathfind
 ///      result is drained before movement consumes the destination.
-///   2. If the NavAgent has a destination and isn't finished, follows the next
-///      path waypoint via <c>MoveAndSlide</c>.
+///   2. If it has a path and has not reached its end, steers at the next point via
+///      <c>MoveAndSlide</c>.
 ///
-/// Wiring: subscribes to the targeter's events and forwards them to NavAgent
+/// Wiring: subscribes to the targeter's events
 /// (<see cref="EnemyStructureTargeter.ApproachResolved"/> → <see cref="SetDestination"/>,
 /// <see cref="EnemyStructureTargeter.TargetCleared"/> → <see cref="Stop"/>).
 ///
-/// Note: NavAgent re-queries the navmesh internally when TargetPosition is set
-/// (in addition to the targeter's MapGetPath check). Accepted duplicate in
-/// exchange for NavAgent doing path-follow and smoothing for us.
+/// <b>Paths come from <see cref="NavPaths.Find"/>, not a NavigationAgent2D.</b> The agent can
+/// only path with Godot's raw query, which bends at the corners where nav regions meet, and it
+/// offers no way to hand it a better path. The route the player lays is drawn from
+/// <see cref="NavPaths"/>, and what is drawn must be what is walked, so the enemy follows the same
+/// path itself. Following a polyline is a few lines; the agent was only ever doing that, plus
+/// re-querying when the mesh changed, which <see cref="_mapIteration"/> does here.
 /// </summary>
 [GlobalClass]
 public partial class EnemyNavController : CharacterBody2D, IMoveSpeed
@@ -32,37 +34,18 @@ public partial class EnemyNavController : CharacterBody2D, IMoveSpeed
     [ExportGroup("Movement")]
     /// <summary>
     /// Speed in px/s. Writable from outside (<see cref="IMoveSpeed"/>) so a slowing state can
-    /// scale it; the agent's avoidance ceiling is kept in step here rather than only at _Ready,
-    /// or a slowed enemy would still dodge at full speed.
+    /// scale it.
     /// </summary>
-    [Export]
-    public float MoveSpeed
-    {
-        get => _moveSpeed;
-        set
-        {
-            _moveSpeed = value;
-            if (NavAgent != null) NavAgent.MaxSpeed = value;
-        }
-    }
-
-    private float _moveSpeed = 160f;
+    [Export] public float MoveSpeed { get; set; } = 160f;
     [Export] public float Acceleration { get; set; } = 10f;
 
     [ExportGroup("Navigation")]
-    [Export] public NavigationAgent2D NavAgent;
     [Export] public CollisionShape2D Hitbox { get; set; }
 
-    /// <summary>
-    /// How close the agent must get to each path waypoint before it advances.
-    /// Keep this at roughly half a tile width (4px for 8px tiles).
-    /// </summary>
+    /// <summary>How close the enemy must get to each path point before it steers at the next.</summary>
     [Export] public float PathDesiredDistance { get; set; } = 16f;
 
-    /// <summary>
-    /// How close the agent must get to the final target before navigation is
-    /// considered finished.
-    /// </summary>
+    /// <summary>How close the enemy must get to the end of its path to count as arrived.</summary>
     [Export] public float TargetDesiredDistance { get; set; } = 2f;
 
     [ExportGroup("Components")]
@@ -85,16 +68,24 @@ public partial class EnemyNavController : CharacterBody2D, IMoveSpeed
     // ── Internal state ────────────────────────────────────────────────────
 
     private bool _hasDestination;
+    private Vector2 _destination;
+
+    /// <summary>The path being walked, from <see cref="NavPaths.Find"/>. Read by the debug view.</summary>
+    public Vector2[] Path { get; private set; } = System.Array.Empty<Vector2>();
+
+    /// <summary>Index into <see cref="Path"/> of the point being steered at.</summary>
+    public int PathIndex { get; private set; }
+
+    /// <summary>
+    /// The nav map's iteration when <see cref="Path"/> was found. A tower landing rebakes the mesh
+    /// and bumps it; a path from an older mesh may run through the new tower, so it is re-found.
+    /// </summary>
+    private long _mapIteration = -1;
 
     // ── Lifecycle ─────────────────────────────────────────────────────────
 
     public sealed override void _Ready()
     {
-        NavAgent.PathDesiredDistance = PathDesiredDistance;
-        NavAgent.TargetDesiredDistance = TargetDesiredDistance;
-        NavAgent.MaxSpeed = MoveSpeed;
-
-        NavAgent.Radius = GlobalEnemyConfig.AgentRadius;
         if (Hitbox?.Shape is CircleShape2D circle)
             circle.Radius = GlobalEnemyConfig.AgentRadius;
         else
@@ -137,13 +128,15 @@ public partial class EnemyNavController : CharacterBody2D, IMoveSpeed
         // before movement consumes it.
         Targeter?.Tick(delta);
 
-        if (!_hasDestination || NavAgent.IsNavigationFinished())
+        if (_hasDestination && MapIteration != _mapIteration)
+            Repath();
+
+        if (!_hasDestination || !TryNextPathPoint(out Vector2 nextPos))
         {
             Velocity = Vector2.Zero;
             return;
         }
 
-        Vector2 nextPos = NavAgent.GetNextPathPosition();
         Vector2 desiredVelocity = (nextPos - GlobalPosition).Normalized() * MoveSpeed;
         Velocity = Velocity.Lerp(desiredVelocity, Acceleration * (float)delta);
         MoveAndSlide();
@@ -193,21 +186,66 @@ public partial class EnemyNavController : CharacterBody2D, IMoveSpeed
     /// <summary>Current target tower, or null. Sourced from the targeter.</summary>
     public Node2D Target => Targeter?.CurrentTarget;
 
-    /// <summary>Sets a navmesh destination and starts moving toward it.</summary>
+    /// <summary>
+    /// Sets a navmesh destination and starts moving toward it. The targeter re-announces the same
+    /// destination on every retarget, so an unchanged one keeps the path it has rather than paying
+    /// for it again.
+    /// </summary>
     public void SetDestination(Vector2 pos)
     {
+        if (_hasDestination && pos.DistanceSquaredTo(_destination) < 1f) return;
+
         _hasDestination = true;
-        if (NavAgent != null)
-            NavAgent.TargetPosition = pos;
+        _destination = pos;
+        Repath();
     }
 
-    /// <summary>Parks on the current position so any cached path is abandoned
-    /// (IsNavigationFinished() goes true on the next query).</summary>
+    /// <summary>Abandons the destination and the path with it.</summary>
     public void Stop()
     {
         _hasDestination = false;
         Velocity = Vector2.Zero;
-        if (NavAgent != null)
-            NavAgent.TargetPosition = GlobalPosition;
+        Path = System.Array.Empty<Vector2>();
+        PathIndex = 0;
+    }
+
+    // ── Path following ────────────────────────────────────────────────────
+
+    private Rid NavMap => GetWorld2D()?.NavigationMap ?? default;
+
+    private long MapIteration
+    {
+        get
+        {
+            Rid map = NavMap;
+            return map.IsValid ? (long)NavigationServer2D.MapGetIterationId(map) : -1;
+        }
+    }
+
+    private void Repath()
+    {
+        _mapIteration = MapIteration;
+        Path = NavPaths.Find(NavMap, GlobalPosition, _destination);
+        PathIndex = 0;
+    }
+
+    /// <summary>
+    /// The point to steer at, skipping any already within reach. False once the last point is
+    /// reached, or when there is no path at all, which before the first bake is every path.
+    /// </summary>
+    private bool TryNextPathPoint(out Vector2 next)
+    {
+        next = default;
+        if (Path.Length == 0) return false;
+
+        while (PathIndex < Path.Length - 1
+               && GlobalPosition.DistanceTo(Path[PathIndex]) <= PathDesiredDistance)
+            PathIndex++;
+
+        next = Path[PathIndex];
+        if (PathIndex == Path.Length - 1 && GlobalPosition.DistanceTo(next) <= TargetDesiredDistance)
+            return false;
+
+        return true;
     }
 }

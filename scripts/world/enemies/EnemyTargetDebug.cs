@@ -13,9 +13,9 @@ namespace towerdefensegame.scripts.world.enemies;
 /// Collision Shapes" cannot show it and there is otherwise no way to see why an enemy turned.
 ///
 /// The colour is the state, so one glance answers the only question worth asking:
-/// <b>aqua</b> heading for the core, <b>orange</b> broken off onto a turret, <b>grey</b> nothing
-/// reachable. A railroaded enemy draws no ring at all, because it cannot break off whatever it
-/// passes.
+/// <b>aqua</b> heading for the core, <b>orange</b> broken off onto a turret, <b>purple</b> walking
+/// toward a ward on the route, <b>grey</b> nothing reachable. A railroaded enemy draws no ring at
+/// all, because it cannot break off whatever it passes.
 ///
 /// Immediate-mode <c>Node2D</c>, like <c>EnemyStateDebug</c> and the HP bar, so nothing here
 /// touches the UI theme or has any opinion about it.
@@ -32,9 +32,20 @@ public partial class EnemyTargetDebug : Node2D
     /// <summary>Draw the line to the current target as well as the ring.</summary>
     [Export] public bool ShowTargetLine { get; set; } = true;
 
+    /// <summary>
+    /// Draw the path the enemy is actually walking, from where it stands. Stands in for the
+    /// NavigationAgent2D's own debug path, which went when the controller stopped using one.
+    /// </summary>
+    [Export] public bool ShowPath { get; set; } = true;
+
+    [Export] public Color PathColor { get; set; } = new(1f, 1f, 1f, 0.45f);
+
     [Export] public Color CoreColor { get; set; } = new(0.3f, 0.85f, 1f, 0.5f);
     [Export] public Color AggroColor { get; set; } = new(1f, 0.6f, 0.2f, 0.75f);
     [Export] public Color IdleColor { get; set; } = new(0.6f, 0.6f, 0.65f, 0.35f);
+
+    /// <summary>The route's own purple, so the line reads as part of the path it is walking.</summary>
+    [Export] public Color RouteColor { get; set; } = new(0.66f, 0.45f, 1f, 0.75f);
 
     private const int Segments = 48;
 
@@ -67,10 +78,33 @@ public partial class EnemyTargetDebug : Node2D
         if (!targeter.Railroaded && targeter.AggroRadius > 0)
             DrawRing(targeter.AggroRadius, color);
 
-        if (!ShowTargetLine || target == null) return;
+        if (ShowPath) DrawWalkedPath();
 
+        if (!ShowTargetLine) return;
+
+        if (targeter.Waypoint is Vector2 ward) DrawObjective(ward, RouteColor);
+        else if (target != null) DrawObjective(target.GlobalPosition, color);
+    }
+
+    /// <summary>The rest of the path: from the enemy to the point it is steering at, then onward.</summary>
+    private void DrawWalkedPath()
+    {
+        Vector2[] path = Controller.Path;
+        int from = Controller.PathIndex;
+        if (path.Length == 0 || from >= path.Length) return;
+
+        Vector2[] points = new Vector2[path.Length - from + 1];
+        points[0] = Vector2.Zero;
+        for (int i = from; i < path.Length; i++)
+            points[i - from + 1] = ToLocal(path[i]);
+
+        DrawPolyline(points, PathColor, 1f);
+    }
+
+    private void DrawObjective(Vector2 global, Color color)
+    {
         // Local space — this node rides the enemy, so the target has to come back to it.
-        Vector2 local = ToLocal(target.GlobalPosition);
+        Vector2 local = ToLocal(global);
         DrawLine(Vector2.Zero, local, color, 1f);
         DrawRect(new Rect2(local - new Vector2(3, 3), new Vector2(6, 6)), color, filled: false, width: 1f);
     }

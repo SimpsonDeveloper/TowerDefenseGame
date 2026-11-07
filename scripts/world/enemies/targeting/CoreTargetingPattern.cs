@@ -18,8 +18,8 @@ namespace towerdefensegame.scripts.world.enemies.targeting;
 /// becomes the objective until it falls. A turret near the route is therefore a turret that gets
 /// attacked, which is what makes placement a risk rather than a free choice.
 ///
-/// Suppressed while the enemy is <b>railroaded</b>: an enemy following a route it believes in
-/// walks past the guns. Breaking the illusion is what frees it to turn on one
+/// <b>Walks the player's route when one is laid</b>, far end first, and is <b>railroaded</b> while
+/// it does: an enemy following a route it believes in walks past the guns. Breaking the illusion is what frees it to turn on one
 /// (<c>impl-planning/combat/paths.md</c>).
 /// </summary>
 [GlobalClass]
@@ -31,5 +31,6 @@ public partial class CoreTargetingPattern : TargetingPattern
         AggroGroup = "Towers",
         AggroRadius = enemyType.AggroRadius,
         AttackRange = enemyType.AttackRange,
+        FollowsRoute = true,
     };
 }

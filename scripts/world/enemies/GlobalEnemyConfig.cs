@@ -12,8 +12,8 @@ public static class GlobalEnemyConfig
 {
     /// <summary>
     /// Collision radius used for navigation. The nav mesh is eroded by this
-    /// amount during baking, and each enemy's NavigationAgent2D.Radius is set
-    /// from it at runtime so paths match the agent's footprint.
+    /// amount during baking, and each enemy's hitbox circle is set from it at
+    /// runtime so paths match the enemy's footprint.
     /// </summary>
     public static float AgentRadius => 10f;
 }

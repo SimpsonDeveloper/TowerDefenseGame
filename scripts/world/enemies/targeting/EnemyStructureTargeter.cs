@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using Godot;
 using towerdefensegame.scripts.towers;
+using towerdefensegame.scripts.world.paths;
+using towerdefensegame.scripts.world.paths.core;
 
 namespace towerdefensegame.scripts.world.enemies.targeting;
 
@@ -23,6 +25,13 @@ namespace towerdefensegame.scripts.world.enemies.targeting;
 ///
 /// The targeter never touches movement state; the mover subscribes and decides
 /// what to do with the destination.
+///
+/// <b>Following a route.</b> With <see cref="FollowsRoute"/> set and wards laid in this viewport,
+/// the targeter stops choosing structures and walks the <see cref="MiragePath"/> instead: joined at
+/// the far end, ward by ward inward, then the last leg into the core. Each ward is emitted as a
+/// plain destination; no resolver job runs while one is being walked. Which ward, and what happens
+/// when the player edits the route mid-walk, is <see cref="RouteCursor{T}"/>'s business, not this
+/// class's. Design: <c>impl-planning/combat/paths.md</c> §8.
 /// </summary>
 [GlobalClass]
 public partial class EnemyStructureTargeter : EnemyTargeter
@@ -45,12 +54,28 @@ public partial class EnemyStructureTargeter : EnemyTargeter
     public float AggroRadius { get; set; }
 
     /// <summary>
-    /// While true the enemy cannot break off, whatever it walks past — it is following a route it
-    /// believes in. Set by the path follower once that exists; a <b>deviating</b> enemy clears it
-    /// and becomes free to turn on a turret beside it
-    /// (<c>impl-planning/combat/paths.md</c>). Nothing writes it yet, so every enemy is free.
+    /// Walk the player's route when one is laid. Set by <see cref="CoreTargetingPattern"/>; a
+    /// turret hunter has no business on a route to the core.
     /// </summary>
-    public bool Railroaded { get; set; }
+    public bool FollowsRoute { get; set; }
+
+    /// <summary>
+    /// While true the enemy cannot break off, whatever it walks past — it is following a route it
+    /// believes in, wards and the final leg home alike. Derived from the route cursor rather than
+    /// stored, so there is one answer. A <b>deviating</b> enemy will step off the route and become
+    /// free to turn on a turret beside it (<c>impl-planning/combat/paths.md</c>); deviation is not
+    /// built, so for now only an empty route frees an enemy.
+    /// </summary>
+    public bool Railroaded => _cursor.OnRoute;
+
+    /// <summary>The ward being walked toward, in world space, or null when not on a ward leg. Debug readout.</summary>
+    public Vector2? Waypoint { get; private set; }
+
+    /// <summary>
+    /// Pixels from a ward's centre that count as reaching it. A tile: tighter than that and a
+    /// crowd jostling round one ward can hold an enemy off it forever.
+    /// </summary>
+    public float WardArriveRadius { get; set; } = 16f;
 
     /// <summary>
     /// Reach of the enemy's attack. Added to agentRadius to form the standoff
@@ -64,6 +89,16 @@ public partial class EnemyStructureTargeter : EnemyTargeter
     private TowerFootprintTracker _footprints;
     private float _retargetTimer;
 
+    private MiragePath _route;
+    private readonly RouteCursor<Vector2I> _cursor = new();
+
+    /// <summary>
+    /// A ward chosen but not yet announced. Emitted from <see cref="Tick"/> rather than on the
+    /// spot, because the first ward is chosen in <c>_Ready</c> — and a child readies before its
+    /// parent, so the controller has not subscribed yet and an immediate emit would be lost.
+    /// </summary>
+    private bool _announceWaypoint;
+
     public override void _Ready()
     {
         _owner = GetParent<Node2D>();
@@ -73,13 +108,27 @@ public partial class EnemyStructureTargeter : EnemyTargeter
         if (_coordinator != null)
             _coordinator.ResourcesReady += OnResourcesReady;
 
-        TryRetarget();
+        if (FollowsRoute)
+        {
+            _route = MiragePath.ForViewport(viewport);
+            if (_route != null)
+            {
+                _route.Changed += OnRouteChanged;
+                _cursor.Sync(_route.Wards);
+            }
+        }
+
+        if (_cursor.Stage == RouteStage.Following) HeadForWard();
+        else TryRetarget();
     }
 
     public override void _ExitTree()
     {
         if (_coordinator != null)
             _coordinator.ResourcesReady -= OnResourcesReady;
+
+        if (_route != null)
+            _route.Changed -= OnRouteChanged;
 
         if (_owner != null)
             EnemyPathfindService.Instance?.Cancel(_owner.GetInstanceId());
@@ -91,6 +140,23 @@ public partial class EnemyStructureTargeter : EnemyTargeter
     /// </summary>
     public override void Tick(double delta)
     {
+        if (_cursor.Stage == RouteStage.Following)
+        {
+            if (_announceWaypoint && Waypoint.HasValue)
+            {
+                _announceWaypoint = false;
+                EmitApproachResolved(Waypoint.Value);
+            }
+
+            if (Waypoint.HasValue && _owner != null
+                && _owner.GlobalPosition.DistanceTo(Waypoint.Value) <= WardArriveRadius)
+            {
+                _cursor.Advance();
+                OnStageMoved();
+            }
+            return;
+        }
+
         DrainPendingPathResult();
 
         _retargetTimer -= (float)delta;
@@ -108,7 +174,69 @@ public partial class EnemyStructureTargeter : EnemyTargeter
         EmitTargetCleared();
     }
 
-    private void OnResourcesReady(PathfindingResourceCoordinator.Snapshot _) => TryRetarget();
+    private void OnResourcesReady(PathfindingResourceCoordinator.Snapshot _)
+    {
+        if (_cursor.Stage != RouteStage.Following) TryRetarget();
+    }
+
+    // ── route ────────────────────────────────────────────────────────────────────
+
+    private void OnRouteChanged()
+    {
+        if (_cursor.Sync(_route.Wards)) OnStageMoved();
+    }
+
+    /// <summary>The cursor has a new destination: a different ward, or off the wards altogether.</summary>
+    private void OnStageMoved()
+    {
+        if (_cursor.Stage == RouteStage.Following)
+        {
+            HeadForWard();
+            return;
+        }
+
+        // Home or free: back to choosing a structure, which is the core. Railroaded or not decides
+        // whether a turret on the way can pull it off — Nearby() reads that.
+        Waypoint = null;
+        TryRetarget();
+    }
+
+    /// <summary>
+    /// Emit the cursor's ward as the destination. A ward with no way to reach it — on an island the
+    /// enemy cannot get to — is skipped rather than walked at forever; placement keeps towers off
+    /// the route, so this is terrain, and rare.
+    /// </summary>
+    private void HeadForWard()
+    {
+        // A resolver job still in flight would land later and overwrite the ward.
+        if (_owner != null) EnemyPathfindService.Instance?.Cancel(_owner.GetInstanceId());
+        CurrentTarget = null;
+
+        while (_cursor.Stage == RouteStage.Following && !Reachable(_route.CentreOf(_cursor.Target)))
+            _cursor.Advance();
+
+        if (_cursor.Stage != RouteStage.Following)
+        {
+            OnStageMoved();
+            return;
+        }
+
+        Waypoint = _route.CentreOf(_cursor.Target);
+        _announceWaypoint = true;
+    }
+
+    /// <summary>Does a walked path from here end at this point? Before the first bake, assume so.</summary>
+    private bool Reachable(Vector2 point)
+    {
+        Rid map = GetViewport()?.World2D?.NavigationMap ?? default;
+        if (!map.IsValid || _owner == null) return true;
+        if (NavigationServer2D.MapGetIterationId(map) == 0) return true;   // nothing baked yet
+
+        Vector2[] path = NavigationServer2D.MapGetPath(map, _owner.GlobalPosition, point, true);
+        if (path.Length == 0) return false;
+
+        return path[^1].DistanceTo(point) <= WardArriveRadius;
+    }
 
     /// <summary>
     /// Single entry point for retargeting. Resets the cadence timer and submits
