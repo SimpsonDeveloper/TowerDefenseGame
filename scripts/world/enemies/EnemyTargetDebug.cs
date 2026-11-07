@@ -56,7 +56,10 @@ public partial class EnemyTargetDebug : Node2D
     {
         if (Controller?.Targeter is not EnemyStructureTargeter targeter) return;
 
+        // The targeter drops a freed target on its own tick, but a turret can die between that
+        // tick and this draw. Treat a dead reference as no target for the frame.
         Node2D target = targeter.CurrentTarget;
+        if (target != null && !IsInstanceValid(target)) target = null;
         bool onTurret = target != null && target.IsInGroup("Towers");
         Color color = target == null ? IdleColor : onTurret ? AggroColor : CoreColor;
 
@@ -74,7 +77,7 @@ public partial class EnemyTargetDebug : Node2D
 
     private void DrawRing(float radius, Color color)
     {
-        var points = new Vector2[Segments + 1];
+        Vector2[] points = new Vector2[Segments + 1];
         for (int i = 0; i <= Segments; i++)
         {
             float angle = i * Mathf.Tau / Segments;
